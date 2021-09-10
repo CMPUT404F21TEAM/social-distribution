@@ -29,6 +29,11 @@ All text is licensed under the CC-BY-SA 4.0 http://creativecommons.org/licenses/
 
 Contributors:
 ```
+Olivier Vadiavaloo
+Jawad Hossain
+Diego Becerra
+Tyler Elston
+Michelle Wang
 Karim Baaba
 Ali Sajedi
 Kyle Richelhoff
