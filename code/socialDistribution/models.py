@@ -91,7 +91,7 @@ class Post(models.Model):
     page_size = models.PositiveSmallIntegerField(default=0)
     
     first_comments_page = models.URLField(max_length=200)
-    comments = models.ManyToManyField(to=Comments, related_name='comments')
+    comments = models.ManyToManyField(to=Comment, related_name='comments')
     pub_date = models.DateTimeField()
 
     visibility = models.CharField(max_length=10, choices=PostVisibility.choices)
