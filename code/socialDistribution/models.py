@@ -18,7 +18,7 @@ class Comment(models.Model):
         content_type        Markdown or Text
         comment             Comment content (markdown or text)
         pub_date            Published date (datetime)
-        post                Post related to the comment
+        post                Post related to the comment (reference to post)
         id                  Auto-generated id
     '''
     class CommentContentType(models.TextChoices):
@@ -34,6 +34,17 @@ class Comment(models.Model):
 
     post = models.ForeignKey('Post', on_delete=models.CASCADE)
     pub_date = models.DateTimeField()
+
+
+class Category(models.Model):
+    '''
+    Categories model:
+        id                  Auto-generated id
+        category            Category name
+        post                reference to post (Many-to-One relationship)
+    '''
+    category = models.CharField(max_length=50)
+    post = models.ForeignKey('Post', on_delete=models.CASCADE)
 
 
 class Post(models.Model):
@@ -57,12 +68,10 @@ class Post(models.Model):
         content_media       Any attached images (base64 encoded image; png or jpeg)
 
         author              Post author (reference to author)
-        categories          Post categories (a list), default is [], JSON field
         
         count               total number of comments (small integer)
         page_size           page size  (small integer)
         first_comments_page URL of first comments page
-        comments            Comments on post, a manytomany field
 
         pub_date            Post published date (datetime)
         visibility          PUBLIC or FRIENDS
@@ -94,16 +103,12 @@ class Post(models.Model):
     content_text = models.TextField()
 
     # Uploads to MEDIA ROOT uploads/ YEAR/ MONTH
-    content_media = models.ImageField(upload_to="uploads/% Y/% m", null=True)
-
+    content_media = models.ImageField(upload_to="uploads/% Y/% m", null=True, blank=True)
     author = models.ForeignKey('Author', on_delete=models.CASCADE)
-    categories = models.JSONField(default=list)
 
     count = models.PositiveSmallIntegerField(default=0)
     page_size = models.PositiveSmallIntegerField(default=0)
-    
-    first_comments_page = models.URLField(max_length=200)
-    comments = models.ManyToManyField(to=Comment, related_name='comments')
+    first_comments_page = models.URLField(max_length=200, blank=True)
     pub_date = models.DateTimeField()
 
     visibility = models.CharField(max_length=10, choices=PostVisibility.choices)
