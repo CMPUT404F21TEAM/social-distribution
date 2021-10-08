@@ -9,6 +9,7 @@ class Comment(models.Model):
         content_type        Markdown or Text
         comment             Comment content (markdown or text)
         pub_date            Published date (datetime)
+        post                Post related to the comment
         id                  Auto-generated id
     '''
     class CommentContentType(models.TextChoices):
@@ -20,7 +21,9 @@ class Comment(models.Model):
         max_length=2,
         choices=CommentContentType.choices
     )
+    comment = models.CharField(_(""), max_length=200)
 
+    post = models.ForeignKey('Post', on_delete=models.CASCADE)
     pub_date = models.DateField()
 
 
