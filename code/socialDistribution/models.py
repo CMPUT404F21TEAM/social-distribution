@@ -2,6 +2,15 @@ from django.db import models
 
 # Create your models here.
 
+## DUMMY
+class Author(models.Model):
+    '''
+    Author model:
+        displayName         Author's displayName (text)
+    '''
+    displayName = models.CharField(max_length=50)
+
+
 class Comment(models.Model):
     '''
     Comment model:
@@ -21,10 +30,10 @@ class Comment(models.Model):
         max_length=2,
         choices=CommentContentType.choices
     )
-    comment = models.CharField(_(""), max_length=200)
+    comment = models.CharField(max_length=200)
 
     post = models.ForeignKey('Post', on_delete=models.CASCADE)
-    pub_date = models.DateField()
+    pub_date = models.DateTimeField()
 
 
 class Post(models.Model):
@@ -82,10 +91,10 @@ class Post(models.Model):
         default=PostContentType.PLAIN
     )
     
-    content_text = models.TextField(_(""))
+    content_text = models.TextField()
 
     # Uploads to MEDIA ROOT uploads/ YEAR/ MONTH
-    content_media = models.ImageField(upload_to="uploads/% Y/% m")
+    content_media = models.ImageField(upload_to="uploads/% Y/% m", null=True)
 
     author = models.ForeignKey('Author', on_delete=models.CASCADE)
     categories = models.JSONField(default=list)
