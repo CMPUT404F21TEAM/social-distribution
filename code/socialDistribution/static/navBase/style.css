@@ -1,5 +1,37 @@
 :root {
     --bg-grey: #eaeaea;
+    --bg-blue: #0d0b73;
+}
+
+.navbar {
+    background-color: var(--bg-blue);
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: x-large;
+}
+
+@media (max-width: 500px) {
+    .navbar button {
+        margin: 2vmin;
+    }
+}
+
+@media (min-width: 800px) {
+    .nav-item {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .nav-item a {
+        padding-top: 2vmin;
+    }
+
+    .navbar ul {
+        margin-left: 1vmin;
+        margin-right: 1vmin;
+    }
 }
 
 h1 {
