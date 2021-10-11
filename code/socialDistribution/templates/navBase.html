@@ -40,6 +40,9 @@
         <form class="mx-md-5 w-50">
             <input class="form-control me-2 rounded-pill" type="search" placeholder="Search" aria-label="Search">
         </form>
+        <div class="mob-btn nav-right">
+          <button class="btn btn-outline-light rounded-pill m-sm-1" type="button">Username</button>
+          <button class="btn btn-secondary rounded-pill m-sm-1" type="logout">Logout</button>
       </div>
       <div class="nav-right">
         {% if request.user.is_authenticated %}
