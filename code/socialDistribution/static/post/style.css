@@ -1,3 +1,36 @@
 body {
     background-color: var(--bg-grey);
 }
+
+#post_container {
+    width: 100%;
+    margin: 0;
+}
+
+#post {
+    margin-top: 5vmin;
+    margin-bottom: 5vmin;
+    width: 100%;
+}
+
+@media (min-width: 500px) {
+    #post_container {
+        margin: auto;
+        width: 50%;
+    }
+
+    #post {
+        width: 100%;
+        margin-top: 5vmin;
+        border-radius: 10px;
+    }
+}
+
+#add_btn {
+    position: fixed;
+    bottom: 5vmin;
+    right: 5vmin;
+    width: 5rem;
+    background: none;
+    border: none;
+}
