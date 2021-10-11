@@ -8,4 +8,11 @@
 
 {% block body %}
     <h1>Post</h1>
+    {% if latest_posts %}
+        <ul>
+        {% for post in latest_posts %}
+            <li>{{ post.title }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
 {% endblock %}

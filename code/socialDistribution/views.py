@@ -95,7 +95,8 @@ def create(request):
     return render(request, 'create/index.html')
 
 def post(request):
-    return render(request, 'post/index.html')
+    latest_posts = Post.objects.order_by('-pub_date')[:5]
+    return render(request, 'post/index.html', {'latest_posts': latest_posts})
 
 def profile(request):
     return render(request, 'profile/index.html')
