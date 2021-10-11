@@ -1,3 +1,7 @@
+:root {
+    --bg-grey: #eaeaea;
+}
+
 h1 {
     color: green;
 }
