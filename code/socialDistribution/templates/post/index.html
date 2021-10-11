@@ -16,7 +16,40 @@
         </div>
     {% endif %}
 
-    <button id="add_btn" type="button">
+    <button id="add_btn" type="button" data-bs-toggle="modal" data-bs-target="#addPostModal">
         <img src="{% static 'assets/add_btn.png' %}" alt="add posts" style="object-fit: contain; width: 100%">
     </button>
+
+    <div class="modal fade" id="addPostModal" tabindex="-1" aria-labelledby="Create Post" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title" id="Create Post">Create Post</h6>
+                    <button class="close" type="button" data-bs-dismiss="modal" aria-label="Close"
+                        style="
+                            background-color: transparent;
+                            border: none;
+                        "
+                    >
+                        <span aria-hidden="true">&times;</span>
+                    </button> 
+                </div>
+                <div class="modal-body">
+                    Lorem Ipsum...
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-sm" style="background-color: transparent;" type="button" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-md btn-primary rounded-pill" type="button"
+                        style="
+                            background-color: var(--bg-blue);
+                            border-color: var(--bg-blue);
+                            text-color: white;
+                        "
+                    >
+                        Publish
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
