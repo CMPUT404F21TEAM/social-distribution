@@ -1,8 +1,5 @@
 
-<div class="card shadow border-light bg-white"
-    id="post"
-    style="width: 100%; margin: 5vmin; border-radius: 10px;"
->
+<div class="card shadow border-light bg-white" id="post">
     <div class="card-header bg-white">
         <div class="fs-5" style="line-height: 20px;">
             {{ post.author.displayName }}
@@ -13,8 +10,6 @@
     </div>
     <div class="card-body">
         <h5 class="card-title">{{ post.title }}</h5>
-        {% comment %} {{ post.source }}</br> {% endcomment %}
-        {% comment %} {{ post.origin }}</br> {% endcomment %}
         <p class="card-text text-center">
             {{ post.description }}
             {{ post.content_type }}</br>
