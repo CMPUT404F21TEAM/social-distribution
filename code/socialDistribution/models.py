@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from datetime import *
+
 # Create your models here.
 
 ## DUMMY
@@ -137,3 +139,47 @@ class Post(models.Model):
         Check if post is public
         '''
         return self.visibility == self.PostVisibility.PUBLIC
+
+    def when(self):
+        '''
+        Returns string describing when post the was created
+        
+        For example,
+            3 days ago
+            1 min ago
+            5 secs ago
+            etc
+            ...
+        '''
+        now = datetime.now(timezone.utc)
+        elapsed = now - self.pub_date
+        print(elapsed)
+
+        def check_gt_one(val, string):
+            if val > 1:
+                return string + 's'
+
+        years_elapsed = elapsed.days // 365
+        months_elapsed = elapsed.days // 30
+        hrs_elapsed = elapsed.seconds // 3600
+        mins_elapsed = elapsed.seconds // 60
+
+        if years_elapsed > 0:
+            return str(years_elapsed) + f' {check_gt_one(years_elapsed, "year")} ago'
+
+        elif months_elapsed > 0:
+            return str(elapsed.days // 30) + f' {check_gt_one(months_elapsed, "month")} ago'
+        
+        elif elapsed.days > 0:
+            return str(elapsed.days) + f' {check_gt_one(elapsed.days, "day")} ago'
+        
+        elif hrs_elapsed > 0:
+            return str(hrs_elapsed) + f' {check_gt_one(hrs_elapsed, "hour")} ago'
+
+        elif mins_elapsed > 0:
+            return str(mins_elapsed) + f' {check_gt_one(mins_elapsed, "min")} ago'
+        elif elapsed.seconds > 10:
+            return str(elapsed.seconds) + f' {check_gt_one(elapsed.seconds, "sec")} ago'
+
+        else:
+            return 'just now'
