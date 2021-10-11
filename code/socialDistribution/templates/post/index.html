@@ -6,13 +6,13 @@
         <link rel="stylesheet" type="text/css" href="{% static 'post/style.css' %}">
 {% endblock %}
 
+{% load post %}
 {% block body %}
-    <h1>Post</h1>
     {% if latest_posts %}
-        <ul>
-        {% for post in latest_posts %}
-            <li>{{ post.title }}</li>
-        {% endfor %}
-        </ul>
+        <div class="container align-self-center" style="width: 50%">
+            {% for post in latest_posts %}
+                {% card_post post %}
+            {% endfor %}
+        </div>
     {% endif %}
 {% endblock %}

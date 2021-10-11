@@ -48,10 +48,12 @@
     </div>
   </nav>
 
-  {% block body %}
-  html files that extend base.html will be loaded and everything within
-  the block named "body" will display here
-  {% endblock %}
+  <div class=".container">
+    {% block body %}
+    html files that extend base.html will be loaded and everything within
+    the block named "body" will display here
+    {% endblock %}
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.2/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-kQtW33rZJAHjgefvhyyzcGF3C5TFyBQBA13V1RKPf4uH+bwyzQxZ6CmMZHmNBEfJ" crossorigin="anonymous">
