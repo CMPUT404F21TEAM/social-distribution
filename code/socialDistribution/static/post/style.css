@@ -34,3 +34,7 @@ body {
     background: none;
     border: none;
 }
+
+#post_form_groups div, textarea, select {
+    margin: 1vmin;
+}
