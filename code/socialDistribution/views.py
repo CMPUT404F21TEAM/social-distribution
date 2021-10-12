@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import redirect
@@ -13,8 +13,9 @@ from .models import *
 from datetime import datetime
 # Create your views here.
 
-def get_home_context(error, msg=''):
+def get_home_context(author, error, msg=''):
     context = {}
+    context['author'] = author
     context['modal_type'] = 'post'
     latest_posts = Post.objects.filter(unlisted=False).order_by("-pub_date")[:5]
     context['latest_posts'] = latest_posts
@@ -97,18 +98,25 @@ def logoutUser(request):
     logout(request)
     return redirect('login')
 
-def home(request):
-    context = get_home_context(False)
+def home(request, author_id):
+    author = get_object_or_404(Author, pk=author_id)
+    context = get_home_context(author, False)
     return render(request, 'home/index.html', context)
 
 @allowedUsers(allowed_roles=['author']) # just for demonstration
 def authors(request):
     return render(request, 'authors/index.html')
 
+def author(request, author_id):
+    author = get_object_or_404(Author, pk=author_id)
+    return render(request, 'author/detail.html', {'author': author})
+
 def create(request):
     return render(request, 'create/index.html')
 
-def posts(request):
+def posts(request, author_id):
+    author = get_object_or_404(Author, pk=author_id)
+    
     if request.method == 'POST':
         title = request.POST.get('title')
         source = request.POST.get('source')
@@ -155,7 +163,7 @@ def posts(request):
             redirect('home')
 
         except ValidationError:
-            context = get_home_context(True, "Something went wrong! Couldn't create post.")
+            context = get_home_context(author, True, "Something went wrong! Couldn't create post.")
             return render(request, 'home/index.html', context)
 
     return render(request, 'posts/index.html')
