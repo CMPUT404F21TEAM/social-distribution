@@ -41,23 +41,27 @@ def register(request):
     if request.method == 'POST':
         form = CreateUserForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            # extract form data
-            username = form.cleaned_data.get('username')
-            first_name = form.cleaned_data.get('first_name')
-            last_name = form.cleaned_data.get('last_name')
-            github_url = request.POST.get('github_url', '')
-            full_name = f"{first_name} {last_name}"
+            try:
+                user = form.save()
+                # extract form data
+                username = form.cleaned_data.get('username')
+                first_name = form.cleaned_data.get('first_name')
+                last_name = form.cleaned_data.get('last_name')
+                github_url = request.POST.get('github_url', '')
+                full_name = f"{first_name} {last_name}"
 
-            # add user to author group by default
-            group = Group.objects.get(name="author")
-            user.groups.add(group)
-            Author.objects.create(
-                user=user,
-                username=username,
-                displayName=full_name,
-                githubUrl=github_url
-            )
+                # add user to author group by default
+                group = Group.objects.get(name="author")
+                user.groups.add(group)
+                Author.objects.create(
+                    user=user,
+                    username=username,
+                    displayName=full_name,
+                    githubUrl=github_url
+                )
+            except:
+                return HttpResponse("Sign up failed. Internal Server Error. Please Try again.", status=500)
+
 
             messages.success(request, f'Account created for {username}')
 
