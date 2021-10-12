@@ -158,6 +158,8 @@ class Post(models.Model):
         def check_gt_one(val, string):
             if val > 1:
                 return string + 's'
+            else:
+                return string
 
         years_elapsed = elapsed.days // 365
         months_elapsed = elapsed.days // 30
