@@ -97,7 +97,7 @@ def authors(request):
 def create(request):
     return render(request, 'create/index.html')
 
-def post(request):
+def posts(request):
     context = {}
     context['modal_type'] = 'post'
 
@@ -149,7 +149,7 @@ def post(request):
     
     latest_posts = Post.objects.order_by('-pub_date')[:5]
     context['latest_posts'] = latest_posts
-    return render(request, 'post/index.html', context)
+    return render(request, 'posts/index.html', context)
 
 def profile(request):
     return render(request, 'profile/index.html')
