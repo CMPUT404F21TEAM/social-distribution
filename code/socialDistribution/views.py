@@ -9,7 +9,21 @@ def home(request):
     return render(request, 'home/index.html')
 
 def authors(request):
-    return render(request, 'authors/index.html')
+    # dummy data
+    args = {}
+    sample_data = [
+        {
+            "name": "John Doe",
+            "type": "Local"
+        },
+        {
+            "name": "Jane Doe",
+            "type": "Remote"
+        }
+    ]
+
+    args["authors"] = sample_data
+    return render(request, 'authors/index.html', args)
 
 def create(request):
     return render(request, 'create/index.html')

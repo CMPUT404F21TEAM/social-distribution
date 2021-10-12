@@ -1,0 +1,11 @@
+.authors-list {
+    max-width: 50rem;
+    margin: 0 auto; 
+}
+
+.profile-img {
+    width: 100%;
+    height: auto;
+    margin: auto;
+    border-radius: 100%;
+}
