@@ -42,13 +42,20 @@ def register(request):
         form = CreateUserForm(request.POST)
         if form.is_valid():
             try:
-                user = form.save()
                 # extract form data
                 username = form.cleaned_data.get('username')
                 first_name = form.cleaned_data.get('first_name')
                 last_name = form.cleaned_data.get('last_name')
                 github_url = request.POST.get('github_url', '')
                 full_name = f"{first_name} {last_name}"
+
+                # check github url
+                if (github_url and not github_url.startswith('https://github.com/')):
+                    context = { 'form': form }
+                    messages.info(request, 'Invalid github url, must be of format: https://github.com/username')
+                    return render(request, 'user/register.html', context)
+
+                user = form.save()
 
                 # add user to author group by default
                 group = Group.objects.get(name="author")
