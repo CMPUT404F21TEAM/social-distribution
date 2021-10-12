@@ -4,25 +4,26 @@ body {
 
 #post_container {
     width: 100%;
-    margin: 0;
+    margin: auto;    
 }
 
 #post {
+    border-radius: 10px;
+    margin: 1vmin;
     margin-top: 5vmin;
-    margin-bottom: 5vmin;
     width: 100%;
+    height: 30rem;
 }
 
 @media (min-width: 800px) {
     #post_container {
-        margin: auto;
-        width: 50%;
+        width: 75%;
     }
-
+    
     #post {
-        width: 100%;
+        width: 60%;
+        margin: auto;
         margin-top: 5vmin;
-        border-radius: 10px;
     }
 }
 
