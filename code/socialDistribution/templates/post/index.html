@@ -17,17 +17,17 @@
         </div>
     {% endif %}
 
-    <button id="add_btn" type="button" data-bs-toggle="modal" data-bs-target="#addPostModal">
+    <button id="add_btn" type="button" data-bs-toggle="modal" data-bs-target="#add_post_modal">
         <img src="{% static 'assets/add_btn.png' %}" alt="add posts" style="object-fit: contain; width: 100%">
     </button>
 
     <form method="POST" action="{% url 'post' %}" id="create_post_form">
         {% csrf_token %}
-        {% modal id="addPostModal" type=modal_type label="Create Post" title="Create Post" btn="Publish"%}
+        {% modal id="add_post_modal" type=modal_type label="Create Post" title="Create Post" btn="Publish"%}
     </form>
 
     <script>
-        $(addPostModal).on('hidden.bs.modal', function() {
+        $('#add_post_modal').on('hidden.bs.modal', function() {
             $('#create_post_form').trigger('reset');
         })
     </script>
