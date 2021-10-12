@@ -8,9 +8,19 @@ from django.contrib.auth import authenticate, login, logout
 from .forms import CreateUserForm
 from .decorators import allowedUsers, unauthenticated_user
 from django.core.exceptions import ValidationError
+from django.shortcuts import redirect
 from .models import *
 from datetime import datetime
 # Create your views here.
+
+def get_home_context(error, msg=''):
+    context = {}
+    context['modal_type'] = 'post'
+    latest_posts = Post.objects.filter(unlisted=False).order_by("-pub_date")[:5]
+    context['latest_posts'] = latest_posts
+    context['error'] = error
+    context['error_msg'] = msg
+    return context
 
 def index(request):
     return HttpResponse("Hello, world. You're at the Login/SignUp Page.")
@@ -88,7 +98,8 @@ def logoutUser(request):
     return redirect('login')
 
 def home(request):
-    return render(request, 'home/index.html')
+    context = get_home_context(False)
+    return render(request, 'home/index.html', context)
 
 @allowedUsers(allowed_roles=['author']) # just for demonstration
 def authors(request):
@@ -98,9 +109,6 @@ def create(request):
     return render(request, 'create/index.html')
 
 def posts(request):
-    context = {}
-    context['modal_type'] = 'post'
-
     if request.method == 'POST':
         title = request.POST.get('title')
         source = request.POST.get('source')
@@ -144,12 +152,13 @@ def posts(request):
             for category in categories:
                 Category.objects.create(category=category, post=post)
 
+            redirect('home')
+
         except ValidationError:
-            context['message'] = "Something went wrong! Couldn't add post"
-    
-    latest_posts = Post.objects.order_by('-pub_date')[:5]
-    context['latest_posts'] = latest_posts
-    return render(request, 'posts/index.html', context)
+            context = get_home_context(True, "Something went wrong! Couldn't create post.")
+            return render(request, 'home/index.html', context)
+
+    return render(request, 'posts/index.html')
 
 def profile(request):
     return render(request, 'profile/index.html')
