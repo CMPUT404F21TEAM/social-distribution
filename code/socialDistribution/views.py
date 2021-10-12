@@ -5,9 +5,12 @@ from django.shortcuts import redirect
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout
 
-from .models import Author
 from .forms import CreateUserForm
 from .decorators import allowedUsers, unauthenticated_user
+from django.core.exceptions import ValidationError
+from .models import *
+from datetime import datetime
+# Create your views here.
 
 def index(request):
     return HttpResponse("Hello, world. You're at the Login/SignUp Page.")
@@ -95,8 +98,58 @@ def create(request):
     return render(request, 'create/index.html')
 
 def post(request):
+    context = {}
+    context['modal_type'] = 'post'
+
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        source = request.POST.get('source')
+        origin = request.POST.get('origin')
+        categories = request.POST.get('categories').split()
+        img = request.POST.get('img')
+        description = request.POST.get('description')
+        content = request.POST.get('content')
+        visibility = request.POST.get('visibility')
+        is_unlisted = request.POST.get('unlisted')
+        pub_date = datetime.now()
+
+        if is_unlisted is None:
+            is_unlisted = False
+        else:
+            is_unlisted = True
+
+        if visibility == '1':
+            visibility = Post.PostVisibility.FRIENDS
+        else:
+            visibility = Post.PostVisibility.PUBLIC
+        
+        # temporarily set to zero; will need to fix that soon!
+        page_size = 0
+        count = 0
+
+        try:
+            post = Post.objects.create(
+                author_id=Author.objects.get(displayName='someauthor').id,  # temporary
+                title=title, 
+                source=source, 
+                description=description,
+                content_text=content,
+                visibility=visibility,
+                pub_date=pub_date,
+                unlisted=is_unlisted,
+                page_size=page_size,
+                count=count
+            )
+
+            for category in categories:
+                Category.objects.create(category=category, post=post)
+
+        except ValidationError:
+            context['message'] = "Something went wrong! Couldn't add post"
+    
     latest_posts = Post.objects.order_by('-pub_date')[:5]
-    return render(request, 'post/index.html', {'latest_posts': latest_posts})
+    context['latest_posts'] = latest_posts
+    return render(request, 'post/index.html', context)
 
 def profile(request):
     return render(request, 'profile/index.html')
