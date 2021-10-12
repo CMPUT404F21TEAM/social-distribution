@@ -117,6 +117,10 @@ def create(request):
 def posts(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
     
+    print('-'*80)
+    print(type(request.method))
+    print('\n'*5)
+
     if request.method == 'POST':
         title = request.POST.get('title')
         source = request.POST.get('source')
@@ -160,12 +164,16 @@ def posts(request, author_id):
             for category in categories:
                 Category.objects.create(category=category, post=post)
 
-            redirect('home')
 
         except ValidationError:
             context = get_home_context(author, True, "Something went wrong! Couldn't create post.")
             return render(request, 'home/index.html', context)
-
+        
+        else:
+            # if using view name, app_name: must prefix the view name
+            # In this case, app_name is socialDistribution
+            return redirect('socialDistribution:home', author_id=author_id)
+    
     return render(request, 'posts/index.html')
 
 def profile(request):
