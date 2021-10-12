@@ -58,7 +58,7 @@ def register(request):
                 user = form.save()
 
                 # add user to author group by default
-                group = Group.objects.get(name="author")
+                group, created = Group.objects.get_or_create(name="author")
                 user.groups.add(group)
                 Author.objects.create(
                     user=user,
