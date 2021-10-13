@@ -12,7 +12,7 @@
 
         {% for author in authors %}
         <!-- Official Bootstrap Documentation, "Cards", https://getbootstrap.com/docs/5.0/components/card/, 2021-10-12, MIT -->
-        <div class="card shadow border-light bg-white m-5">
+        <div class="author-tile card shadow border-light bg-white m-5">
             <div class="card-body">
                 <div class="row">
                     <div class="col-2 d-flex align-items-center justify-content-center">
@@ -20,11 +20,17 @@
                             class="profile-img align-middle" alt="">
                     </div>
                     <div class="col">
-                        <h5 class="card-title">{{author.displayName}}</h5>
+                        <h5 class="card-title">{{author.data.displayName}}</h5>
                         <h6 class="card-subtitle mb-2 text-muted">{{author.type}}</h6>
                         <p>
-                            {% if author.id %}
-                            <a href="{% url 'socialDistribution:author' author.id %}">See public posts</a>
+                            {% if author.data.id %}
+                            <a href="{% url 'socialDistribution:author' author.data.id %}">
+                                {% if author.data.post__count == 1 %}
+                                {{author.data.post__count}} public post
+                                {% else %}
+                                {{author.data.post__count}} public posts
+                                {% endif %}
+                            </a>
                             {% endif %}
                         </p>
                     </div>
