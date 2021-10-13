@@ -10,6 +10,8 @@
 <div class="content-area container">
     <div class="authors-list">
 
+        <!-- Official Bootstrap Documentation, "Cards", https://getbootstrap.com/docs/5.0/components/card/, 2021-10-12, MIT -->
+
         {% for author in authors %}
         <div class="card shadow border-light bg-white m-5">
             <div class="card-body">
@@ -19,7 +21,7 @@
                             class="profile-img align-middle" alt="">
                     </div>
                     <div class="col">
-                        <h5 class="card-title">{{author.name}}</h5>
+                        <h5 class="card-title">{{author.displayName}}</h5>
                         <h6 class="card-subtitle mb-2 text-muted">{{author.type}}</h6>
                         <p>
                             <a href="#">12 public posts</a>

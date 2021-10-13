@@ -87,22 +87,33 @@ def logoutUser(request):
 def home(request):
     return render(request, 'home/index.html')
 
-@allowedUsers(allowed_roles=['author']) # just for demonstration
+#@allowedUsers(allowed_roles=['author']) # just for demonstration
 def authors(request):
-    # dummy data
     args = {}
-    sample_data = [
+
+    # demonstration purposes: Authors on remote server
+    remote_authors = [
         {
-            "name": "John Doe",
-            "type": "Local"
+            "username": "johnd",
+            "displayName": "John Doe",
+            "type": "Remote"
         },
         {
-            "name": "Jane Doe",
+            "username": "janed",
+            "displayName": "Jane Doe",
             "type": "Remote"
         }
     ]
 
-    args["authors"] = sample_data
+    authors = Author.objects.all()
+    local_authors = [{
+            "username": author.username,
+            "displayName": author.displayName,
+            "type": "Local"
+        } for author in authors ]
+
+    args["authors"] = local_authors + remote_authors
+
     return render(request, 'authors/index.html', args)
 
 def create(request):
