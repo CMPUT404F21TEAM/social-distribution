@@ -132,12 +132,13 @@ def authors(request):
     local_authors = [{
             "username": author.username,
             "displayName": author.displayName,
-            "type": "Local"
+            "type": "Local",
+            "id": author.id
         } for author in authors ]
 
     args["authors"] = local_authors + remote_authors
 
-    return render(request, 'authors/index.html', args)
+    return render(request, 'author/index.html', args)
 
 def author(request, author_id):
     author = get_object_or_404(Author, pk=author_id)

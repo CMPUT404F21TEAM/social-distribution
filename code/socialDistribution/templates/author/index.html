@@ -3,7 +3,7 @@
 {% block head %}
 <title>Authors</title>
 {% load static %}
-<link rel="stylesheet" type="text/css" href="{% static 'authors/style.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'author/style.css' %}">
 {% endblock %}
 
 {% block body %}
@@ -16,14 +16,16 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-2 d-flex align-items-center justify-content-center">
-                        <img src="{% static 'authors/images/blank-profile-picture.png' %}"
+                        <img src="{% static 'assets/blank-profile-picture.png' %}"
                             class="profile-img align-middle" alt="">
                     </div>
                     <div class="col">
                         <h5 class="card-title">{{author.displayName}}</h5>
                         <h6 class="card-subtitle mb-2 text-muted">{{author.type}}</h6>
                         <p>
-                            <a href="#">12 public posts</a>
+                            {% if author.id %}
+                            <a href="{% url 'socialDistribution:author' author.id %}">See public posts</a>
+                            {% endif %}
                         </p>
                     </div>
                 </div>
