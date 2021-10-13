@@ -32,7 +32,6 @@ def loginPage(request):
     """
         Logs in a user and redirects to Home page
     """
-    print("LOGIN")
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -44,7 +43,7 @@ def loginPage(request):
 
             if user is not None:
                 login(request, user)
-                return redirect(f'/author/{author_id}/home/', author_id=author_id)
+                return redirect('socialDistribution:home', author_id=author_id)
             else:
                 raise KeyError
 

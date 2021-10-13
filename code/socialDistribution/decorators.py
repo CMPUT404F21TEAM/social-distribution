@@ -1,5 +1,4 @@
 from django.http import HttpResponse
-from django.http.response import HttpResponseRedirect
 from django.shortcuts import redirect
 from .models import Author
 
@@ -11,7 +10,7 @@ def unauthenticated_user(view_func):
     def wrapper_func(request, *args, **kwargs):
         if request.user.is_authenticated:
             author_id = Author.objects.get(user=request.user).id
-            return redirect(f'/author/{author_id}/home/')
+            return redirect('socialDistribution:home', author_id=author_id)
         else:
             return view_func(request, *args, **kwargs)
 
