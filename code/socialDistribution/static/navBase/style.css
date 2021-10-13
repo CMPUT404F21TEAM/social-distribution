@@ -3,9 +3,15 @@
     --bg-blue: #0d0b73;
 }
 
-/* Default background color across site */
-body {
+
+html, body {
     background-color: var(--bg-grey);
+    height:100%;
+}
+
+.content {
+    position: relative;
+    height: 100%;
 }
 
 .navbar {
@@ -70,7 +76,6 @@ body {
         margin-right: 1vmin;
         }    
 }
-
 h1 {
-    color: green;
+    color: var(--bg-blue);
 }
