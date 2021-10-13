@@ -23,6 +23,7 @@ def get_home_context(author, error, msg=''):
     context['error_msg'] = msg
     return context
 
+@unauthenticated_user
 def index(request):
     return HttpResponse("Hello, world. You're at the Login/SignUp Page.")
 
@@ -31,6 +32,7 @@ def loginPage(request):
     """
         Logs in a user and redirects to Home page
     """
+    print("LOGIN")
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -42,12 +44,12 @@ def loginPage(request):
 
             if user is not None:
                 login(request, user)
-                return redirect('socialDistribution:home', author_id=author_id)
+                return redirect(f'author/{author_id}/home/', author_id=author_id)
             else:
                 raise KeyError
 
         except (KeyError, Author.DoesNotExist):
-            messages.info(request, "Username or Passoword is incorrect.")
+            messages.info(request, "Username or Password is incorrect.")
 
     return render(request, 'user/login.html')
 
