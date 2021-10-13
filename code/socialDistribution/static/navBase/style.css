@@ -12,7 +12,15 @@
     font-size: x-large;
 }
 
-@media (max-width: 500px) {
+@media (max-width: 952px) {
+    .navbar-nav li {
+        margin: auto;
+    }
+
+    .search-btn {
+        display: none;
+    }
+
     .navbar button {
         margin: 2vmin;
     }
@@ -27,9 +35,16 @@
         height: 0;
         visibility: hidden;
     }
+
+    .navbar-toggler {
+        position: fixed;
+        right: 0;
+        top: 0;
+        margin: 1vmin;
+    }
 }
 
-@media (min-width: 500px) {
+@media (min-width: 952px) {
     .mob-btn {
         width: 0;
         height: 0;

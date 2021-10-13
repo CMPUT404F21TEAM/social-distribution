@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 
 from .forms import CreateUserForm
 from .decorators import allowedUsers, unauthenticated_user
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
 from .models import *
 from datetime import datetime
@@ -37,10 +37,16 @@ def loginPage(request):
 
         user = authenticate(request, username=username, password=password)
 
-        if user is not None:
-            login(request, user)
-            return redirect('home')
-        else:
+        try:
+            author_id = Author.objects.get(user=user).id
+
+            if user is not None:
+                login(request, user)
+                return redirect('socialDistribution:home', author_id=author_id)
+            else:
+                raise KeyError
+
+        except (KeyError, Author.DoesNotExist):
             messages.info(request, "Username or Passoword is incorrect.")
 
     return render(request, 'user/login.html')
@@ -86,7 +92,7 @@ def register(request):
 
             messages.success(request, f'Account created for {username}')
 
-            return redirect('login')
+            return redirect('socialDistribution:login')
 
     context = { 'form': form }
     return render(request, 'user/register.html', context)
@@ -96,7 +102,7 @@ def logoutUser(request):
         Logoust out a user and redirects to login page
     """
     logout(request)
-    return redirect('login')
+    return redirect('socialDistribution:login')
 
 def home(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
@@ -149,7 +155,7 @@ def posts(request, author_id):
 
         try:
             post = Post.objects.create(
-                author_id=Author.objects.get(displayName='someauthor').id,  # temporary
+                author_id=author_id,  # temporary
                 title=title, 
                 source=source, 
                 description=description,
