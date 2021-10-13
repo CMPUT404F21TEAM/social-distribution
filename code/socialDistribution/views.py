@@ -44,7 +44,7 @@ def loginPage(request):
 
             if user is not None:
                 login(request, user)
-                return redirect(f'author/{author_id}/home/', author_id=author_id)
+                return redirect(f'/author/{author_id}/home/', author_id=author_id)
             else:
                 raise KeyError
 
