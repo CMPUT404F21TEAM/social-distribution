@@ -3,6 +3,11 @@
     --bg-blue: #0d0b73;
 }
 
+/* Default background color across site */
+body {
+    background-color: var(--bg-grey);
+}
+
 .navbar {
     background-color: var(--bg-blue);
 }
