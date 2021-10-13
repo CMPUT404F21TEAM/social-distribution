@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import *
+import timeago
 
 # Create your models here.
 
@@ -152,36 +153,4 @@ class Post(models.Model):
             ...
         '''
         now = datetime.now(timezone.utc)
-        elapsed = now - self.pub_date
-        print(elapsed)
-
-        def check_gt_one(val, string):
-            if val > 1:
-                return string + 's'
-            else:
-                return string
-
-        years_elapsed = elapsed.days // 365
-        months_elapsed = elapsed.days // 30
-        hrs_elapsed = elapsed.seconds // 3600
-        mins_elapsed = elapsed.seconds // 60
-
-        if years_elapsed > 0:
-            return str(years_elapsed) + f' {check_gt_one(years_elapsed, "year")} ago'
-
-        elif months_elapsed > 0:
-            return str(elapsed.days // 30) + f' {check_gt_one(months_elapsed, "month")} ago'
-        
-        elif elapsed.days > 0:
-            return str(elapsed.days) + f' {check_gt_one(elapsed.days, "day")} ago'
-        
-        elif hrs_elapsed > 0:
-            return str(hrs_elapsed) + f' {check_gt_one(hrs_elapsed, "hour")} ago'
-
-        elif mins_elapsed > 0:
-            return str(mins_elapsed) + f' {check_gt_one(mins_elapsed, "min")} ago'
-        elif elapsed.seconds > 10:
-            return str(elapsed.seconds) + f' {check_gt_one(elapsed.seconds, "sec")} ago'
-
-        else:
-            return 'just now'
+        return timeago.format(self.pub_date, now)
