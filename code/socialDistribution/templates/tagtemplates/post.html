@@ -21,9 +21,9 @@
         <form action="{% url 'socialDistribution:likePost' %}" method="post">
             {% csrf_token %}
             {% if isLiked %}
-                <button class="btn btn-secondary" type="submit" name="postId" value={{ post.id }}>Un-like</button>
+                <button class="btn btn-secondary" type="submit" name="postId" value={{ post.id }}><i class="fas fa-thumbs-up"></i></button>
             {% else %}
-                <button class="btn btn-primary" type="submit" name="postId" value={{ post.id }}>Like</button>
+                <button class="btn btn-primary" type="submit" name="postId" value={{ post.id }}><i class="far fa-thumbs-up"></i></button>
             {% endif %}
             <br>
         {{ likeText }}
