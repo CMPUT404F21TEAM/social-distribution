@@ -5,12 +5,11 @@ register = template.Library()
 
 @register.inclusion_tag('tagtemplates/post.html')
 def card_post(post, author):
-    isLiked = False
+    isLiked = post.likes.filter(id=author.id).exists()
     likeText = ''
     likes = post.total_likes()
-    if post.likes.filter(id=author.id).exists():
+    if isLiked:
         likes -= 1
-        isLiked = True
         if likes >= 2:
             likeText = f'Liked by you and {likes} others'
         elif likes == 1:
