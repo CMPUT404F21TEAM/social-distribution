@@ -1,3 +1,4 @@
+from django.http.response import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse
@@ -213,6 +214,12 @@ def posts(request, author_id):
             return redirect('socialDistribution:home', author_id=author_id)
     
     return render(request, 'posts/index.html')
+
+def likePost(request):
+    post = get_object_or_404(Post, id = request.POST.get('postId'))
+    author = Author.objects.get(user=request.user)
+    post.likes.add(author)
+    return redirect('socialDistribution:home', author_id=author.id)
 
 def profile(request):
     return render(request, 'profile/index.html')
