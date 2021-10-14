@@ -204,10 +204,13 @@ def posts(request, author_id):
                 Category.objects.create(category=category, post=post)
 
 
+
+
+
         except ValidationError:
             context = get_home_context(author, True, "Something went wrong! Couldn't create post.")
             return render(request, 'home/index.html', context)
-        
+
         else:
             # if using view name, app_name: must prefix the view name
             # In this case, app_name is socialDistribution
@@ -215,10 +218,14 @@ def posts(request, author_id):
     
     return render(request, 'posts/index.html')
 
+# https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
 def likePost(request):
     post = get_object_or_404(Post, id = request.POST.get('postId'))
     author = Author.objects.get(user=request.user)
-    post.likes.add(author)
+    if post.likes.filter(id=author.id).exists():
+        post.likes.remove(author)
+    else:
+        post.likes.add(author)
     return redirect('socialDistribution:home', author_id=author.id)
 
 def profile(request):

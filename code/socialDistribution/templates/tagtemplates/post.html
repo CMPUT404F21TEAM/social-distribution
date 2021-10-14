@@ -18,10 +18,15 @@
         </p>
     </div>
     <div class="card-footer bg-white">
-        Likes
         <form action="{% url 'socialDistribution:likePost' %}" method="post">
             {% csrf_token %}
-            <button class="btn btn-secondary" type="submit" name="postId" value={{ post.id }}></button>
+            {% if isLiked %}
+                <button class="btn btn-secondary" type="submit" name="postId" value={{ post.id }}>Un-like</button>
+            {% else %}
+                <button class="btn btn-primary" type="submit" name="postId" value={{ post.id }}>Like</button>
+            {% endif %}
+        <p>{{ likeText }}</p>
+
         </form>
     </div>
 </div>

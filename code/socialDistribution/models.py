@@ -156,3 +156,7 @@ class Post(models.Model):
         '''
         now = datetime.now(timezone.utc)
         return timeago.format(self.pub_date, now)
+
+    def total_likes(self):
+        return self.likes.count()
+        
