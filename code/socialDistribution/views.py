@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout
 
 from .forms import CreateUserForm
-from .decorators import allowedUsers, unauthenticated_user
+from .decorators import allowedUsers, unauthenticated_user, restrictOtherAuthors
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.db.models import Count
@@ -145,6 +145,7 @@ def authors(request):
     args["authors"] = local_authors + remote_authors
     return render(request, 'author/index.html', args)
 
+@restrictOtherAuthors
 def author(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
     return render(request, 'author/detail.html', {'author': author})

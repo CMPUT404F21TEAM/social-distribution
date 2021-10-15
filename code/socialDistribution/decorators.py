@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from .models import Author
 
 # ref: https://www.youtube.com/watch?v=eBsc65jTKvw&list=PL-51WBLyFTg2vW-_6XBoUpE7vpmoR3ztO&index=15 - Dennis Ivy
@@ -34,3 +34,19 @@ def allowedUsers(allowed_roles=[]):
         
         return wrapper_func
     return decorator
+
+def restrictOtherAuthors(view_func):
+    """
+        Only allow the authenticated user to access personal routes
+    """
+    def wrapper_func(request, *args, **kwargs):
+        author_id = get_object_or_404(Author, user=request.user).id
+
+        # proceed to view if id matches
+        if (author_id == kwargs['author_id']):
+            return view_func(request, *args, **kwargs)
+        else:
+            # Todo: Add message indicating not allowed
+            return redirect('socialDistribution:home', author_id=author_id)
+
+    return wrapper_func
