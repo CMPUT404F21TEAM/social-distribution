@@ -237,6 +237,10 @@ def deletePost(request, id):
         post.delete()
     return redirect('socialDistribution:home', author_id=author.id)
 
+def editPost(request, id):
+    # todo
+    return render(request, 'create/index.html')
+
 def profile(request):
     return render(request, 'profile/index.html')
 
