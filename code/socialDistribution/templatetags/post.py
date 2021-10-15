@@ -5,9 +5,8 @@ register = template.Library()
 
 @register.inclusion_tag('tagtemplates/post.html')
 def card_post(post, author):
-    # Delete
+    # Delete/Edit
     isAuthor = post.author == author
-    print(isAuthor)
 
     # Likes
     isLiked = post.likes.filter(id=author.id).exists()

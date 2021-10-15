@@ -219,9 +219,9 @@ def posts(request, author_id):
     return render(request, 'posts/index.html')
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-def likePost(request):
+def likePost(request, id):
     # move functionality to API
-    post = get_object_or_404(Post, id = request.POST.get('postId'))
+    post = get_object_or_404(Post, id = id)
     author = Author.objects.get(user=request.user)
     if post.likes.filter(id=author.id).exists():
         post.likes.remove(author)
