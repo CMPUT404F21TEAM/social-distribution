@@ -2,11 +2,25 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.core import serializers
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from socialDistribution.models import *
 
+# References for entire file:
+# Django Software Foundation, "Introduction to class-based views", 2021-10-13
 # https://docs.djangoproject.com/en/3.2/topics/class-based-views/intro/
+# Django Software Foundation, "JsonResponse objects", 2021-10-13
+# https://docs.djangoproject.com/en/3.2/ref/request-response/#jsonresponse-objects
+
+# Need to disable CSRF to make POST, PUT, etc requests. Otherwise, your request needs to contain 'X--CSRFToken: blahblah' with a CSRF token.
+# If we need CSRF validation in the future, just remove the csrf_exempt decorators.
+#
+# Martijn ten Hoor, https://stackoverflow.com/users/6945548/martijn-ten-hoor, "How to disable Django's CSRF validation?", 
+# 2016-10-12, https://stackoverflow.com/a/39993384, CC BY-SA 3.0
+#
+# Note: @ensure_crsf_cookie will send the token in the response
+# Ryan Pergent, https://stackoverflow.com/users/3904557/ryan-pergent, "how do I use ensure_csrf_cookie?", 
+# 2017-05-30, https://stackoverflow.com/a/43712324, CC BY-SA 3.0
 
 
 def index(request):
@@ -16,6 +30,7 @@ def index(request):
 @method_decorator(csrf_exempt, name='dispatch')
 class AuthorsView(View):
 
+    @method_decorator(ensure_csrf_cookie)
     def get(self, request):
         page = request.GET.get("page")
         size = request.GET.get("size")
@@ -27,7 +42,7 @@ class AuthorsView(View):
                     # WARNING: hardcode
                     "type": "author",
                     "id": f"http://127.0.0.1:8000/authors/{author.id}",
-                    "url": f"http://127.0.0.1:8000/author/{author.id}",
+                    "url": f"http://127.0.0.1:8000/authors/{author.id}",
                     "host": "http://127.0.0.1:8000/",
                     "displayName": author.displayName,
                     "github": author.githubUrl,
@@ -52,7 +67,7 @@ class AuthorView(View):
             # WARNING; hardcode
             "type": "author",
             "id": f"http://127.0.0.1:8000/authors/{author.id}",
-            "url": f"http://127.0.0.1:8000/author/{author.id}",
+            "url": f"http://127.0.0.1:8000/authors/{author.id}",
             "host": "http://127.0.0.1:8000/",
             "displayName": author.displayName,
             "github": author.githubUrl,
