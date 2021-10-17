@@ -18,54 +18,25 @@ class Author(models.Model):
     username = models.CharField(max_length=50, default='', unique=True)
     displayName = models.CharField(max_length=50)
     githubUrl = models.CharField(max_length=50, null=True)
-    followee = models.ManyToManyField('Author', related_name='followees', blank=True)
     friend = models.ManyToManyField('Author', related_name='friends', blank=True)
 
-    LOCAL = 'LOCAL'
-    REMOTE = 'REMOTE'
-    HOSTS = [
-        ('LOCAL', 'Local'),
-        ('REMOTE', 'Remote')
-    ]
-
-    host_type = models.CharField(
-        choices=HOSTS,
-        max_length=6,
-        default=LOCAL
-    )
-
-    def is_following(self, author):
-        return self.followee.filter(pk=author.id).exists()
+    def is_only_following(self, author):
+        # unidirectional relation between author and self
+        return self.friend.filter(pk=author.id).exists() and \
+            not author.friend.filter(pk=self.id).exists() 
     
     def is_friends_with(self, author):
-        return self.friend.filter(pk=author.id).exists()
+        # bidirectional relation between author and self
+        return self.friend.filter(pk=author.id).exists() and \
+            author.friend.filter(pk=self.id).exists()
 
-    def accept_friend(self, author):
-        if author.is_following(self):
-            author.followee.remove(self)
+    def befriend(self, author):
+        if author.id != self.id:
             self.friend.add(author)
-            author.friend.add(self)
-            return True
-        return False
-
-    def follow(self, author):
-        if author.is_following(self):
-            return self.accept_friend(author)
-
-        if author.id != self.id and not self.is_friends_with(author):
-            # it doesn't matter if self is already following author
-            # django will not create duplicate entries
-            self.followee.add(author)
-            return True
-        return False
-
-    def unfollow(self, author):
-        if author.id != self.id and self.is_following(author):
-            self.followee.remove(author)
             return True
         return False
         
-    def unfriend(self, author):
+    def un_befriend(self, author):
         if author.id != self.id and self.is_friends_with(author):
             self.friend.remove(author)
             author.friend.remove(self)

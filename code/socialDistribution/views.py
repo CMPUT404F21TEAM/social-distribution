@@ -132,25 +132,17 @@ def befriend(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
     curr_user = Author.objects.get(user=request.user)
 
-    if not curr_user.accept_friend(author) and not curr_user.follow(author):
-        messages.info(request, f'Couldn\'t follow {author.displayName}')
+    if not curr_user.befriend(author):
+        messages.info(f'Couldn\'t befriend {author.displayName}')
 
     return redirect('socialDistribution:author', author_id)
 
-def unfriend(request, author_id):
+def un_befriend(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
     curr_user = Author.objects.get(user=request.user)
     
-    if not curr_user.unfriend(author):
-        messages.info(request, f'Couldn\'t unfriend {author.displayName}')
-    return redirect('socialDistribution:author', author_id)
-
-def unfollow(request, author_id):
-    author = get_object_or_404(Author, pk=author_id)
-    curr_user = Author.objects.get(user=request.user)
-
-    if not curr_user.unfollow(author):
-        messages.info(request, f'Couldn\'t unfollow {author.displayName}')
+    if not curr_user.un_befriend(author):
+        messages.info(request, f'Couldn\'t un-befriend {author.displayName}')
     return redirect('socialDistribution:author', author_id)
 
 #@allowedUsers(allowed_roles=['author']) # just for demonstration
@@ -160,25 +152,32 @@ def authors(request):
     # demonstration purposes: Authors on remote server
     remote_authors = [
         {
-            "id": 16000,
-            "username": "johnd",
-            "displayName": "John Doe",
-            "get_host_type_display": "Remote",   # temporary fix for demonstration
-            "post__count": 0
+            "data": {
+                "id": 16000,
+                "username": "johnd",
+                "displayName": "John Doe",
+                "post__count": 0,
+            },
+            "type": "Remote"
         },
         {
-            "id": 15000,
-            "username": "janed",
-            "displayName": "Hane Doe",
-            "get_host_type_display": "Remote",
-            "post__count": 0
-        },
+            "data": {
+                "id": 15000,
+                "username": "janed",
+                "displayName": "Hane Doe",
+                "post__count": 0
+            },
+            "type": "Remote"
+        }
     ]
 
     # Django Software Foundation, "Generating aggregates for each item in a QuerySet", 2021-10-13
     # https://docs.djangoproject.com/en/3.2/topics/db/aggregation/#generating-aggregates-for-each-item-in-a-queryset
     authors = Author.objects.all().annotate(Count("post"))
-    local_authors = [author for author in authors ]
+    local_authors = [{
+            "data": author,
+            "type": "Local"
+        } for author in authors]
 
     args["authors"] = local_authors + remote_authors
     return render(request, 'author/index.html', args)
@@ -189,6 +188,7 @@ def author(request, author_id):
     posts = Post.objects.filter(author__pk=author.id)
     context = {
         'author': author,
+        'author_type': 'Local',
         'curr_user': curr_user,
         'author_posts': posts
     }
@@ -243,10 +243,6 @@ def posts(request, author_id):
 
             for category in categories:
                 Category.objects.create(category=category, post=post)
-
-
-
-
 
         except ValidationError:
             context = get_home_context(author, True, "Something went wrong! Couldn't create post.")

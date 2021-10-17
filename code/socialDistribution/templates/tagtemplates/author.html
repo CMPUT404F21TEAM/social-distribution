@@ -1,5 +1,5 @@
 {% load static %}
-<div class="author-tile card shadow border-light bg-white m-5 h-100">
+<div class="author-tile card shadow bg-white m-5 h-100">
     <div class="card-body">
         <div class="row">
             <div class="col-2 d-flex align-items-center justify-content-center h-100 ml-2">
@@ -8,7 +8,7 @@
             </div>
             <div class="col">
                 <h5 class="card-title h3">{{author.displayName}}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">{{author.get_host_type_display}}</h6>
+                <h6 class="card-subtitle mb-2 text-muted">{{author_type}}</h6>
                 <div>
                     {% if not profile_card %}
                         {% if author.post__count == 1 %}
@@ -18,16 +18,15 @@
                         {% endif %}
                     {% else %}
                         <div class="author-card-opt d-flex ml-10">
-                            {% if friend %}
+                            {% if only_following %}
+                                <p class="text-muted px-1">Friend Request Sent</p>
+                            {% elif is_friend %}
                                 <p class="text-muted px-1">Friend &#8226;</p>
-                                <a class="px-1" href="{% url 'socialDistribution:unfriend' author.id %}">Un-Friend</a>
-                            {% elif followed %}
-                                <p class="text-muted px-1">Followed &#8226;</p>
-                                <a class="px-1" href="{% url 'socialDistribution:unfollow' author.id %}">Un-Follow</a>
+                                <a class="px-1" href="{% url 'socialDistribution:un-befriend' author.id %}">Un-Befriend</a>
                             {% elif not author_is_user %}
                                 <a class="px-1" href="{% url 'socialDistribution:befriend' author.id %}">
                                     {% if accept_friend %}
-                                        Accept friend request
+                                        Accept Friend Request
                                     {% else %}
                                         Befriend
                                     {% endif %}

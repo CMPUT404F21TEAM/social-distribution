@@ -13,9 +13,9 @@
 
         {% for author in authors %}
             <!-- Official Bootstrap Documentation, "Cards", https://getbootstrap.com/docs/5.0/components/card/, 2021-10-12, MIT -->
-            {% if author.id %}
-                <a class="author-tile-link" href="{% url 'socialDistribution:author' author.id %}">
-                    {% card_author author=author profile_card=False %}
+            {% if author.data.id %}
+                <a class="author-tile-link" href="{% url 'socialDistribution:author' author.data.id %}">
+                    {% card_author author=author.data author_type=author.type profile_card=False %}
                 </a>
             {% endif %}
         {% endfor %}
