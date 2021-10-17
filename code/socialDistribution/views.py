@@ -1,9 +1,10 @@
+from django.http.response import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.contrib.auth.models import Group
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 
 from .forms import CreateUserForm
 from .decorators import allowedUsers, unauthenticated_user
@@ -36,20 +37,34 @@ def loginPage(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
+        
+        User = get_user_model()
 
-        user = authenticate(request, username=username, password=password)
+        # check if user is active
+        try: 
+            user = User.objects.get(username=username)
+        except Exception:
+            messages.info(request, "Login Failed. Please try again.")
+            return render(request, 'user/login.html')
 
-        try:
-            author_id = Author.objects.get(user=user).id
+        if user.is_active:
+            user = authenticate(request, username=username, password=password)
 
-            if user is not None:
-                login(request, user)
-                return redirect('socialDistribution:home', author_id=author_id)
-            else:
-                raise KeyError
+            try:
+                author_id = Author.objects.get(user=user).id
 
-        except (KeyError, Author.DoesNotExist):
-            messages.info(request, "Username or Password is incorrect.")
+                if user is not None:
+                    login(request, user)
+                    return redirect('socialDistribution:home', author_id=author_id)
+                else:
+                    raise KeyError
+
+            except (KeyError, Author.DoesNotExist):
+                messages.info(request, "Username or Password is incorrect.")
+        else:
+            # user inactive
+            messages.info(request, "Your account is currently pending approval. Please check back later.")
+
 
     return render(request, 'user/login.html')
 
@@ -78,6 +93,8 @@ def register(request):
                     return render(request, 'user/register.html', context)
 
                 user = form.save()
+                user.is_active = False # admin must approve user from console 
+                user.save()
 
                 # add user to author group by default
                 group, created = Group.objects.get_or_create(name="author")
@@ -91,8 +108,7 @@ def register(request):
             except:
                 return HttpResponse("Sign up failed. Internal Server Error. Please Try again.", status=500)
 
-
-            messages.success(request, f'Account created for {username}')
+            messages.success(request, f'Account creation request sent to admin for {username}')
 
             return redirect('socialDistribution:login')
         else:
@@ -155,10 +171,6 @@ def create(request):
 def posts(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
     
-    print('-'*80)
-    print(type(request.method))
-    print('\n'*5)
-
     if request.method == 'POST':
         title = request.POST.get('title')
         source = request.POST.get('source')
@@ -203,16 +215,42 @@ def posts(request, author_id):
                 Category.objects.create(category=category, post=post)
 
 
+
+
+
         except ValidationError:
             context = get_home_context(author, True, "Something went wrong! Couldn't create post.")
             return render(request, 'home/index.html', context)
-        
+
         else:
             # if using view name, app_name: must prefix the view name
             # In this case, app_name is socialDistribution
             return redirect('socialDistribution:home', author_id=author_id)
     
     return render(request, 'posts/index.html')
+
+# https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
+def likePost(request, id):
+    # move functionality to API
+    post = get_object_or_404(Post, id = id)
+    author = Author.objects.get(user=request.user)
+    if post.likes.filter(id=author.id).exists():
+        post.likes.remove(author)
+    else:
+        post.likes.add(author)
+    return redirect('socialDistribution:home', author_id=author.id)
+
+def deletePost(request, id):
+    # move functionality to API
+    post = get_object_or_404(Post, id = id)
+    author = Author.objects.get(user=request.user)
+    if post.author == author:
+        post.delete()
+    return redirect('socialDistribution:home', author_id=author.id)
+
+def editPost(request, id):
+    # todo
+    return render(request, 'create/index.html')
 
 def profile(request):
     return render(request, 'profile/index.html')
