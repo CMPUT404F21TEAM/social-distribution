@@ -18,6 +18,8 @@ class Author(models.Model):
     username = models.CharField(max_length=50, default='', unique=True)
     displayName = models.CharField(max_length=50)
     githubUrl = models.CharField(max_length=50, null=True)
+    followee = models.ManyToManyField('Author', related_name='followees', blank=True)
+    friend = models.ManyToManyField('Author', related_name='friends', blank=True)
 
     LOCAL = 'LOCAL'
     REMOTE = 'REMOTE'
@@ -31,6 +33,31 @@ class Author(models.Model):
         max_length=6,
         default=LOCAL
     )
+
+    def is_following(self, author):
+        return self.followee.filter(pk=author.id).exists()
+    
+    def is_friends_with(self, author):
+        return self.friend.filter(pk=author.id).exists()
+
+    def accept_friend(self, author):
+        if self.is_following(author):
+            author.followee.remove(self)
+            self.friend.add(author)
+            return True
+        return False
+
+    def follow(self, author):
+        if not self.is_friends_with(author):
+            self.followee.add(author)
+            return True
+        return False
+        
+    def unfriend(self, author):
+        if self.is_friends_with(author):
+            self.friend.remove(author)
+            return True
+        return False
 
     def __str__(self):
         return self.displayName
