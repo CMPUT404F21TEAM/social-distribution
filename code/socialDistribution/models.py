@@ -48,13 +48,13 @@ class Author(models.Model):
         return False
 
     def follow(self, author):
-        if not self.is_friends_with(author):
+        if author.id != self.id and not self.is_friends_with(author):
             self.followee.add(author)
             return True
         return False
         
     def unfriend(self, author):
-        if self.is_friends_with(author):
+        if author.id != self.id and self.is_friends_with(author):
             self.friend.remove(author)
             return True
         return False

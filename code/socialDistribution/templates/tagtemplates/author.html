@@ -24,7 +24,7 @@
                                 {% elif followed %}
                                     <p class="text-muted px-1" href="#">Followed &#8226;</p>
                                     <a class="link-info px-1" href="#">Un-Follow</a>
-                                {% else %}
+                                {% elif not author_is_user %}
                                     <a class="link-info px-1" href="#">Befriend</a>
                                     <p class="px-1 text-muted">&#8226;</p>
                                 {% endif %}
