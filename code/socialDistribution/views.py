@@ -135,28 +135,23 @@ def authors(request):
     # demonstration purposes: Authors on remote server
     remote_authors = [
         {
-            "data" : {
-                "username": "johnd",
-                "displayName": "John Doe",
-            },
-            "type": "Remote"
+            "id": 16000,
+            "username": "johnd",
+            "displayName": "John Doe",
+            "get_host_type_display": "Remote"   # temporary fix for demonstration
         },
         {
-            "data" : {
-                "username": "janed",
-                "displayName": "Hane Doe",
-            },
-            "type": "Remote"
+            "id": 15000,
+            "username": "janed",
+            "displayName": "Hane Doe",
+            "get_host_type_display": "Remote"
         },
     ]
 
     # Django Software Foundation, "Generating aggregates for each item in a QuerySet", 2021-10-13
     # https://docs.djangoproject.com/en/3.2/topics/db/aggregation/#generating-aggregates-for-each-item-in-a-queryset
     authors = Author.objects.all().annotate(Count("post"))
-    local_authors = [{
-            "data": author,
-            "type": "Local",
-        } for author in authors ]
+    local_authors = [author for author in authors ]
 
     args["authors"] = local_authors + remote_authors
     return render(request, 'author/index.html', args)

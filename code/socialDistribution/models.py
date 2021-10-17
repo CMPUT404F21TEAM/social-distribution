@@ -19,6 +19,19 @@ class Author(models.Model):
     displayName = models.CharField(max_length=50)
     githubUrl = models.CharField(max_length=50, null=True)
 
+    LOCAL = 'LOCAL'
+    REMOTE = 'REMOTE'
+    HOSTS = [
+        ('LOCAL', 'Local'),
+        ('REMOTE', 'Remote')
+    ]
+
+    host_type = models.CharField(
+        choices=HOSTS,
+        max_length=6,
+        default=LOCAL
+    )
+
     def __str__(self):
         return self.displayName
 

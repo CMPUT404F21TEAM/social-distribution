@@ -6,36 +6,17 @@
 <link rel="stylesheet" type="text/css" href="{% static 'author/style.css' %}">
 {% endblock %}
 
+{% load author %}
 {% block body %}
 <div>
     <div class="authors-list">
 
         {% for author in authors %}
         <!-- Official Bootstrap Documentation, "Cards", https://getbootstrap.com/docs/5.0/components/card/, 2021-10-12, MIT -->
-        {% if author.data.id %}
-            <div class="author-tile card shadow border-light bg-white m-5">
-                <a class="author-tile-link" href="{% url 'socialDistribution:author' author.data.id %}">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-2 d-flex align-items-center justify-content-center">
-                                <img src="{% static 'assets/blank-profile-picture.png' %}"
-                                    class="profile-img align-middle" alt="">
-                            </div>
-                            <div class="col">
-                                <h5 class="card-title">{{author.data.displayName}}</h5>
-                                <h6 class="card-subtitle mb-2 text-muted">{{author.type}}</h6>
-                                <p>
-                                        {% if author.data.post__count == 1 %}
-                                            {{author.data.post__count}} public post
-                                        {% else %}
-                                            {{author.data.post__count}} public posts
-                                        {% endif %}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-            </div>
+        {% if author.id %}
+            <a class="author-tile-link" href="{% url 'socialDistribution:author' author.id %}">
+                {% card_author author %}
+            </a>
         {% endif %}
         {% endfor %}
 
