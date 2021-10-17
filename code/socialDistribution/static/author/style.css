@@ -3,8 +3,18 @@
     margin: 0 auto; 
 }
 
+.author-tile-link, .author-tile-link:active, .author-tile-link:focus {
+    text-decoration: none;
+    color: inherit;
+    outline: none;
+}
+
 .author-tile {
     border-radius: 30px;
+}
+
+.author-tile:hover {
+    border-color: lightblue !important;
 }
 
 .profile-img {
