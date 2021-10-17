@@ -20,7 +20,7 @@
 }
 
 .author-tile:hover {
-    border-color: lightblue !important;
+    border-color: lightblue;
 }
 
 .profile-img {
