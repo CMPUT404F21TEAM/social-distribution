@@ -8,6 +8,15 @@
 
 {% load author %}
 {% block body %}
+    <!--Django Software Foundation, "The messages framework", 2021-10-17-->
+    <!--https://docs.djangoproject.com/en/3.2/ref/contrib/messages/#displaying-messages-->
+    {% if messages %}
+        <ul class="messages text-danger">
+            <li {% if messages.tags %} class="{{messages.tags}}" {% endif %}>
+            {{messages}}
+            </li>
+        </ul>
+    {% endif %}
     <div class="author-prof">
         {% card_author author=author curr_user=curr_user profile_card=True %}
     </div>
