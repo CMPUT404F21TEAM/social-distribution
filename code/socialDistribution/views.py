@@ -128,6 +128,31 @@ def home(request, author_id):
     context = get_home_context(author, False)
     return render(request, 'home/index.html', context)
 
+def befriend(request, author_id):
+    author = get_object_or_404(Author, pk=author_id)
+    curr_user = Author.objects.get(user=request.user)
+
+    if not curr_user.accept_friend(author) and not curr_user.follow(author):
+        messages.info(request, f'Couldn\'t follow {author.displayName}')
+
+    return redirect('socialDistribution:author', author_id)
+
+def unfriend(request, author_id):
+    author = get_object_or_404(Author, pk=author_id)
+    curr_user = Author.objects.get(user=request.user)
+    
+    if not curr_user.unfriend(author):
+        messages.info(request, f'Couldn\'t unfriend {author.displayName}')
+    return redirect('socialDistribution:author', author_id)
+
+def unfollow(request, author_id):
+    author = get_object_or_404(Author, pk=author_id)
+    curr_user = Author.objects.get(user=request.user)
+
+    if not curr_user.unfollow(author):
+        messages.info(request, f'Couldn\'t unfollow {author.displayName}')
+    return redirect('socialDistribution:author', author_id)
+
 #@allowedUsers(allowed_roles=['author']) # just for demonstration
 def authors(request):
     args = {}

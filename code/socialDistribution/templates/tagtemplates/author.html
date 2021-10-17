@@ -2,7 +2,7 @@
 <div class="author-tile card shadow border-light bg-white m-5 h-100">
     <div class="card-body">
         <div class="row">
-            <div class="col-2 d-flex align-items-center justify-content-center">
+            <div class="col-2 d-flex align-items-center justify-content-center h-100 ml-2">
                 <img src="{% static 'assets/blank-profile-picture.png' %}"
                     class="profile-img align-middle" alt="">
             </div>
@@ -17,15 +17,15 @@
                             <p>{{author.post__count}} public posts</p>
                         {% endif %}
                     {% else %}
-                        <div class="author-card-opt d-flex">
+                        <div class="author-card-opt d-flex ml-10">
                             {% if friend %}
                                 <p class="text-muted px-1">Friend &#8226;</p>
-                                <a class="px-1" href="#">Un-Friend</a>
+                                <a class="px-1" href="{% url 'socialDistribution:unfriend' author.id %}">Un-Friend</a>
                             {% elif followed %}
-                                <p class="text-muted px-1" href="#">Followed &#8226;</p>
-                                <a class="px-1" href="#">Un-Follow</a>
+                                <p class="text-muted px-1">Followed &#8226;</p>
+                                <a class="px-1" href="{% url 'socialDistribution:unfollow' author.id %}">Un-Follow</a>
                             {% elif not author_is_user %}
-                                <a class="px-1" href="#">Befriend</a>
+                                <a class="px-1" href="{% url 'socialDistribution:befriend' author.id %}">Befriend</a>
                             {% endif %}
                         </div>
                     {% endif %}

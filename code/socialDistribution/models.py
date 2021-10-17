@@ -41,7 +41,7 @@ class Author(models.Model):
         return self.friend.filter(pk=author.id).exists()
 
     def accept_friend(self, author):
-        if self.is_following(author):
+        if author.is_following(self):
             author.followee.remove(self)
             self.friend.add(author)
             return True
@@ -50,6 +50,12 @@ class Author(models.Model):
     def follow(self, author):
         if author.id != self.id and not self.is_friends_with(author):
             self.followee.add(author)
+            return True
+        return False
+
+    def unfollow(self, author):
+        if author.id != self.id and self.is_following(author):
+            self.followee.remove(author)
             return True
         return False
         

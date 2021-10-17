@@ -11,11 +11,18 @@
     <!--Django Software Foundation, "The messages framework", 2021-10-17-->
     <!--https://docs.djangoproject.com/en/3.2/ref/contrib/messages/#displaying-messages-->
     {% if messages %}
-        <ul class="messages text-danger">
-            <li {% if messages.tags %} class="{{messages.tags}}" {% endif %}>
-            {{messages}}
-            </li>
-        </ul>
+            {% for message in messages %}
+                <div class="toast align-items-center bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body text-muted">
+                            <p>{{message}}</p>
+                        </div>
+                        <button class="btn btn-close btn-close-white btn" 
+                            data-bs-dismiss="toast" aria-label="Close">
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
     {% endif %}
     <div class="author-prof">
         {% card_author author=author curr_user=curr_user profile_card=True %}
