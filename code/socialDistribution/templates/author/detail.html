@@ -12,15 +12,11 @@
     <!--https://docs.djangoproject.com/en/3.2/ref/contrib/messages/#displaying-messages-->
     {% if messages %}
             {% for message in messages %}
-                <div class="toast align-items-center bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="d-flex">
-                        <div class="toast-body text-muted">
-                            <p>{{message}}</p>
-                        </div>
-                        <button class="btn btn-close btn-close-white btn" 
-                            data-bs-dismiss="toast" aria-label="Close">
-                        </button>
-                    </div>
+                <div class="alert alert-warning alert-dismissible
+                 d-flex justify-content-between
+                 w-50 p-3 mt-sm-1 mx-auto text-center" role="alert">
+                    {{message}}
+                    <button type="button" class="close" data-bs-dismiss="alert">&times;</btn>
                 </div>
             {% endfor %}
     {% endif %}
