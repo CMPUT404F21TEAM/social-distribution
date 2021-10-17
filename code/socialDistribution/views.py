@@ -138,13 +138,15 @@ def authors(request):
             "id": 16000,
             "username": "johnd",
             "displayName": "John Doe",
-            "get_host_type_display": "Remote"   # temporary fix for demonstration
+            "get_host_type_display": "Remote",   # temporary fix for demonstration
+            "post__count": 0
         },
         {
             "id": 15000,
             "username": "janed",
             "displayName": "Hane Doe",
-            "get_host_type_display": "Remote"
+            "get_host_type_display": "Remote",
+            "post__count": 0
         },
     ]
 
