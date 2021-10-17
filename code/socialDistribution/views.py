@@ -186,7 +186,14 @@ def authors(request):
 def author(request, author_id):
     curr_user = Author.objects.get(user=request.user)
     author = get_object_or_404(Author, pk=author_id)
-    return render(request, 'author/detail.html', {'author': author, 'curr_user': curr_user})
+    posts = Post.objects.filter(author__pk=author.id)
+    context = {
+        'author': author,
+        'curr_user': curr_user,
+        'author_posts': posts
+    }
+
+    return render(request, 'author/detail.html', context)
 
 def create(request):
     return render(request, 'create/index.html')

@@ -4,9 +4,11 @@
     <title>Author Profile</title>
     {% load static %}
         <link rel="stylesheet" type="text/css" href="{% static 'author/style.css' %}">
+        <link rel="stylesheet" type"text/css" href="{% static 'posts/style.css' %}"
 {% endblock %}
 
 {% load author %}
+{% load post %}
 {% block body %}
     <!--Django Software Foundation, "The messages framework", 2021-10-17-->
     <!--https://docs.djangoproject.com/en/3.2/ref/contrib/messages/#displaying-messages-->
@@ -22,5 +24,10 @@
     {% endif %}
     <div class="author-prof">
         {% card_author author=author curr_user=curr_user profile_card=True %}
+    </div>
+    <div class="container align-self-center" id="post_container">
+        {% for post in author_posts %}
+            {% card_post post curr_user %}
+        {% endfor %}
     </div>
 {% endblock %}
