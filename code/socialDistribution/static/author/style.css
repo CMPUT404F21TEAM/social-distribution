@@ -9,7 +9,7 @@
     margin: 0 auto;
 }
 
-.author-tile-link, .author-tile-link:active, .author-tile-link:focus {
+.author-tile-link {
     text-decoration: none;
     color: inherit;
     outline: none;
@@ -34,9 +34,7 @@
     font-size: 14pt;
 }
 
-.author-card-opt a, 
-.author-card-opt a:active,
-.author-tile-link:focus {
+.author-card-opt a {
     text-decoration: none;
     outline: none;
 }

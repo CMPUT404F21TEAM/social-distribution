@@ -7,31 +7,31 @@
                     class="profile-img align-middle" alt="">
             </div>
             <div class="col">
-                <h5 class="card-title h4">{{author.displayName}}</h5>
+                <h5 class="card-title h3">{{author.displayName}}</h5>
                 <h6 class="card-subtitle mb-2 text-muted">{{author.get_host_type_display}}</h6>
-                <p>
-                        {% if not profile_card %}
-                            {% if author.post__count == 1 %}
-                                {{author.post__count}} public post
-                            {% else %}
-                                {{author.post__count}} public posts
-                            {% endif %}
+                <div>
+                    {% if not profile_card %}
+                        {% if author.post__count == 1 %}
+                            <p>{{author.post__count}} public post</p>
                         {% else %}
-                            <div class="author-card-opt d-flex">
-                                {% if friend %}
-                                    <p class="text-muted px-1">Friend &#8226;</p>
-                                    <a class="link-info px-1" href="#">Un-Friend</a>
-                                {% elif followed %}
-                                    <p class="text-muted px-1" href="#">Followed &#8226;</p>
-                                    <a class="link-info px-1" href="#">Un-Follow</a>
-                                {% elif not author_is_user %}
-                                    <a class="link-info px-1" href="#">Befriend</a>
-                                    <p class="px-1 text-muted">&#8226;</p>
-                                {% endif %}
-                                <a class="link-info px-1" href="#">See posts</a>
-                            </div>
+                            <p>{{author.post__count}} public posts</p>
                         {% endif %}
-                </p>
+                    {% else %}
+                        <div class="author-card-opt d-flex">
+                            {% if friend %}
+                                <p class="text-muted px-1">Friend &#8226;</p>
+                                <a class="px-1" href="#">Un-Friend</a>
+                            {% elif followed %}
+                                <p class="text-muted px-1" href="#">Followed &#8226;</p>
+                                <a class="px-1" href="#">Un-Follow</a>
+                            {% elif not author_is_user %}
+                                <a class="px-1" href="#">Befriend</a>
+                                <p class="px-1 text-muted">&#8226;</p>
+                            {% endif %}
+                            <a class="px-1" href="#">See posts</a>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
