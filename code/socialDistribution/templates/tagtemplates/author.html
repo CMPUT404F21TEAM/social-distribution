@@ -25,7 +25,13 @@
                                 <p class="text-muted px-1">Followed &#8226;</p>
                                 <a class="px-1" href="{% url 'socialDistribution:unfollow' author.id %}">Un-Follow</a>
                             {% elif not author_is_user %}
-                                <a class="px-1" href="{% url 'socialDistribution:befriend' author.id %}">Befriend</a>
+                                <a class="px-1" href="{% url 'socialDistribution:befriend' author.id %}">
+                                    {% if accept_friend %}
+                                        Accept friend request
+                                    {% else %}
+                                        Befriend
+                                    {% endif %}
+                                </a>
                             {% endif %}
                         </div>
                     {% endif %}

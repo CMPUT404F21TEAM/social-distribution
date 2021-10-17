@@ -10,12 +10,14 @@ def card_author(*args, **kwargs):
     profile_card = kwargs['profile_card']
     followed = False
     friend = False
+    accept_friend = False
     author_is_user = False
 
     if profile_card:
         curr_user = kwargs['curr_user']
         followed = curr_user.is_following(author)
         friend = curr_user.is_friends_with(author)
+        accept_friend = author.is_following(curr_user)
         author_is_user = curr_user.id == author.id
 
     return {
@@ -23,5 +25,6 @@ def card_author(*args, **kwargs):
         'profile_card': profile_card,
         'followed': followed,
         'friend': friend,
+        'accept_friend': accept_friend,
         'author_is_user': author_is_user
     }
