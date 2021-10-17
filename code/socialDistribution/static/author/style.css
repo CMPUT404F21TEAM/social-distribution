@@ -3,6 +3,12 @@
     margin: 0 auto; 
 }
 
+.author-prof {
+    max-width: 50rem;
+    height: 10rem;
+    margin: 0 auto;
+}
+
 .author-tile-link, .author-tile-link:active, .author-tile-link:focus {
     text-decoration: none;
     color: inherit;
@@ -22,4 +28,15 @@
     height: auto;
     margin: auto;
     border-radius: 100%;
+}
+
+.author-card-opt {
+    font-size: 14pt;
+}
+
+.author-card-opt a, 
+.author-card-opt a:active,
+.author-tile-link:focus {
+    text-decoration: none;
+    outline: none;
 }

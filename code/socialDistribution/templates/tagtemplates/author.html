@@ -1,5 +1,5 @@
 {% load static %}
-<div class="author-tile card shadow border-light bg-white m-5">
+<div class="author-tile card shadow border-light bg-white m-5 h-100">
     <div class="card-body">
         <div class="row">
             <div class="col-2 d-flex align-items-center justify-content-center">
@@ -7,13 +7,29 @@
                     class="profile-img align-middle" alt="">
             </div>
             <div class="col">
-                <h5 class="card-title">{{author.displayName}}</h5>
+                <h5 class="card-title h4">{{author.displayName}}</h5>
                 <h6 class="card-subtitle mb-2 text-muted">{{author.get_host_type_display}}</h6>
                 <p>
-                        {% if author.post__count == 1 %}
-                            {{author.post__count}} public post
+                        {% if not profile_card %}
+                            {% if author.post__count == 1 %}
+                                {{author.post__count}} public post
+                            {% else %}
+                                {{author.post__count}} public posts
+                            {% endif %}
                         {% else %}
-                            {{author.post__count}} public posts
+                            <div class="author-card-opt d-flex">
+                                {% if friend %}
+                                    <p class="text-muted px-1">Friend &#8226;</p>
+                                    <a class="link-info px-1" href="#">Un-Friend</a>
+                                {% elif followed %}
+                                    <p class="text-muted px-1" href="#">Followed &#8226;</p>
+                                    <a class="link-info px-1" href="#">Un-Follow</a>
+                                {% else %}
+                                    <a class="link-info px-1" href="#">Befriend</a>
+                                    <p class="px-1 text-muted">&#8226;</p>
+                                {% endif %}
+                                <a class="link-info px-1" href="#">See posts</a>
+                            </div>
                         {% endif %}
                 </p>
             </div>

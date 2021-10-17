@@ -159,8 +159,9 @@ def authors(request):
     return render(request, 'author/index.html', args)
 
 def author(request, author_id):
+    curr_user = Author.objects.get(user=request.user)
     author = get_object_or_404(Author, pk=author_id)
-    return render(request, 'author/detail.html', {'author': author})
+    return render(request, 'author/detail.html', {'author': author, 'curr_user': curr_user})
 
 def create(request):
     return render(request, 'create/index.html')

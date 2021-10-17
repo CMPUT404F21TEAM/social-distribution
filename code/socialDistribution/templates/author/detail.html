@@ -1,11 +1,14 @@
 {% extends 'navBase.html' %}
 
 {% block head %}
-    <title>Author</title>
+    <title>Author Profile</title>
     {% load static %}
         <link rel="stylesheet" type="text/css" href="{% static 'author/style.css' %}">
 {% endblock %}
 
+{% load author %}
 {% block body %}
-    <h1>{{author.displayName}}</h1>
+    <div class="author-prof">
+        {% card_author author=author curr_user=curr_user profile_card=True %}
+    </div>
 {% endblock %}
