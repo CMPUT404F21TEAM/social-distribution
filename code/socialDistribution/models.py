@@ -44,11 +44,17 @@ class Author(models.Model):
         if author.is_following(self):
             author.followee.remove(self)
             self.friend.add(author)
+            author.friend.add(self)
             return True
         return False
 
     def follow(self, author):
+        if author.is_following(self):
+            return self.accept_friend(author)
+
         if author.id != self.id and not self.is_friends_with(author):
+            # it doesn't matter if self is already following author
+            # django will not create duplicate entries
             self.followee.add(author)
             return True
         return False
@@ -62,6 +68,7 @@ class Author(models.Model):
     def unfriend(self, author):
         if author.id != self.id and self.is_friends_with(author):
             self.friend.remove(author)
+            author.friend.remove(self)
             return True
         return False
 
