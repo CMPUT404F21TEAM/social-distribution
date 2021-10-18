@@ -29,4 +29,4 @@ class LoginRequired:
         if (splitPath != 'admin' and splitPath == 'app' ): 
             if not request.user.is_authenticated:
                 if not any(url.match(path) for url in EXEMPT_URLS):
-                    return redirect(settings.LOGIN_URL)
+                    return redirect('socialDistribution:login')

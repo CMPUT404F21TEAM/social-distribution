@@ -57,7 +57,7 @@ ROOT_URLCONF = 'cmput404.urls'
 LOGIN_URL = 'app/login'
 
 LOGIN_EXEMPT_URLS = ( 
-    r'^register/$',
+    r'^app/register/$',
 )
 
 TEMPLATES = [
