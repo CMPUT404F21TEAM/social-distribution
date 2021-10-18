@@ -18,30 +18,14 @@ class Author(models.Model):
     username = models.CharField(max_length=50, default='', unique=True)
     displayName = models.CharField(max_length=50)
     githubUrl = models.CharField(max_length=50, null=True)
-    friend = models.ManyToManyField('Author', related_name='friends', blank=True)
+    followers = models.ManyToManyField('Author', blank=True)
 
-    def is_only_following(self, author):
-        # unidirectional relation between author and self
-        return self.friend.filter(pk=author.id).exists() and \
-            not author.friend.filter(pk=self.id).exists() 
-    
+    def has_follower(self, author):
+        return self.followers.filter(pk=author.id).exists()
+
     def is_friends_with(self, author):
-        # bidirectional relation between author and self
-        return self.friend.filter(pk=author.id).exists() and \
-            author.friend.filter(pk=self.id).exists()
-
-    def befriend(self, author):
-        if author.id != self.id:
-            self.friend.add(author)
-            return True
-        return False
-        
-    def un_befriend(self, author):
-        if author.id != self.id and self.is_friends_with(author):
-            self.friend.remove(author)
-            author.friend.remove(self)
-            return True
-        return False
+        return self.followers.filter(pk=author.id).exists() and \
+            author.followers.filter(pk=self.id).exists()
 
     def __str__(self):
         return self.displayName
@@ -184,3 +168,17 @@ class Post(models.Model):
     def total_likes(self):
         return self.likes.count()
         
+
+class Inbox(models.Model):
+    '''
+    Inbox model:
+        author          author associated with the inbox (primary key)
+        posts           posts pushed to this inbox (M2M)
+        followRequests  follow requests pushed to this inbox (M2M)
+    '''
+    author = models.OneToOneField('Author', on_delete=models.CASCADE, primary_key=True)
+    posts = models.ManyToManyField('Post', related_name='pushed_posts', blank=True)
+    follow_requests = models.ManyToManyField('Author', related_name='follow_requests', blank=True)
+
+    def has_req_from(self, author):
+        return self.follow_requests.filter(pk=author.id).exists()
