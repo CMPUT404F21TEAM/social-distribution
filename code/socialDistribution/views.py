@@ -99,12 +99,13 @@ def register(request):
                 # add user to author group by default
                 group, created = Group.objects.get_or_create(name="author")
                 user.groups.add(group)
-                Author.objects.create(
+                author = Author.objects.create(
                     user=user,
                     username=username,
                     displayName=full_name,
                     githubUrl=github_url
                 )
+                Inbox.objects.create(author=author)
             except:
                 return HttpResponse("Sign up failed. Internal Server Error. Please Try again.", status=500)
 
@@ -128,12 +129,33 @@ def home(request, author_id):
     context = get_home_context(author, False)
     return render(request, 'home/index.html', context)
 
+def accept_friend(request, author_id):
+    author = get_object_or_404(Author, pk=author_id)
+    curr_user = Author.objects.get(user=request.user)
+
+    if curr_user.id != author.id and curr_user.inbox.has_req_from(author) \
+        and not curr_user.has_follower(author):
+        curr_user.inbox.follow_requests.remove(author)
+        curr_user.followers.add(author)
+    else:
+        messages.info(request, f'Couldn\'t accept request')
+
+    return redirect('socialDistribution:author', author_id)
+
+
 def befriend(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
     curr_user = Author.objects.get(user=request.user)
 
-    if not curr_user.befriend(author):
-        messages.info(f'Couldn\'t befriend {author.displayName}')
+    if author.has_follower(curr_user):
+        messages.info(request, f'Already following {author.displayName}')
+
+    if author.inbox.has_req_from(curr_user):
+        messages.info(request, f'Follow request to {author.displayName} is pending')
+
+    if author.id != curr_user.id:
+        # send follow request
+        author.inbox.follow_requests.add(curr_user)
 
     return redirect('socialDistribution:author', author_id)
 
@@ -141,8 +163,11 @@ def un_befriend(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
     curr_user = Author.objects.get(user=request.user)
     
-    if not curr_user.un_befriend(author):
-        messages.info(request, f'Couldn\'t un-befriend {author.displayName}')
+    if author.has_follower(curr_user):
+        author.followers.remove(curr_user)
+    else:
+        messages.info(f'Couldn\'t un-befriend {author.displayName}')
+
     return redirect('socialDistribution:author', author_id)
 
 #@allowedUsers(allowed_roles=['author']) # just for demonstration
