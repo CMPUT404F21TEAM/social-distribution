@@ -144,29 +144,31 @@ def accept_friend(request, author_id):
 
 
 def befriend(request, author_id):
-    author = get_object_or_404(Author, pk=author_id)
-    curr_user = Author.objects.get(user=request.user)
+    if request.method == 'POST':
+        author = get_object_or_404(Author, pk=author_id)
+        curr_user = Author.objects.get(user=request.user)
 
-    if author.has_follower(curr_user):
-        messages.info(request, f'Already following {author.displayName}')
+        if author.has_follower(curr_user):
+            messages.info(request, f'Already following {author.displayName}')
 
-    if author.inbox.has_req_from(curr_user):
-        messages.info(request, f'Follow request to {author.displayName} is pending')
+        if author.inbox.has_req_from(curr_user):
+            messages.info(request, f'Follow request to {author.displayName} is pending')
 
-    if author.id != curr_user.id:
-        # send follow request
-        author.inbox.follow_requests.add(curr_user)
+        if author.id != curr_user.id:
+            # send follow request
+            author.inbox.follow_requests.add(curr_user)
 
     return redirect('socialDistribution:author', author_id)
 
 def un_befriend(request, author_id):
-    author = get_object_or_404(Author, pk=author_id)
-    curr_user = Author.objects.get(user=request.user)
-    
-    if author.has_follower(curr_user):
-        author.followers.remove(curr_user)
-    else:
-        messages.info(f'Couldn\'t un-befriend {author.displayName}')
+    if request.method == 'POST':
+        author = get_object_or_404(Author, pk=author_id)
+        curr_user = Author.objects.get(user=request.user)
+        
+        if author.has_follower(curr_user):
+            author.followers.remove(curr_user)
+        else:
+            messages.info(f'Couldn\'t un-befriend {author.displayName}')
 
     return redirect('socialDistribution:author', author_id)
 
