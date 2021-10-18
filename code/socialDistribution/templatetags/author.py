@@ -9,24 +9,24 @@ def card_author(*args, **kwargs):
     author = kwargs['author']
     author_type = kwargs['author_type']
     profile_card = kwargs['profile_card']
-    only_following = False
+    is_following = False
+    request_sent = False
     is_friend = False
-    accept_friend = False
     author_is_user = False
 
     if profile_card:
         curr_user = kwargs['curr_user']
-        only_following = curr_user.is_only_following(author)
+        is_following = author.has_follower(curr_user)
+        request_sent = author.inbox.has_req_from(curr_user)
         is_friend = curr_user.is_friends_with(author)
-        accept_friend = author.is_only_following(curr_user)
-        author_is_user = curr_user.id == author.id
+        author_is_user = author.id == curr_user.id
 
     return {
         'author': author,
         'author_type': author_type,
         'profile_card': profile_card,
-        'only_following': only_following,
+        'is_following': is_following,
+        'request_sent': request_sent,
         'is_friend': is_friend,
-        'accept_friend': accept_friend,
         'author_is_user': author_is_user
     }
