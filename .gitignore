@@ -140,3 +140,5 @@ cython_debug/
 # Static files
 /code/static
 /code/staticfiles
+
+migrations

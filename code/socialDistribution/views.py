@@ -154,7 +154,6 @@ def accept_friend(request, author_id):
 
     return redirect('socialDistribution:author', author_id)
 
-
 def befriend(request, author_id):
     if request.method == 'POST':
         author = get_object_or_404(Author, pk=author_id)
@@ -304,6 +303,16 @@ def likePost(request, id):
     else:
         post.likes.add(author)
     return redirect('socialDistribution:home', author_id=author.id)
+
+def commentPost(request, id):
+    '''
+        Render Post and comments
+    '''
+    post = get_object_or_404(Post, id = id)
+    author = get_object_or_404(Author, user=request.user)
+    return render(request, 'posts/comments.html')
+
+
 
 def deletePost(request, id):
     # move functionality to API

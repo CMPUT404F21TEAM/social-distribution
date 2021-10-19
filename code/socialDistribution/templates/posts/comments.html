@@ -1,0 +1,12 @@
+{% extends 'navBase.html' %}
+
+{% block head %}
+    <title>Posts</title>
+    {% load static %}
+        <link rel="stylesheet" type="text/css" href="{% static 'posts/style.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'posts/comments.css' %}">
+{% endblock %}
+
+{% block body %}
+    <h1>Post Comments</h1>
+{% endblock %}
