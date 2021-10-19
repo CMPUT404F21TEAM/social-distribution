@@ -241,51 +241,56 @@ def author(request, author_id):
 def create(request):
     return render(request, 'create/index.html')
 
+def parsePostRequest(request):
+    postDetails = {}
+    postDetails['title'] = request.POST.get('title')
+    postDetails['source'] = request.POST.get('source')
+    postDetails['origin'] = request.POST.get('origin')
+    postDetails['categories'] = request.POST.get('categories').split()
+    postDetails['img'] = request.POST.get('img')
+    postDetails['description'] = request.POST.get('description')
+    postDetails['content'] = request.POST.get('content')
+    postDetails['visibility'] = request.POST.get('visibility')
+    postDetails['is_unlisted'] = request.POST.get('unlisted')
+    postDetails['pub_date'] = datetime.now()
+
+    if postDetails['is_unlisted'] is None:
+        postDetails['is_unlisted'] = False
+    else:
+        postDetails['is_unlisted'] = True
+
+    if postDetails['visibility'] == '1':
+        postDetails['visibility'] = Post.PostVisibility.FRIENDS
+    else:
+        postDetails['visibility'] = Post.PostVisibility.PUBLIC
+
+    # temporarily set to zero; will need to fix that soon!
+    postDetails['page_size'] = 0
+    postDetails['count'] = 0
+
+    return postDetails
 
 def posts(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
 
     if request.method == 'POST':
-        title = request.POST.get('title')
-        source = request.POST.get('source')
-        origin = request.POST.get('origin')
-        categories = request.POST.get('categories').split()
-        img = request.POST.get('img')
-        description = request.POST.get('description')
-        content = request.POST.get('content')
-        visibility = request.POST.get('visibility')
-        is_unlisted = request.POST.get('unlisted')
-        pub_date = datetime.now()
-
-        if is_unlisted is None:
-            is_unlisted = False
-        else:
-            is_unlisted = True
-
-        if visibility == '1':
-            visibility = Post.PostVisibility.FRIENDS
-        else:
-            visibility = Post.PostVisibility.PUBLIC
-
-        # temporarily set to zero; will need to fix that soon!
-        page_size = 0
-        count = 0
+        postDetails = parsePostRequest(request)
 
         try:
             post = Post.objects.create(
                 author_id=author_id,  # temporary
-                title=title,
-                source=source,
-                description=description,
-                content_text=content,
-                visibility=visibility,
-                pub_date=pub_date,
-                unlisted=is_unlisted,
-                page_size=page_size,
-                count=count
+                title=postDetails['title'],
+                source=postDetails['source'],
+                description=postDetails['origin'],
+                content_text=postDetails['content'],
+                visibility=postDetails['visibility'],
+                pub_date=postDetails['pub_date'],
+                unlisted=postDetails['is_unlisted'],
+                page_size=postDetails['page_size'],
+                count=postDetails['count']
             )
 
-            for category in categories:
+            for category in postDetails['categories']:
                 Category.objects.create(category=category, post=post)
 
         except ValidationError:
@@ -306,41 +311,35 @@ def editPost(request, id):
     post = Post.objects.get(id=id)
 
     if request.method == 'POST':
-        post.title = request.POST.get('title')
-        post.source = request.POST.get('source')
-        post.origin = request.POST.get('origin')
-        categories = request.POST.get('categories').split()
-        post.img = request.POST.get('img')
-        post.description = request.POST.get('description')
-        post.content = request.POST.get('content')
-        visibility = request.POST.get('visibility')
-        is_unlisted = request.POST.get('unlisted')
-        post.pub_date = datetime.now()
+        postDetails = parsePostRequest(request)
+        post.title = postDetails['title']
+        post.source = postDetails['source']
+        post.origin = postDetails['origin']
+        categories = postDetails['categories']
+        post.img = postDetails['img']
+        post.description = postDetails['description']
+        post.content = postDetails['content']
+        post.pub_date = postDetails['pub_date']
 
-        if is_unlisted is None:
-            post.is_unlisted = False
-        else:
-            post.is_unlisted = True
+        post.is_unlisted = postDetails['is_unlisted']
 
-        if visibility == '1':
-            post.visibility = Post.PostVisibility.FRIENDS
-        else:
-            post.visibility = Post.PostVisibility.PUBLIC
+        post.visibility = postDetails['visibility']
 
         # temporarily set to zero; will need to fix that soon!
-        post.page_size = 0
-        post.count = 0
+        post.page_size = postDetails['page_size']
+        post.count = postDetails['count']
 
         previousCategories = Category.objects.filter(post=post)
         previousCategoriesNames = [cat.category for cat in previousCategories]
 
+        # Create new categories
         for category in categories:
             if category in previousCategoriesNames:
                 previousCategoriesNames.remove(category)
             else:
                 Category.objects.create(category=category, post=post)
 
-        # remove old categories that were deleted
+        # Remove old categories that were deleted
         for category in previousCategoriesNames:
             Category.objects.get(category=category, post=post).delete()
 
