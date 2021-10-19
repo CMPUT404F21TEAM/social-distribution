@@ -18,7 +18,7 @@ from django.urls import include, path
 from django.views.generic.base import RedirectView
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='app/login', permanent=False), name='index'),
+    path('', RedirectView.as_view(url='app/login', permanent=True), name='index'),
     path('app/', include('socialDistribution.urls')),
     path('api/', include('api.urls')),
     path('admin/', admin.site.urls),
