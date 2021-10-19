@@ -18,9 +18,7 @@ def card_author(*args, **kwargs):
 
     if 'comment_card' in kwargs:
         comment_card = kwargs['comment_card']
-        comment = 'Nice Post!'
-        # comment_time = kwargs['comment_time']
-
+        comment = kwargs['comment']
 
     if profile_card:
         curr_user = kwargs['curr_user']

@@ -20,12 +20,17 @@
     <div class="author-prof">
         <h2>Comments</h2>
 
-        <form action="" class="d-flex">
+        <form         
+            method="post"
+            action="{% url 'socialDistribution:commentsAPI' author.id post.id %}" 
+            class="d-flex"
+        >
+            {% csrf_token %}
             <textarea name="comment" id="" class="m-2" placeholder="Add New Comment."></textarea>
             <button type="submit" class="btn btn-primary">Post Comment</button>
         </form>
         {% for comment in comments %}
-            {% card_author author=author author_type=author_type curr_user=author profile_card=False comment_card=True comment=comment.content %}
+            {% card_author author=author author_type=author_type curr_user=author profile_card=False comment_card=True comment=comment %}
         {% endfor %}
     </div>
 

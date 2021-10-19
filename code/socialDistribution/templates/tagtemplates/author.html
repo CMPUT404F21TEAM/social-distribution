@@ -8,7 +8,11 @@
             </div>
             <div class="col">
 
-                <h4 class="card-title">{{author.displayName}}</h4>
+                {% if comment_card %}
+                    <h4 class="card-title">{{comment.author.displayName}}&nbsp; <span class="text-muted fs-6">•&nbsp;{{comment.when}}</span> </h4>
+                {% else %}
+                    <h4 class="card-title">{{author.displayName}}</h4>
+                {% endif %}
 
                 <h6 class="card-subtitle mb-2 text-muted px-1">
                     <span class="badge bg-secondary">{{author_type}}&nbsp;</span>
@@ -18,12 +22,13 @@
                 </h6>
 
                 <div>
-                    <!-- If comment card show comment -->
+                    <!-- If comment card show comment  -->
                     {% if comment_card %}
                         <div>
-                            <p>{{ comment }}</p>
+                            <p>{{ comment.comment }}</p>
                         </div>
                     {% else %}
+                    <!-- Else show profile card labels and actions  -->
 
                         {% if not profile_card %}
                             {% if author.post__count == 1 %}

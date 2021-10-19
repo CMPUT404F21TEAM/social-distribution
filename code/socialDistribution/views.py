@@ -1,7 +1,7 @@
-from django.http.response import HttpResponseRedirect
+from django.http.response import HttpResponseForbidden, HttpResponseNotAllowed, HttpResponseRedirect, HttpResponseServerError
 from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout, get_user_model
@@ -311,25 +311,17 @@ def commentPost(request, id):
     post = get_object_or_404(Post, id = id)
     author = get_object_or_404(Author, user=request.user)
 
-    dummyComments = [
-        {
-            "author": 'Olivier',
-            "content": 'Ola amigoes',
-            "published": '2 days ago'
-        },
-        {
-            "author": 'Jawad',
-            "content": 'Heheh',
-            "published": '3 days ago'
-        }
-    ]
+    try:
+        comments = Comment.objects.all().filter(post=post).order_by('-pub_date')
+    except Exception:
+        return HttpResponseServerError()
 
     context = {
         'author': author,
         'author_type': 'Local',
         'modal_type': 'post',
         'post': post,
-        'comments': dummyComments
+        'comments': comments
     }
     
     return render(request, 'posts/comments.html', context)
@@ -353,3 +345,43 @@ def profile(request):
 
 def user(request):
     return render(request, 'user/index.html')
+
+def commentsAPI(request, author_id, post_id):
+    '''
+     TODO: Move to api app
+     HANDLE Comment GET and POST
+    '''
+
+    # Add comment 
+    if request.method == 'POST':
+        # check if authenticated
+        if (not request.user):
+            return HttpResponseForbidden()
+
+        comment = request.POST.get('comment')
+        pub_date = datetime.now(timezone.utc)
+
+        try:
+            author = get_object_or_404(Author, pk=author_id)
+            post = get_object_or_404(Post, id=post_id)
+
+            comment = Comment.objects.create(
+                author = author,
+                post = post,
+                comment = comment,
+                content_type = 'PL', # TODO: add content type
+                pub_date =pub_date,
+            )
+
+        except Exception:
+            return HttpResponse('Internal Server Error')
+
+        return redirect('socialDistribution:commentPost', id=post_id)
+
+    elif request.method == 'GET':
+        # Send all comments 
+        return JsonResponse({ 'name': 'jawad'})
+    else:
+        # Method not allowed
+        return HttpResponseNotAllowed(['GET', 'POST'])
+    
