@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import *
+from django.core import serializers
 import timeago
 
 # Create your models here.
@@ -167,6 +168,9 @@ class Post(models.Model):
 
     def total_likes(self):
         return self.likes.count()
+
+    def serialize(self):
+        return serializers.serialize('json', [object])
         
 
 class Inbox(models.Model):

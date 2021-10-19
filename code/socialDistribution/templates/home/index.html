@@ -1,35 +1,53 @@
 {% extends 'navBase.html' %}
 
 {% block head %}
-    <title>Home</title>
-    {% load static %}
-        <link rel="stylesheet" type="text/css" href="{% static 'home/style.css' %}">
-        <link rel="stylesheet" type="text/css" href="{% static 'posts/style.css' %}">
+<title>Home</title>
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'home/style.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'posts/style.css' %}">
 {% endblock %}
 
 {% load post %}
 {% load modal %}
 {% block body %}
-    {% if latest_posts %}
-        <div class="container align-self-center" id="post_container">
-            {% for post in latest_posts %}
-                {% card_post post author %}
-            {% endfor %}
-        </div>
-    {% endif %}
+{% if latest_posts %}
+<div class="container align-self-center" id="post_container">
+    {% for post in latest_posts %}
+    {% card_post post author %}
+    {% endfor %}
+</div>
+{% endif %}
 
-    <button id="add_btn" type="button" data-bs-toggle="modal" data-bs-target="#add_post_modal">
-        <img src="{% static 'assets/add_btn.png' %}" alt="add posts" style="object-fit: contain; width: 100%">
-    </button>
+<button id="add_btn" type="button" data-bs-toggle="modal" data-bs-target="#add_post_modal">
+    <img src="{% static 'assets/add_btn.png' %}" alt="add posts" style="object-fit: contain; width: 100%">
+</button>
 
-    <form method="POST" action="{% url 'socialDistribution:posts' author.id %}" id="create_post_form">
-        {% csrf_token %}
-        {% modal id="add_post_modal" type=modal_type label="Create Post" title="Create Post" btn="Publish"%}
-    </form>
+<form method="POST" action="{% url 'socialDistribution:posts' author.id %}" id="create_post_form">
+    {% csrf_token %}
+    {% modal id="add_post_modal" type=modal_type label="Create Post" title="Create Post" btn="Publish"%}
+</form>
 
-    <script>
-        $('#add_post_modal').on('hidden.bs.modal', function() {
-            $('#create_post_form').trigger('reset');
-        })
-    </script>
+<script>
+    $('#add_post_modal').on('hidden.bs.modal', function () {
+        $('#create_post_form').trigger('reset');
+    })
+
+    // https://stackoverflow.com/a/25060114 - LostInComputer
+    $('#edit_post_modal').on('show.bs.modal', function (e) {
+        var post = $(e.relatedTarget).data('bs-post');
+        //const obj = JSON.parse(post);
+
+        //$(e.currentTarget).find('input[name="title"]').val(obj["title"]);
+        $(e.currentTarget).find('input[name="title"]').val(post);
+        $(e.currentTarget).find('input[name="source"]').val(post);
+        $(e.currentTarget).find('input[name="origin"]').val(post);
+        $(e.currentTarget).find('input[name="categories"]').val(post);
+        $(e.currentTarget).find('input[name="description"]').val(post);
+        $(e.currentTarget).find('input[name="content"]').val(post);
+        // TODO
+        //$(e.currentTarget).find('input[name="content_media"]').val(post);
+        //$(e.currentTarget).find('input[name="unlisted"]').val(post);
+        //$(e.currentTarget).find('input[name="visibility"]').val(2);
+    })
+</script>
 {% endblock %}

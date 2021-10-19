@@ -7,12 +7,10 @@ register = template.Library()
 # https://docs.djangoproject.com/en/3.2/howto/custom-template-tags/#inclusion-tags
 @register.inclusion_tag('tagtemplates/modal.html')
 def modal(*args, **kwargs):
-    existingPost = kwargs['existingPost'] if 'existingPost' in kwargs else None
     return {
             'modal_id': kwargs['id'],
             'modal_type': kwargs['type'],
             'modal_label': kwargs['label'],
             'modal_title': kwargs['title'],
             'submit_btn_text': kwargs['btn'],
-            'existing_post': existingPost,
         }
