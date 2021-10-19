@@ -331,8 +331,18 @@ def editPost(request, id):
         post.page_size = 0
         post.count = 0
 
+        previousCategories = Category.objects.filter(post=post)
+        previousCategoriesNames = [cat.category for cat in previousCategories]
+
         for category in categories:
-            Category.objects.create(category=category, post=post)
+            if category in previousCategoriesNames:
+                previousCategoriesNames.remove(category)
+            else:
+                Category.objects.create(category=category, post=post)
+
+        # remove old categories that were deleted
+        for category in previousCategoriesNames:
+            Category.objects.get(category=category, post=post).delete()
 
         post.save()
         return redirect('socialDistribution:home', author_id=author.id)
