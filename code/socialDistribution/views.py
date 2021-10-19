@@ -310,7 +310,29 @@ def commentPost(request, id):
     '''
     post = get_object_or_404(Post, id = id)
     author = get_object_or_404(Author, user=request.user)
-    return render(request, 'posts/comments.html')
+
+    dummyComments = [
+        {
+            "author": 'Olivier',
+            "content": 'Ola amigoes',
+            "published": '2 days ago'
+        },
+        {
+            "author": 'Jawad',
+            "content": 'Heheh',
+            "published": '3 days ago'
+        }
+    ]
+
+    context = {
+        'author': author,
+        'author_type': 'Local',
+        'modal_type': 'post',
+        'post': post,
+        'comments': dummyComments
+    }
+    
+    return render(request, 'posts/comments.html', context)
 
 
 
