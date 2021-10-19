@@ -32,5 +32,5 @@ def card_post(post, author):
 
 
 @register.inclusion_tag('tagtemplates/post_form.html')
-def post_form():
+def post_form(existingPost=None):
     return {}

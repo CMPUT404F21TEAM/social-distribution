@@ -15,19 +15,23 @@ from .models import *
 from datetime import datetime
 # Create your views here.
 
+
 def get_home_context(author, error, msg=''):
     context = {}
     context['author'] = author
     context['modal_type'] = 'post'
-    latest_posts = Post.objects.filter(unlisted=False).order_by("-pub_date")[:5]
+    latest_posts = Post.objects.filter(
+        unlisted=False).order_by("-pub_date")[:5]
     context['latest_posts'] = latest_posts
     context['error'] = error
     context['error_msg'] = msg
     return context
 
+
 @unauthenticated_user
 def index(request):
     return HttpResponse("Hello, world. You're at the Login/SignUp Page.")
+
 
 @unauthenticated_user
 def loginPage(request):
@@ -37,11 +41,11 @@ def loginPage(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        
+
         User = get_user_model()
 
         # check if user is active
-        try: 
+        try:
             user = User.objects.get(username=username)
         except Exception:
             messages.info(request, "Login Failed. Please try again.")
@@ -63,10 +67,11 @@ def loginPage(request):
                 messages.info(request, "Username or Password is incorrect.")
         else:
             # user inactive
-            messages.info(request, "Your account is currently pending approval. Please check back later.")
-
+            messages.info(
+                request, "Your account is currently pending approval. Please check back later.")
 
     return render(request, 'user/login.html')
+
 
 @unauthenticated_user
 def register(request):
@@ -88,12 +93,13 @@ def register(request):
 
                 # check github url
                 if (github_url and not github_url.startswith('https://github.com/')):
-                    context = { 'form': form }
-                    messages.info(request, 'Invalid github url, must be of format: https://github.com/username')
+                    context = {'form': form}
+                    messages.info(
+                        request, 'Invalid github url, must be of format: https://github.com/username')
                     return render(request, 'user/register.html', context)
 
                 user = form.save()
-                user.is_active = False # admin must approve user from console 
+                user.is_active = False  # admin must approve user from console
                 user.save()
 
                 # add user to author group by default
@@ -109,32 +115,36 @@ def register(request):
             except:
                 return HttpResponse("Sign up failed. Internal Server Error. Please Try again.", status=500)
 
-            messages.success(request, f'Account creation request sent to admin for {username}')
+            messages.success(
+                request, f'Account creation request sent to admin for {username}')
 
             return redirect('socialDistribution:login')
         else:
             print(form.errors['password2'])
-    context = { 'form': form }
+    context = {'form': form}
     return render(request, 'user/register.html', context)
 
-def logoutUser(request): 
+
+def logoutUser(request):
     """
         Logoust out a user and redirects to login page
     """
     logout(request)
     return redirect('socialDistribution:login')
 
+
 def home(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
     context = get_home_context(author, False)
     return render(request, 'home/index.html', context)
+
 
 def accept_friend(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
     curr_user = Author.objects.get(user=request.user)
 
     if curr_user.id != author.id and curr_user.inbox.has_req_from(author) \
-        and not curr_user.has_follower(author):
+            and not curr_user.has_follower(author):
         curr_user.inbox.follow_requests.remove(author)
         curr_user.followers.add(author)
     else:
@@ -152,7 +162,8 @@ def befriend(request, author_id):
             messages.info(request, f'Already following {author.displayName}')
 
         if author.inbox.has_req_from(curr_user):
-            messages.info(request, f'Follow request to {author.displayName} is pending')
+            messages.info(
+                request, f'Follow request to {author.displayName} is pending')
 
         if author.id != curr_user.id:
             # send follow request
@@ -160,11 +171,12 @@ def befriend(request, author_id):
 
     return redirect('socialDistribution:author', author_id)
 
+
 def un_befriend(request, author_id):
     if request.method == 'POST':
         author = get_object_or_404(Author, pk=author_id)
         curr_user = Author.objects.get(user=request.user)
-        
+
         if author.has_follower(curr_user):
             author.followers.remove(curr_user)
         else:
@@ -172,7 +184,9 @@ def un_befriend(request, author_id):
 
     return redirect('socialDistribution:author', author_id)
 
-#@allowedUsers(allowed_roles=['author']) # just for demonstration
+# @allowedUsers(allowed_roles=['author']) # just for demonstration
+
+
 def authors(request):
     args = {}
 
@@ -202,12 +216,13 @@ def authors(request):
     # https://docs.djangoproject.com/en/3.2/topics/db/aggregation/#generating-aggregates-for-each-item-in-a-queryset
     authors = Author.objects.all().annotate(Count("post"))
     local_authors = [{
-            "data": author,
-            "type": "Local"
-        } for author in authors]
+        "data": author,
+        "type": "Local"
+    } for author in authors]
 
     args["authors"] = local_authors + remote_authors
     return render(request, 'author/index.html', args)
+
 
 def author(request, author_id):
     curr_user = Author.objects.get(user=request.user)
@@ -222,12 +237,14 @@ def author(request, author_id):
 
     return render(request, 'author/detail.html', context)
 
+
 def create(request):
     return render(request, 'create/index.html')
 
+
 def posts(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
-    
+
     if request.method == 'POST':
         title = request.POST.get('title')
         source = request.POST.get('source')
@@ -249,7 +266,7 @@ def posts(request, author_id):
             visibility = Post.PostVisibility.FRIENDS
         else:
             visibility = Post.PostVisibility.PUBLIC
-        
+
         # temporarily set to zero; will need to fix that soon!
         page_size = 0
         count = 0
@@ -257,8 +274,8 @@ def posts(request, author_id):
         try:
             post = Post.objects.create(
                 author_id=author_id,  # temporary
-                title=title, 
-                source=source, 
+                title=title,
+                source=source,
                 description=description,
                 content_text=content,
                 visibility=visibility,
@@ -272,20 +289,60 @@ def posts(request, author_id):
                 Category.objects.create(category=category, post=post)
 
         except ValidationError:
-            context = get_home_context(author, True, "Something went wrong! Couldn't create post.")
+            context = get_home_context(
+                author, True, "Something went wrong! Couldn't create post.")
             return render(request, 'home/index.html', context)
 
         else:
             # if using view name, app_name: must prefix the view name
             # In this case, app_name is socialDistribution
             return redirect('socialDistribution:home', author_id=author_id)
-    
+
+    return render(request, 'posts/index.html')
+
+
+def editPost(request, id):
+    author = Author.objects.get(user=request.user)
+    post = Post.objects.get(id=id)
+
+    if request.method == 'POST':
+        post.title = request.POST.get('title')
+        post.source = request.POST.get('source')
+        post.origin = request.POST.get('origin')
+        categories = request.POST.get('categories').split()
+        post.img = request.POST.get('img')
+        post.description = request.POST.get('description')
+        post.content = request.POST.get('content')
+        visibility = request.POST.get('visibility')
+        is_unlisted = request.POST.get('unlisted')
+        post.pub_date = datetime.now()
+
+        if is_unlisted is None:
+            post.is_unlisted = False
+        else:
+            post.is_unlisted = True
+
+        if visibility == '1':
+            post.visibility = Post.PostVisibility.FRIENDS
+        else:
+            post.visibility = Post.PostVisibility.PUBLIC
+
+        # temporarily set to zero; will need to fix that soon!
+        post.page_size = 0
+        post.count = 0
+
+        for category in categories:
+            Category.objects.create(category=category, post=post)
+
+        post.save()
+        return redirect('socialDistribution:home', author_id=author.id)
+
     return render(request, 'posts/index.html')
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
 def likePost(request, id):
     # move functionality to API
-    post = get_object_or_404(Post, id = id)
+    post = get_object_or_404(Post, id=id)
     author = Author.objects.get(user=request.user)
     if post.likes.filter(id=author.id).exists():
         post.likes.remove(author)
@@ -293,20 +350,19 @@ def likePost(request, id):
         post.likes.add(author)
     return redirect('socialDistribution:home', author_id=author.id)
 
+
 def deletePost(request, id):
     # move functionality to API
-    post = get_object_or_404(Post, id = id)
+    post = get_object_or_404(Post, id=id)
     author = Author.objects.get(user=request.user)
     if post.author == author:
         post.delete()
     return redirect('socialDistribution:home', author_id=author.id)
 
-def editPost(request, id):
-    # todo
-    return render(request, 'create/index.html')
 
 def profile(request):
     return render(request, 'profile/index.html')
+
 
 def user(request):
     return render(request, 'user/index.html')
