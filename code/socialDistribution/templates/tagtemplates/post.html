@@ -19,15 +19,16 @@
     </div>
     <div class="card-footer bg-white d-flex justify-content-between">
         <span>
-        {% if isLiked %}
-        <a href="/like-post/{{post.id}}"> <button class="btn btn-secondary"><i
+            {% if isLiked %}
+                <a href="{% url 'socialDistribution:likePost' post.id %}"> <button class="btn btn-secondary"><i
                         class="fas fa-thumbs-up"></i></button></a>
 
-        {% else %}
-            <a href="/like-post/{{post.id}}"> <button class="btn btn-primary"><i
+            {% else %}
+                <a href="{% url 'socialDistribution:likePost' post.id %}"> <button class="btn btn-primary"><i
                         class="far fa-thumbs-up"></i></button></a>
 
-        {% endif %}
+            {% endif %}
+            
             {{ likeText }}
 
             <!-- Comment Icon -->
@@ -37,7 +38,7 @@
 
         {% if isAuthor %}
         <span>
-            <a href="/edit-post/{{post.id}}"><button type="button" class="btn btn btn-secondary">
+            <a href="{% url 'socialDistribution:editPost' post.id %}"><button type="button" class="btn btn btn-secondary">
                     <i class="fas fa-edit"></i></button></a>
             </button>
             <!-- Launch Delete Modal -->
