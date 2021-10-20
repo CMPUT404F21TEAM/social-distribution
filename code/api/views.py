@@ -7,6 +7,7 @@ from django.utils.decorators import method_decorator
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
+from .decorators import authenticate_request
 
 # References for entire file:
 # Django Software Foundation, "Introduction to class-based views", 2021-10-13
@@ -63,7 +64,7 @@ class AuthorsView(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class AuthorView(View):
 
-    """ GET: Retrieve profile of a user 
+    """ GET: Retrieve profile of {author_id} 
     """
     def get(self, request, author_id):
         author = get_object_or_404(Author, pk=author_id)
@@ -78,7 +79,7 @@ class AuthorView(View):
         }
         return JsonResponse(response)
 
-    """ POST: Update profile of a user
+    """ POST: Update profile of {author_id}
     """
     def post(self, request, author_id):
         return HttpResponse("authors post\nupdate profile")
@@ -129,5 +130,23 @@ class CommentLikesView(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class InboxView(View):
 
+    """ GET: If authenticated, get a list of posts sent to {author_id}
+    """
+    @authenticate_request
     def get(self, request, author_id):
-        return HttpResponse("This is the authors/aid/inbox/ endpoint")
+        return JsonResponse({
+            "message": f"This is the inbox for author_id={author_id}. Only author {author_id} can read this."
+        })
+
+    """ POST: Send a post to {author_id}
+        - if the type is “post” then add that post to the author’s inbox
+        - if the type is “follow” then add that follow is added to the author’s inbox to approve later
+        - if the type is “like” then add that like to the author’s inbox    
+    """
+    def post(self, request, author_id):
+        return HttpResponse("Hello")
+    
+    """ DELETE: Clear the inbox
+    """
+    def delete(self, request, author_id):
+        return HttpResponse("Hello")
