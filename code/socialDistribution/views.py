@@ -284,14 +284,12 @@ def posts(request, author_id):
 
             except ValidationError:
                 messages.info(request, 'Unable to create new post.')
-                context = get_home_context(author, True, "Something went wrong! Couldn't create post.")
-                return render(request, 'home/index.html', context)
 
-        # if using view name, app_name: must prefix the view name
-        # In this case, app_name is socialDistribution
-        return redirect('socialDistribution:home', author_id=author_id)
-    
-    return render(request, 'posts/index.html')
+    context = get_home_context(author, True, "Something went wrong! Couldn't create post.")
+
+    # if using view name, app_name: must prefix the view name
+    # In this case, app_name is socialDistribution
+    return redirect('socialDistribution:home', author_id=author_id)
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
 def likePost(request, id):
