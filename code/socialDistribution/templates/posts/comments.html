@@ -22,7 +22,7 @@
 
         <form         
             method="post"
-            action="{% url 'socialDistribution:commentsAPI' author.id post.id %}" 
+            action="{% url 'api:post_comments' author.id post.id %}" 
             class="d-flex"
         >
             {% csrf_token %}
@@ -34,5 +34,4 @@
         {% endfor %}
     </div>
 
-   
 {% endblock %}

@@ -24,8 +24,4 @@ urlpatterns = [
   path('comment-post/<int:id>', views.commentPost, name='commentPost'),
   path('delete-post/<int:id>', views.deletePost, name='deletePost'),
   path('edit-post/<int:id>', views.editPost, name='editPost'),
-
-  path('author/<int:author_id>/posts/<int:post_id>/comments', views.commentsAPI, name="commentsAPI")
-
-
 ]
