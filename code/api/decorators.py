@@ -5,7 +5,7 @@ def authenticate_request(view_func):
     """
         Restrict API path to only {author_id}
     """
-    def wrapper_func(view, request, author_id, *args, **kwargs):
+    def wrapper_func(request, author_id, *args, **kwargs):
         # check is user is authenticated
         if not request.user.is_authenticated:
             return HttpResponse(status=401)
@@ -16,6 +16,6 @@ def authenticate_request(view_func):
         if request_id != author_id:
             return HttpResponse(status=403)
 
-        return view_func(request, request, author_id, *args, **kwargs)
+        return view_func(request, author_id, *args, **kwargs)
 
     return wrapper_func

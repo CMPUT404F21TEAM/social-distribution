@@ -1,9 +1,11 @@
 from django.http import HttpResponse, JsonResponse
+from django.http.response import HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404
 from django.core import serializers
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
+import json
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
@@ -132,7 +134,7 @@ class InboxView(View):
 
     """ GET: If authenticated, get a list of posts sent to {author_id}
     """
-    @authenticate_request
+    @method_decorator(authenticate_request)
     def get(self, request, author_id):
         return JsonResponse({
             "message": f"This is the inbox for author_id={author_id}. Only author {author_id} can read this."
@@ -144,7 +146,27 @@ class InboxView(View):
         - if the type is “like” then add that like to the author’s inbox    
     """
     def post(self, request, author_id):
-        return HttpResponse("Hello")
+        data = json.loads(request.body)
+        try:
+            if data["type"] == "post":
+                return HttpResponse(status=501) # not implemented
+
+            elif data["type"] == "follow":
+                actor, obj = data["actor"], data["object"]
+                # actor want's to follow object
+                # need to add actor URL to object's inbox
+                # object decides later to add actor URL to its outward feed (followers)
+                response_data = str(data["actor"]) + "\n" + str(data["object"]) # demo, try with spec sample data
+                return HttpResponse(response_data) # okay
+
+            elif data["type"] == "like":
+                return HttpResponse(status=501) # not implemented
+            
+            else: 
+                return HttpResponseBadRequest()
+
+        except KeyError:
+            return HttpResponseBadRequest()
     
     """ DELETE: Clear the inbox
     """
