@@ -120,8 +120,7 @@ class Post(models.Model):
     
     content_text = models.TextField(max_length=CONTEXT_TEXT_MAXLEN)
 
-    # Uploads to MEDIA ROOT uploads/ YEAR/ MONTH
-    # content_media = models.ImageField(upload_to="uploads/% Y/% m", null=True, blank=True)
+    # Base64 encoded binary field (image/png, image/jpg, application/base64)
     content_media = models.BinaryField(max_length=CONTENT_MEDIA_MAXLEN, null=True, blank=True)
     author = models.ForeignKey('Author', on_delete=models.CASCADE)
 
@@ -145,7 +144,8 @@ class Post(models.Model):
         '''
         return self.content_type in [
             self.PostContentType.PNG,
-            self.PostContentType.JPEG
+            self.PostContentType.JPEG,
+            self.PostContentType.BASE64
         ]
 
     def is_public(self):
