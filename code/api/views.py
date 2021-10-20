@@ -4,6 +4,8 @@ from django.core import serializers
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
+
+from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
 
 # References for entire file:
@@ -22,7 +24,6 @@ from socialDistribution.models import *
 # Ryan Pergent, https://stackoverflow.com/users/3904557/ryan-pergent, "how do I use ensure_csrf_cookie?", 
 # 2017-05-30, https://stackoverflow.com/a/43712324, CC BY-SA 3.0
 
-
 def index(request):
     return HttpResponse("Welcome to the Social Distribution API")
 
@@ -30,6 +31,8 @@ def index(request):
 @method_decorator(csrf_exempt, name='dispatch')
 class AuthorsView(View):
 
+    """ GET: Retrieve all user profiles
+    """
     @method_decorator(ensure_csrf_cookie)
     def get(self, request):
         page = request.GET.get("page")
@@ -39,11 +42,10 @@ class AuthorsView(View):
         for author in Author.objects.all():
             data.append(
                 {
-                    # WARNING: hardcode
                     "type": "author",
-                    "id": f"http://127.0.0.1:8000/authors/{author.id}",
-                    "url": f"http://127.0.0.1:8000/authors/{author.id}",
-                    "host": "http://127.0.0.1:8000/",
+                    "id": f"{HOST}{API_PREFIX}authors/{author.id}",
+                    "url": f"{HOST}{API_PREFIX}authors/{author.id}",
+                    "host": f"{HOST}",
                     "displayName": author.displayName,
                     "github": author.githubUrl,
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg",
@@ -61,20 +63,23 @@ class AuthorsView(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class AuthorView(View):
 
+    """ GET: Retrieve profile of a user 
+    """
     def get(self, request, author_id):
         author = get_object_or_404(Author, pk=author_id)
         response = {
-            # WARNING; hardcode
             "type": "author",
-            "id": f"http://127.0.0.1:8000/authors/{author.id}",
-            "url": f"http://127.0.0.1:8000/authors/{author.id}",
-            "host": "http://127.0.0.1:8000/",
+            "id": f"{HOST}{API_PREFIX}authors/{author.id}",
+            "url": f"{HOST}{API_PREFIX}authors/{author.id}",
+            "host": f"{HOST}",
             "displayName": author.displayName,
             "github": author.githubUrl,
             "profileImage": "https://i.imgur.com/k7XVwpB.jpeg",
         }
         return JsonResponse(response)
 
+    """ POST: Update profile of a user
+    """
     def post(self, request, author_id):
         return HttpResponse("authors post\nupdate profile")
 
