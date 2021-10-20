@@ -1,5 +1,6 @@
 from django import template
 import base64
+from socialDistribution.forms import PostForm
 
 register = template.Library()
 
@@ -44,4 +45,5 @@ def card_post(post, author):
 
 @register.inclusion_tag('tagtemplates/post_form.html')
 def post_form():
-    return {}
+    form = PostForm()
+    return {'form': form}
