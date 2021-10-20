@@ -102,10 +102,6 @@ class Post(models.Model):
         PNG = 'PNG', 'image/png;base64'
         JPEG = 'JPEG', 'image/jpeg;base64'
 
-    class PostVisibility(models.TextChoices):
-        PUBLIC = "PB", "PUBLIC"
-        FRIENDS = "FRD", "FRIENDS"
-
     TITLE_MAXLEN = 50
     DESCRIPTION_MAXLEN = 50
     CONTEXT_TEXT_MAXLEN = 200
@@ -132,7 +128,14 @@ class Post(models.Model):
     count = models.PositiveSmallIntegerField(default=0)
     pub_date = models.DateTimeField()
 
-    visibility = models.CharField(max_length=10, choices=PostVisibility.choices)
+    PUBLIC = "PB"
+    FRIENDS = "FRD"
+    VISIBILITY_CHOICES = (
+        (PUBLIC, 'PUBLIC'),
+        (FRIENDS, 'FRIENDS')
+    )
+
+    visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default=PUBLIC)
     unlisted = models.BooleanField()
     likes = models.ManyToManyField('Author', related_name="liked_post", blank=True)
 

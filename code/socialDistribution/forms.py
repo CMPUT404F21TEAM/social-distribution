@@ -26,13 +26,13 @@ class PostForm(forms.Form):
     content_media = forms.FileField(required=False)
     unlisted = forms.BooleanField(required=False)
     visibility = forms.ChoiceField(
-        choices=Post.PostVisibility, 
+        choices=Post.VISIBILITY_CHOICES, 
         required=True,
     )
 
     def clean_visibility(self):
         data = self.cleaned_data['visibility']
-        if data in ['FRIENDS', 'PUBLIC']:
+        if data in [Post.FRIENDS, Post.PUBLIC]:
             return data
         else:
             raise ValidationError('Invalid visibility')
