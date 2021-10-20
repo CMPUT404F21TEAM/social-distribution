@@ -250,36 +250,22 @@ def posts(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
     
     if request.method == 'POST':
-        # title = request.POST.get('title')
-        # source = request.POST.get('source')
-        # origin = request.POST.get('origin')
-        # categories = request.POST.get('categories').split()
-        # content_media = request.POST.get('content_media')
-        # description = request.POST.get('description')
-        # content = request.POST.get('content')
-        # visibility = request.POST.get('visibility')
-        # is_unlisted = request.POST.get('unlisted')
-        form = PostForm(request.POST)
+        form = PostForm(request.POST, request.FILES)
         if form.is_valid():
             bin_content = form.cleaned_data.get('content_media')
             if bin_content is not None:
-                content_media = base64.b64encode(bin_content)
+                content_media = base64.b64encode(bin_content.read())
             else:
                 content_media = None
 
             pub_date = datetime.now()
 
-            # if is_unlisted is None:
-            #     is_unlisted = False
-            # else:
-            #     is_unlisted = True
-
             try:
                 post = Post.objects.create(
                     author_id=author_id,  # temporary
                     title=form.cleaned_data.get('title'), 
-                    source=reverse('socialDistribution:'),
-                    origin=reverse('socialDistribution:'),
+                    source=request.build_absolute_uri(request.path),
+                    origin=request.build_absolute_uri(request.path),
                     description=form.cleaned_data.get('description'),
                     content_text=form.cleaned_data.get('content_text'),
                     visibility=form.cleaned_data.get('visibility'),
@@ -289,7 +275,7 @@ def posts(request, author_id):
                     count=0
                 )
 
-                categories = form.cleaned_data('categories')
+                categories = form.cleaned_data.get('categories')
                 if categories is not None:
                     categories = categories.split()
 
@@ -297,12 +283,9 @@ def posts(request, author_id):
                         Category.objects.create(category=category, post=post)
 
             except ValidationError:
+                messages.info(request, 'Unable to create new post.')
                 context = get_home_context(author, True, "Something went wrong! Couldn't create post.")
                 return render(request, 'home/index.html', context)
-
-        print('-'*80)
-        print(form.errors)
-        print(' '*4)
 
         # if using view name, app_name: must prefix the view name
         # In this case, app_name is socialDistribution

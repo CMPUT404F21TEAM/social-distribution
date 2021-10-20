@@ -1,4 +1,5 @@
 from django import template
+import base64
 
 register = template.Library()
 
@@ -28,7 +29,17 @@ def card_post(post, author):
         elif likes == 1:
             likeText = f'Liked by 1 other'
 
-    return {'post': post, 'isAuthor': isAuthor, 'isLiked': isLiked, 'likeText': likeText}
+    content_media = None
+    if post.content_media is not None:
+        content_media = post.content_media.decode('utf-8')
+
+    return {
+        'post': post, 
+        'content_media': content_media, 
+        'isAuthor': isAuthor, 
+        'isLiked': isLiked, 
+        'likeText': likeText
+        }
 
 
 @register.inclusion_tag('tagtemplates/post_form.html')
