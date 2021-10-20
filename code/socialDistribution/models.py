@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import *
-from django.core import serializers
 import timeago
 
 # Create your models here.

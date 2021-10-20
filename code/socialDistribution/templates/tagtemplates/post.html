@@ -53,6 +53,6 @@
     </form>
     <form method="POST" action="{% url 'socialDistribution:editPost' post.id %}">
         {% csrf_token %}
-        {% modal id="edit_post_modal" type="edit" label="Edit Post" title="Edit Post" btn="Save" existingPost=post %}
+        {% modal id="edit_post_modal" type="edit" label="Edit Post" title="Edit Post" btn="Save"%}
     </form>
 </div>
