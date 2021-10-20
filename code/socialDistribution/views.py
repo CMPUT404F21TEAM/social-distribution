@@ -241,13 +241,13 @@ def author(request, author_id):
 def create(request):
     return render(request, 'create/index.html')
 
+
 def parsePostRequest(request):
     postDetails = {}
     postDetails['title'] = request.POST.get('title')
     postDetails['source'] = request.POST.get('source')
     postDetails['origin'] = request.POST.get('origin')
     postDetails['categories'] = request.POST.get('categories').split()
-    postDetails['img'] = request.POST.get('img')
     postDetails['description'] = request.POST.get('description')
     postDetails['content'] = request.POST.get('content')
     postDetails['visibility'] = request.POST.get('visibility')
@@ -259,7 +259,7 @@ def parsePostRequest(request):
     else:
         postDetails['is_unlisted'] = True
 
-    if postDetails['visibility'] == '1':
+    if postDetails['visibility'] == 'PR':
         postDetails['visibility'] = Post.PostVisibility.FRIENDS
     else:
         postDetails['visibility'] = Post.PostVisibility.PUBLIC
@@ -269,6 +269,7 @@ def parsePostRequest(request):
     postDetails['count'] = 0
 
     return postDetails
+
 
 def posts(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
@@ -312,18 +313,17 @@ def editPost(request, id):
 
     if request.method == 'POST':
         postDetails = parsePostRequest(request)
+        print(postDetails)
         post.title = postDetails['title']
         post.source = postDetails['source']
         post.origin = postDetails['origin']
-        categories = postDetails['categories']
-        post.img = postDetails['img']
         post.description = postDetails['description']
-        post.content = postDetails['content']
+        post.content_text = postDetails['content']
         post.pub_date = postDetails['pub_date']
-
-        post.is_unlisted = postDetails['is_unlisted']
-
+        post.unlisted = postDetails['is_unlisted']
         post.visibility = postDetails['visibility']
+
+        categories = postDetails['categories']
 
         # temporarily set to zero; will need to fix that soon!
         post.page_size = postDetails['page_size']
@@ -349,6 +349,8 @@ def editPost(request, id):
     return render(request, 'posts/index.html')
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
+
+
 def likePost(request, id):
     # move functionality to API
     post = get_object_or_404(Post, id=id)

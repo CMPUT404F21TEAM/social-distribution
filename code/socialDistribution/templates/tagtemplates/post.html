@@ -34,7 +34,9 @@
         {% if isAuthor %}
         <span>
             <button type="button" class="btn btn btn-secondary" data-bs-toggle="modal" data-bs-target="#edit_post_modal"
-                data-bs-post={{post.total_likes}}>
+                data-bs-title={{post.title}} data-bs-source={{post.source}} data-bs-origin={{post.origin}}
+                data-bs-description={{post.description}} data-bs-content={{post.content_text}}
+                data-bs-unlisted={{post.unlisted}} data-bs-visibility={{post.visibility}}>
                 <i class="fas fa-edit"></i></button>
             </button>
             <!-- Launch Delete Modal -->

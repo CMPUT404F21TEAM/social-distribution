@@ -168,9 +168,6 @@ class Post(models.Model):
 
     def total_likes(self):
         return self.likes.count()
-
-    def serialize(self):
-        return serializers.serialize('json', [object])
         
 
 class Inbox(models.Model):
