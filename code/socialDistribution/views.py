@@ -6,13 +6,15 @@ from django.shortcuts import redirect
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout, get_user_model
 
-from .forms import CreateUserForm
+from .forms import CreateUserForm, PostForm
 from .decorators import allowedUsers, unauthenticated_user
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.db.models import Count
+from django.urls import reverse
 from .models import *
 from datetime import datetime
+import base64
 
 REQUIRE_SIGNUP_APPROVAL = False
 ''' 
@@ -248,56 +250,63 @@ def posts(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
     
     if request.method == 'POST':
-        title = request.POST.get('title')
-        source = request.POST.get('source')
-        origin = request.POST.get('origin')
-        categories = request.POST.get('categories').split()
-        img = request.POST.get('img')
-        description = request.POST.get('description')
-        content = request.POST.get('content')
-        visibility = request.POST.get('visibility')
-        is_unlisted = request.POST.get('unlisted')
-        pub_date = datetime.now()
+        # title = request.POST.get('title')
+        # source = request.POST.get('source')
+        # origin = request.POST.get('origin')
+        # categories = request.POST.get('categories').split()
+        # content_media = request.POST.get('content_media')
+        # description = request.POST.get('description')
+        # content = request.POST.get('content')
+        # visibility = request.POST.get('visibility')
+        # is_unlisted = request.POST.get('unlisted')
+        form = PostForm(request.POST)
+        if form.is_valid():
+            bin_content = form.cleaned_data.get('content_media')
+            if bin_content is not None:
+                content_media = base64.b64encode(bin_content)
+            else:
+                content_media = None
 
-        if is_unlisted is None:
-            is_unlisted = False
-        else:
-            is_unlisted = True
+            pub_date = datetime.now()
 
-        if visibility == '1':
-            visibility = Post.PostVisibility.FRIENDS
-        else:
-            visibility = Post.PostVisibility.PUBLIC
-        
-        # temporarily set to zero; will need to fix that soon!
-        page_size = 0
-        count = 0
+            # if is_unlisted is None:
+            #     is_unlisted = False
+            # else:
+            #     is_unlisted = True
 
-        try:
-            post = Post.objects.create(
-                author_id=author_id,  # temporary
-                title=title, 
-                source=source, 
-                description=description,
-                content_text=content,
-                visibility=visibility,
-                pub_date=pub_date,
-                unlisted=is_unlisted,
-                page_size=page_size,
-                count=count
-            )
+            try:
+                post = Post.objects.create(
+                    author_id=author_id,  # temporary
+                    title=form.cleaned_data.get('title'), 
+                    source=reverse('socialDistribution:'),
+                    origin=reverse('socialDistribution:'),
+                    description=form.cleaned_data.get('description'),
+                    content_text=form.cleaned_data.get('content_text'),
+                    visibility=form.cleaned_data.get('visibility'),
+                    unlisted=form.cleaned_data.get('unlisted'),
+                    content_media=content_media,
+                    pub_date=pub_date,
+                    count=0
+                )
 
-            for category in categories:
-                Category.objects.create(category=category, post=post)
+                categories = form.cleaned_data('categories')
+                if categories is not None:
+                    categories = categories.split()
 
-        except ValidationError:
-            context = get_home_context(author, True, "Something went wrong! Couldn't create post.")
-            return render(request, 'home/index.html', context)
+                    for category in categories:
+                        Category.objects.create(category=category, post=post)
 
-        else:
-            # if using view name, app_name: must prefix the view name
-            # In this case, app_name is socialDistribution
-            return redirect('socialDistribution:home', author_id=author_id)
+            except ValidationError:
+                context = get_home_context(author, True, "Something went wrong! Couldn't create post.")
+                return render(request, 'home/index.html', context)
+
+        print('-'*80)
+        print(form.errors)
+        print(' '*4)
+
+        # if using view name, app_name: must prefix the view name
+        # In this case, app_name is socialDistribution
+        return redirect('socialDistribution:home', author_id=author_id)
     
     return render(request, 'posts/index.html')
 

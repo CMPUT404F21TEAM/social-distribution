@@ -88,11 +88,7 @@ class Post(models.Model):
         content_media       Any attached images (base64 encoded image; png or jpeg)
 
         author              Post author (reference to author)
-        
         count               total number of comments (small integer)
-        page_size           page size  (small integer)
-        first_comments_page URL of first comments page
-
         pub_date            Post published date (datetime)
         visibility          PUBLIC or FRIENDS
         unlisted            Boolean indicating whether post is listed or not
@@ -110,10 +106,15 @@ class Post(models.Model):
         PUBLIC = "PB", "PUBLIC"
         FRIENDS = "FRD", "FRIENDS"
 
-    title = models.CharField(max_length=50)
+    TITLE_MAXLEN = 50
+    DESCRIPTION_MAXLEN = 50
+    CONTEXT_TEXT_MAXLEN = 200
+    CONTENT_MEDIA_MAXLEN = 1000
+
+    title = models.CharField(max_length=TITLE_MAXLEN)
     source = models.URLField(max_length=200)
     origin = models.URLField(max_length=200)
-    description = models.CharField(max_length=50)
+    description = models.CharField(max_length=DESCRIPTION_MAXLEN)
 
     content_type = models.CharField(
         choices=PostContentType.choices, 
@@ -121,15 +122,14 @@ class Post(models.Model):
         default=PostContentType.PLAIN
     )
     
-    content_text = models.TextField()
+    content_text = models.TextField(max_length=CONTEXT_TEXT_MAXLEN)
 
     # Uploads to MEDIA ROOT uploads/ YEAR/ MONTH
-    content_media = models.ImageField(upload_to="uploads/% Y/% m", null=True, blank=True)
+    # content_media = models.ImageField(upload_to="uploads/% Y/% m", null=True, blank=True)
+    content_media = models.BinaryField(max_length=CONTENT_MEDIA_MAXLEN, null=True, blank=True)
     author = models.ForeignKey('Author', on_delete=models.CASCADE)
 
     count = models.PositiveSmallIntegerField(default=0)
-    page_size = models.PositiveSmallIntegerField(default=0)
-    first_comments_page = models.URLField(max_length=200, blank=True)
     pub_date = models.DateTimeField()
 
     visibility = models.CharField(max_length=10, choices=PostVisibility.choices)
