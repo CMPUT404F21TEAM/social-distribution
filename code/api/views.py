@@ -164,6 +164,11 @@ class PostCommentsView(View):
             return HttpResponseForbidden()
 
         comment = request.POST.get('comment')
+
+        # check if empty
+        if not len(comment): 
+            return HttpResponseBadRequest("Comment cannot be empty.")
+
         pub_date = datetime.now(timezone.utc)
 
         try:
