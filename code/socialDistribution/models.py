@@ -106,10 +106,11 @@ class Post(models.Model):
     DESCRIPTION_MAXLEN = 50
     CONTEXT_TEXT_MAXLEN = 200
     CONTENT_MEDIA_MAXLEN = 1000
+    URL_MAXLEN = 2048
 
     title = models.CharField(max_length=TITLE_MAXLEN)
-    source = models.URLField(max_length=200)
-    origin = models.URLField(max_length=200)
+    source = models.URLField(max_length=URL_MAXLEN)
+    origin = models.URLField(max_length=URL_MAXLEN)
     description = models.CharField(max_length=DESCRIPTION_MAXLEN)
 
     content_type = models.CharField(
