@@ -264,8 +264,8 @@ def posts(request, author_id):
                 post = Post.objects.create(
                     author_id=author_id,  # temporary
                     title=form.cleaned_data.get('title'), 
-                    source=request.build_absolute_uri(request.path),
-                    origin=request.build_absolute_uri(request.path),
+                    source=request.build_absolute_uri(request.path),    # will need to fix when moved to api
+                    origin=request.build_absolute_uri(request.path),    # will need to fix when moved to api
                     description=form.cleaned_data.get('description'),
                     content_text=form.cleaned_data.get('content_text'),
                     visibility=form.cleaned_data.get('visibility'),
