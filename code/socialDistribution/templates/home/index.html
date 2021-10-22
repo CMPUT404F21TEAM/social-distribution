@@ -10,51 +10,26 @@
 {% load post %}
 {% load modal %}
 {% block body %}
-{% if latest_posts %}
-<div class="container align-self-center" id="post_container">
-    {% for post in latest_posts %}
-    {% card_post post author %}
-    {% endfor %}
-</div>
-{% endif %}
+    {% if latest_posts %}
+        <div class="container align-self-center" id="post_container">
+            {% for post in latest_posts %}
+                {% card_post post author %}
+            {% endfor %}
+        </div>
+    {% endif %}
 
-<button id="add_btn" type="button" data-bs-toggle="modal" data-bs-target="#add_post_modal">
-    <img src="{% static 'assets/add_btn.png' %}" alt="add posts" style="object-fit: contain; width: 100%">
-</button>
+    <button id="add_btn" type="button" data-bs-toggle="modal" data-bs-target="#add_post_modal">
+        <img src="{% static 'assets/add_btn.png' %}" alt="add posts" style="object-fit: contain; width: 100%">
+    </button>
 
-<form method="POST" action="{% url 'socialDistribution:posts' author.id %}" id="create_post_form">
-    {% csrf_token %}
-    {% modal id="add_post_modal" type=modal_type label="Create Post" title="Create Post" btn="Publish"%}
-</form>
+    <form enctype="multipart/form-data" method="POST" action="{% url 'socialDistribution:posts' author.id %}" id="create_post_form">
+        {% csrf_token %}
+        {% modal id="add_post_modal" type=modal_type label="Create Post" title="Create Post" btn="Publish"%}
+    </form>
 
-<script>
-    $('#add_post_modal').on('hidden.bs.modal', function () {
-        $('#create_post_form').trigger('reset');
-    })
-
-    // https://stackoverflow.com/a/25060114 - LostInComputer
-    $('#edit_post_modal').on('show.bs.modal', function (e) {
-        var title = $(e.relatedTarget).data('bs-title');
-        var source = $(e.relatedTarget).data('bs-source');
-        var origin = $(e.relatedTarget).data('bs-origin');
-        //var categories = $(e.relatedTarget).data('bs-categories');
-        var description = $(e.relatedTarget).data('bs-description');
-        var content = $(e.relatedTarget).data('bs-content');
-        var visibility = $(e.relatedTarget).data('bs-visibility');
-
-        var unlistedInput = $(e.relatedTarget).data('bs-unlisted');
-        var unlisted = unlistedInput === 'True';
-
-        $(e.currentTarget).find('input[name="title"]').val(title);
-        $(e.currentTarget).find('input[name="source"]').val(source);
-        $(e.currentTarget).find('input[name="origin"]').val(origin);
-        //$(e.currentTarget).find('input[name="categories"]').val(categories);
-        $(e.currentTarget).find('input[name="description"]').val(description);
-        $(e.currentTarget).find('textarea[name="content"]').val(content);
-        // TODO
-        //$(e.currentTarget).find('input[name="content_media"]').val(post);
-        $(e.currentTarget).find('input[name="unlisted"]').prop('checked', unlisted);
-        $(e.currentTarget).find('select[name="visibility"]').val(visibility);
-    })
-</script>
+    <script>
+        $('#add_post_modal').on('hidden.bs.modal', function() {
+            $('#create_post_form').trigger('reset');
+        })
+    </script>
 {% endblock %}

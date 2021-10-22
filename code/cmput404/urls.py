@@ -15,9 +15,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic.base import RedirectView
+
+from cmput404.constants import API_PREFIX, CLIENT_PREFIX
 
 urlpatterns = [
-    path('', include('socialDistribution.urls')),
-    path('api/', include('api.urls')),
+    path('', RedirectView.as_view(url='app/login', permanent=True), name='index'),
+    path(CLIENT_PREFIX, include('socialDistribution.urls')),
+    path(API_PREFIX, include('api.urls')),
     path('admin/', admin.site.urls),
 ]

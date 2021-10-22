@@ -1,19 +1,25 @@
-from django.http.response import HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404
+from django.http.response import *
+from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
-from django.http import HttpResponse
-from django.shortcuts import redirect
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout, get_user_model
 
-from .forms import CreateUserForm
+from .forms import CreateUserForm, PostForm
 from .decorators import allowedUsers, unauthenticated_user
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.db.models import Count
+from django.urls import reverse
 from .models import *
 from datetime import datetime
-# Create your views here.
+import base64
+
+REQUIRE_SIGNUP_APPROVAL = False
+''' 
+    sign up approval not required by default, should turn on in prod. 
+    if time permits store this in database and allow change from admin dashboard.
+'''
 
 
 def get_home_context(author, error, msg=''):
@@ -27,12 +33,17 @@ def get_home_context(author, error, msg=''):
     context['error_msg'] = msg
     return context
 
-
-@unauthenticated_user
 def index(request):
-    return HttpResponse("Hello, world. You're at the Login/SignUp Page.")
+    """
+        Redirect User on visiting /
+    """
+    if request.user.is_authenticated:
+        author_id = get_object_or_404(Author, user=request.user).id
+        return redirect('socialDistribution:home', author_id=author_id)
+    else:
+        return redirect('socialDistribution:login')
 
-
+        
 @unauthenticated_user
 def loginPage(request):
     """
@@ -51,7 +62,11 @@ def loginPage(request):
             messages.info(request, "Login Failed. Please try again.")
             return render(request, 'user/login.html')
 
-        if user.is_active:
+        if REQUIRE_SIGNUP_APPROVAL and not user.is_active:
+            # user inactive
+            messages.info(request, "Your account is currently pending approval. Please check back later.")
+        else:
+            # user active, proceed to authentication
             user = authenticate(request, username=username, password=password)
 
             try:
@@ -65,10 +80,6 @@ def loginPage(request):
 
             except (KeyError, Author.DoesNotExist):
                 messages.info(request, "Username or Password is incorrect.")
-        else:
-            # user inactive
-            messages.info(
-                request, "Your account is currently pending approval. Please check back later.")
 
     return render(request, 'user/login.html')
 
@@ -93,13 +104,16 @@ def register(request):
 
                 # check github url
                 if (github_url and not github_url.startswith('https://github.com/')):
-                    context = {'form': form}
-                    messages.info(
-                        request, 'Invalid github url, must be of format: https://github.com/username')
+                    context = { 'form': form }
+                    form.errors['github_url'] = 'Invalid github url, must be of format: https://github.com/username'
                     return render(request, 'user/register.html', context)
 
                 user = form.save()
-                user.is_active = False  # admin must approve user from console
+
+                if REQUIRE_SIGNUP_APPROVAL:
+                    # admin must approve user from console 
+                    user.is_active = False 
+
                 user.save()
 
                 # add user to author group by default
@@ -114,14 +128,16 @@ def register(request):
                 Inbox.objects.create(author=author)
             except:
                 return HttpResponse("Sign up failed. Internal Server Error. Please Try again.", status=500)
+            
+            if REQUIRE_SIGNUP_APPROVAL:
+                messages.success(request, f'Account creation request sent to admin for {username}.')
+            else:
+                messages.success(request, f'Account created for {username}.')
 
-            messages.success(
-                request, f'Account creation request sent to admin for {username}')
-
+            # On successful sign up request, redirect to login page
             return redirect('socialDistribution:login')
-        else:
-            print(form.errors['password2'])
-    context = {'form': form}
+        
+    context = { 'form': form }
     return render(request, 'user/register.html', context)
 
 
@@ -151,7 +167,6 @@ def accept_friend(request, author_id):
         messages.info(request, f'Couldn\'t accept request')
 
     return redirect('socialDistribution:author', author_id)
-
 
 def befriend(request, author_id):
     if request.method == 'POST':
@@ -241,70 +256,50 @@ def author(request, author_id):
 def create(request):
     return render(request, 'create/index.html')
 
-
-def parsePostRequest(request):
-    postDetails = {}
-    postDetails['title'] = request.POST.get('title')
-    postDetails['source'] = request.POST.get('source')
-    postDetails['origin'] = request.POST.get('origin')
-    postDetails['categories'] = request.POST.get('categories').split()
-    postDetails['description'] = request.POST.get('description')
-    postDetails['content'] = request.POST.get('content')
-    postDetails['visibility'] = request.POST.get('visibility')
-    postDetails['is_unlisted'] = request.POST.get('unlisted')
-    postDetails['pub_date'] = datetime.now()
-
-    if postDetails['is_unlisted'] is None:
-        postDetails['is_unlisted'] = False
-    else:
-        postDetails['is_unlisted'] = True
-
-    if postDetails['visibility'] == 'PR':
-        postDetails['visibility'] = Post.PostVisibility.FRIENDS
-    else:
-        postDetails['visibility'] = Post.PostVisibility.PUBLIC
-
-    # temporarily set to zero; will need to fix that soon!
-    postDetails['page_size'] = 0
-    postDetails['count'] = 0
-
-    return postDetails
-
-
 def posts(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
 
     if request.method == 'POST':
-        postDetails = parsePostRequest(request)
+        form = PostForm(request.POST, request.FILES)
+        if form.is_valid():
+            bin_content = form.cleaned_data.get('content_media')
+            if bin_content is not None:
+                content_media = base64.b64encode(bin_content.read())
+            else:
+                content_media = None
 
-        try:
-            post = Post.objects.create(
-                author_id=author_id,  # temporary
-                title=postDetails['title'],
-                source=postDetails['source'],
-                description=postDetails['origin'],
-                content_text=postDetails['content'],
-                visibility=postDetails['visibility'],
-                pub_date=postDetails['pub_date'],
-                unlisted=postDetails['is_unlisted'],
-                page_size=postDetails['page_size'],
-                count=postDetails['count']
-            )
+            pub_date = datetime.now()
 
-            for category in postDetails['categories']:
-                Category.objects.create(category=category, post=post)
+            try:
+                post = Post.objects.create(
+                    author_id=author_id,  # temporary
+                    title=form.cleaned_data.get('title'), 
+                    source=request.build_absolute_uri(request.path),    # will need to fix when moved to api
+                    origin=request.build_absolute_uri(request.path),    # will need to fix when moved to api
+                    description=form.cleaned_data.get('description'),
+                    content_text=form.cleaned_data.get('content_text'),
+                    visibility=form.cleaned_data.get('visibility'),
+                    unlisted=form.cleaned_data.get('unlisted'),
+                    content_media=content_media,
+                    pub_date=pub_date,
+                    count=0
+                )
 
-        except ValidationError:
-            context = get_home_context(
-                author, True, "Something went wrong! Couldn't create post.")
-            return render(request, 'home/index.html', context)
+                categories = form.cleaned_data.get('categories')
+                if categories is not None:
+                    categories = categories.split()
 
-        else:
-            # if using view name, app_name: must prefix the view name
-            # In this case, app_name is socialDistribution
-            return redirect('socialDistribution:home', author_id=author_id)
+                    for category in categories:
+                        Category.objects.create(category=category, post=post)
 
-    return render(request, 'posts/index.html')
+            except ValidationError:
+                messages.info(request, 'Unable to create new post.')
+
+    context = get_home_context(author, True, "Something went wrong! Couldn't create post.")
+
+    # if using view name, app_name: must prefix the view name
+    # In this case, app_name is socialDistribution
+    return redirect('socialDistribution:home', author_id=author_id)
 
 
 def editPost(request, id):
@@ -312,41 +307,50 @@ def editPost(request, id):
     post = Post.objects.get(id=id)
 
     if request.method == 'POST':
-        postDetails = parsePostRequest(request)
-        print(postDetails)
-        post.title = postDetails['title']
-        post.source = postDetails['source']
-        post.origin = postDetails['origin']
-        post.description = postDetails['description']
-        post.content_text = postDetails['content']
-        post.pub_date = postDetails['pub_date']
-        post.unlisted = postDetails['is_unlisted']
-        post.visibility = postDetails['visibility']
-
-        categories = postDetails['categories']
-
-        # temporarily set to zero; will need to fix that soon!
-        post.page_size = postDetails['page_size']
-        post.count = postDetails['count']
-
-        previousCategories = Category.objects.filter(post=post)
-        previousCategoriesNames = [cat.category for cat in previousCategories]
-
-        # Create new categories
-        for category in categories:
-            if category in previousCategoriesNames:
-                previousCategoriesNames.remove(category)
+        form = PostForm(request.POST, request.FILES)
+        if form.is_valid():
+            bin_content = form.cleaned_data.get('content_media')
+            if bin_content is not None:
+                content_media = base64.b64encode(bin_content.read())
             else:
-                Category.objects.create(category=category, post=post)
+                content_media = None
 
-        # Remove old categories that were deleted
-        for category in previousCategoriesNames:
-            Category.objects.get(category=category, post=post).delete()
+            pub_date = datetime.now()
 
-        post.save()
-        return redirect('socialDistribution:home', author_id=author.id)
+            try:
+                post.title = form.cleaned_data.get('title'), 
+                post.source = request.build_absolute_uri(request.path),    # will need to fix when moved to api
+                post.origin = request.build_absolute_uri(request.path),    # will need to fix when moved to api
+                post.description = form.cleaned_data.get('description'),
+                post.content_text = form.cleaned_data.get('content_text'),
+                post.visibility = form.cleaned_data.get('visibility'),
+                post.unlisted = form.cleaned_data.get('unlisted'),
+                post.content_media = content_media,
+                post.pub_date = pub_date,
+                post.count = 0
 
-    return render(request, 'posts/index.html')
+                categories = form.cleaned_data.get('categories')
+                previousCategories = Category.objects.filter(post=post)
+                previousCategoriesNames = [cat.category for cat in previousCategories]
+                # Create new categories
+                for category in categories:
+                    if category in previousCategoriesNames:
+                        previousCategoriesNames.remove(category)
+                    else:
+                        Category.objects.create(category=category, post=post)
+
+                # Remove old categories that were deleted
+                for category in previousCategoriesNames:
+                    Category.objects.get(category=category, post=post).delete()
+
+            except ValidationError:
+                messages.info(request, 'Unable to edit post.')
+
+    context = get_home_context(author, True, "Something went wrong! Couldn't create post.")
+
+    # if using view name, app_name: must prefix the view name
+    # In this case, app_name is socialDistribution
+    return redirect('socialDistribution:home', author_id=author.id)
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
 
@@ -360,6 +364,29 @@ def likePost(request, id):
     else:
         post.likes.add(author)
     return redirect('socialDistribution:home', author_id=author.id)
+
+def commentPost(request, id):
+    '''
+        Render Post and comments
+    '''
+    post = get_object_or_404(Post, id = id)
+    author = get_object_or_404(Author, user=request.user)
+
+    try:
+        comments = Comment.objects.filter(post=post).order_by('-pub_date')
+    except Exception:
+        return HttpResponseServerError()
+
+    context = {
+        'author': author,
+        'author_type': 'Local',
+        'modal_type': 'post',
+        'post': post,
+        'comments': comments
+    }
+    
+    return render(request, 'posts/comments.html', context)
+
 
 
 def deletePost(request, id):
