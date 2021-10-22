@@ -309,6 +309,7 @@ def editPost(request, id):
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES)
         if form.is_valid():
+            print("VALID")
             bin_content = form.cleaned_data.get('content_media')
             if bin_content is not None:
                 content_media = base64.b64encode(bin_content.read())
@@ -318,20 +319,21 @@ def editPost(request, id):
             pub_date = datetime.now()
 
             try:
-                post.title = form.cleaned_data.get('title'), 
-                post.source = request.build_absolute_uri(request.path),    # will need to fix when moved to api
-                post.origin = request.build_absolute_uri(request.path),    # will need to fix when moved to api
-                post.description = form.cleaned_data.get('description'),
-                post.content_text = form.cleaned_data.get('content_text'),
-                post.visibility = form.cleaned_data.get('visibility'),
-                post.unlisted = form.cleaned_data.get('unlisted'),
-                post.content_media = content_media,
-                post.pub_date = pub_date,
+                post.title = form.cleaned_data.get('title')
+                post.source = request.build_absolute_uri(request.path)    # will need to fix when moved to api
+                post.origin = request.build_absolute_uri(request.path)    # will need to fix when moved to api
+                post.description = form.cleaned_data.get('description')
+                post.content_text = form.cleaned_data.get('content_text')
+                post.visibility = form.cleaned_data.get('visibility')
+                post.unlisted = form.cleaned_data.get('unlisted')
+                post.content_media = content_media
+                post.pub_date = pub_date
                 post.count = 0
 
-                categories = form.cleaned_data.get('categories')
+                categories = form.cleaned_data.get('categories').split()
                 previousCategories = Category.objects.filter(post=post)
                 previousCategoriesNames = [cat.category for cat in previousCategories]
+
                 # Create new categories
                 for category in categories:
                     if category in previousCategoriesNames:
@@ -342,6 +344,8 @@ def editPost(request, id):
                 # Remove old categories that were deleted
                 for category in previousCategoriesNames:
                     Category.objects.get(category=category, post=post).delete()
+                
+                post.save()
 
             except ValidationError:
                 messages.info(request, 'Unable to edit post.')
