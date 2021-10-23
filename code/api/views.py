@@ -135,6 +135,25 @@ class PostLikesView(View):
     def get(self, request, author_id, post_id):
         return HttpResponse("This is the authors/aid/posts/pid/likes/ endpoint")
 
+    # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
+    def post(self, request, author_id, post_id):
+        #TODO refactor to use like object format in spec
+        if (not request.user):
+            return HttpResponseForbidden()
+
+        try:
+            post = get_object_or_404(Post, id=post_id)
+            author = Author.objects.get(user=request.user)
+            if post.likes.filter(id=author.id).exists():
+                post.likes.remove(author)
+            else:
+                post.likes.add(author)
+
+        except Exception:
+            return HttpResponse('Internal Server Error')
+
+        return redirect('socialDistribution:home', author_id=author.id)
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostCommentsView(View):
@@ -143,19 +162,20 @@ class PostCommentsView(View):
     '''
 
     def get(self, request, author_id, post_id):
-        # Send all comments 
+        # Send all comments
         # TODO: Update json response and data serialization to match spec
         try:
-            comments = Comment.objects.filter(post=post_id).order_by('-pub_date')
-            
+            comments = Comment.objects.filter(
+                post=post_id).order_by('-pub_date')
+
             serializedComments = []
             for comment in comments:
-                serialized_obj = serializers.serialize('json', [ comment, ])
+                serialized_obj = serializers.serialize('json', [comment, ])
                 serializedComments.append(serialized_obj)
         except Exception as e:
             print(e)
             return HttpResponseServerError()
-          
+
         return JsonResponse(serializedComments, safe=False)
 
     def post(self, request, author_id, post_id):
@@ -171,18 +191,17 @@ class PostCommentsView(View):
             post = get_object_or_404(Post, id=post_id)
 
             comment = Comment.objects.create(
-                author = author,
-                post = post,
-                comment = comment,
-                content_type = 'PL', # TODO: add content type
-                pub_date =pub_date,
+                author=author,
+                post=post,
+                comment=comment,
+                content_type='PL',  # TODO: add content type
+                pub_date=pub_date,
             )
 
         except Exception:
             return HttpResponse('Internal Server Error')
 
         return redirect('socialDistribution:commentPost', id=post_id)
-
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -232,7 +251,6 @@ class InboxView(View):
 
         except KeyError:
             return HttpResponseBadRequest()
-
 
     def delete(self, request, author_id):
         """ DELETE - Clear the inbox """

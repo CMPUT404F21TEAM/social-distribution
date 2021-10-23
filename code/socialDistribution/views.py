@@ -289,17 +289,6 @@ def posts(request, author_id):
     # In this case, app_name is socialDistribution
     return redirect('socialDistribution:home', author_id=author_id)
 
-# https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-def likePost(request, id):
-    # move functionality to API
-    post = get_object_or_404(Post, id = id)
-    author = Author.objects.get(user=request.user)
-    if post.likes.filter(id=author.id).exists():
-        post.likes.remove(author)
-    else:
-        post.likes.add(author)
-    return redirect('socialDistribution:home', author_id=author.id)
-
 def commentPost(request, id):
     '''
         Render Post and comments
