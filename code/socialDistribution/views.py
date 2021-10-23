@@ -309,14 +309,12 @@ def editPost(request, id):
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES)
         if form.is_valid():
-            print("VALID")
             bin_content = form.cleaned_data.get('content_media')
             if bin_content is not None:
                 content_media = base64.b64encode(bin_content.read())
             else:
                 content_media = None
 
-            pub_date = datetime.now()
 
             try:
                 post.title = form.cleaned_data.get('title')
@@ -327,7 +325,6 @@ def editPost(request, id):
                 post.visibility = form.cleaned_data.get('visibility')
                 post.unlisted = form.cleaned_data.get('unlisted')
                 post.content_media = content_media
-                post.pub_date = pub_date
                 post.count = 0
 
                 categories = form.cleaned_data.get('categories').split()
@@ -350,7 +347,7 @@ def editPost(request, id):
             except ValidationError:
                 messages.info(request, 'Unable to edit post.')
 
-    context = get_home_context(author, True, "Something went wrong! Couldn't create post.")
+    context = get_home_context(author, True, "Something went wrong! Couldn't edit post.")
 
     # if using view name, app_name: must prefix the view name
     # In this case, app_name is socialDistribution
