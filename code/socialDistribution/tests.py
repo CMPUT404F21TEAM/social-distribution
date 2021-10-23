@@ -1,10 +1,26 @@
 from django.test import TestCase
 from mixer.backend.django import mixer
 from datetime import timedelta
-
-
 from .models import *
-# Create your tests here.
+from .builders import *
+
+
+class PostTest(TestCase):
+    def test_post_is_public(self):
+        visibility = Post.FRIENDS
+        post = PostBuilder().visibility(visibility).build()
+        self.assertFalse(post.is_public())
+
+    def test_post_when(self):
+        time = datetime.now(timezone.utc)
+        post = PostBuilder().pub_date(time).build()
+        self.assertTrue(post.when() == 'just now')
+
+    def test_post_total_likes(self):
+        likes = 25
+        post = PostBuilder().likes(likes).build()
+        self.assertTrue(post.total_likes() == likes)
+
 
 class CommentModelTests(TestCase):
 
@@ -29,6 +45,3 @@ class CommentModelTests(TestCase):
         comment = mixer.blend(Comment, author=author, post=post, pub_date = pub_date  )
 
         self.assertIs( comment.when() == '10 seconds ago', True)
-
-
-
