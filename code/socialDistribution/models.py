@@ -5,9 +5,7 @@ import timeago
 
 from cmput404.constants import HOST, API_PREFIX
 
-# Create your models here.
 
-## DUMMY
 class Author(models.Model):
     '''
     Author model:
@@ -34,18 +32,18 @@ class Author(models.Model):
 
     def as_json(self):
         return {
-            "type":"author",
+            "type": "author",
             # ID of the Author
-            "id":f"http://{HOST}/{API_PREFIX}/author/{self.id}",
+            "id": f"http://{HOST}/{API_PREFIX}/author/{self.id}/",
             # the home host of the author
-            "host":f'http://{HOST}/{API_PREFIX}/',
+            "host": f'http://{HOST}/{API_PREFIX}/',
             # the display name of the author
-            "displayName":self.username,
+            "displayName": self.displayName,
             # url to the authors profile
-            "url":f"http://{HOST}/{API_PREFIX}/author/{self.id}",
+            "url": f"http://{HOST}/{API_PREFIX}/author/{self.id}/",
             # HATEOS url for Github API
-            "github":self.githubUrl,
-            # Image from a public domain 
+            "github": self.githubUrl,
+            # Image from a public domain
             # #TODO
             "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
         }
@@ -120,7 +118,7 @@ class Post(models.Model):
         visibility          PUBLIC or FRIENDS
         unlisted            Boolean indicating whether post is listed or not
         likes               Authors that liked this post
-        
+
     '''
     class PostContentType(models.TextChoices):
         MARKDOWN = 'MD', 'text/markdown'
@@ -141,15 +139,16 @@ class Post(models.Model):
     description = models.CharField(max_length=DESCRIPTION_MAXLEN)
 
     content_type = models.CharField(
-        choices=PostContentType.choices, 
+        choices=PostContentType.choices,
         max_length=4,
         default=PostContentType.PLAIN
     )
-    
+
     content_text = models.TextField(max_length=CONTEXT_TEXT_MAXLEN)
 
     # Base64 encoded binary field (image/png, image/jpg, application/base64)
-    content_media = models.BinaryField(max_length=CONTENT_MEDIA_MAXLEN, null=True, blank=True)
+    content_media = models.BinaryField(
+        max_length=CONTENT_MEDIA_MAXLEN, null=True, blank=True)
     author = models.ForeignKey('Author', on_delete=models.CASCADE)
 
     count = models.PositiveSmallIntegerField(default=0)
@@ -162,9 +161,11 @@ class Post(models.Model):
         (FRIENDS, 'FRIENDS')
     )
 
-    visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default=PUBLIC)
+    visibility = models.CharField(
+        max_length=10, choices=VISIBILITY_CHOICES, default=PUBLIC)
     unlisted = models.BooleanField()
-    likes = models.ManyToManyField('Author', related_name="liked_post", blank=True)
+    likes = models.ManyToManyField(
+        'Author', related_name="liked_post", blank=True)
 
     def has_media(self):
         '''
@@ -185,7 +186,7 @@ class Post(models.Model):
     def when(self):
         '''
         Returns string describing when post the was created
-        
+
         For example,
             3 days ago
             1 min ago
@@ -199,7 +200,6 @@ class Post(models.Model):
     def total_likes(self):
         return self.likes.count()
 
-        
 
 class Inbox(models.Model):
     '''
@@ -208,9 +208,12 @@ class Inbox(models.Model):
         posts           posts pushed to this inbox (M2M)
         followRequests  follow requests pushed to this inbox (M2M)
     '''
-    author = models.OneToOneField('Author', on_delete=models.CASCADE, primary_key=True)
-    posts = models.ManyToManyField('Post', related_name='pushed_posts', blank=True)
-    follow_requests = models.ManyToManyField('Author', related_name='follow_requests', blank=True)
+    author = models.OneToOneField(
+        'Author', on_delete=models.CASCADE, primary_key=True)
+    posts = models.ManyToManyField(
+        'Post', related_name='pushed_posts', blank=True)
+    follow_requests = models.ManyToManyField(
+        'Author', related_name='follow_requests', blank=True)
 
     def has_req_from(self, author):
         return self.follow_requests.filter(pk=author.id).exists()
