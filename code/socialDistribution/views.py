@@ -13,13 +13,23 @@ from django.db.models import Count
 from django.urls import reverse
 from .models import *
 from datetime import datetime
-import base64
+import base64, requests, json
 
 REQUIRE_SIGNUP_APPROVAL = False
 ''' 
     sign up approval not required by default, should turn on in prod. 
     if time permits store this in database and allow change from admin dashboard.
 '''
+
+def make_request(method='GET', url='http://127.0.0.1:8000/', body=''):
+    r = None
+    if method == 'GET':
+        r = requests.get(url)
+    elif method == 'POST':
+        r = requests.post(url, data=body)
+
+    if r.status_code == 200:
+        print(f'{method} succeeded')
 
 def get_home_context(author, error, msg=''):
     context = {}
@@ -288,6 +298,24 @@ def posts(request, author_id):
     # if using view name, app_name: must prefix the view name
     # In this case, app_name is socialDistribution
     return redirect('socialDistribution:home', author_id=author_id)
+
+def likePost(request, id):
+    author = Author.objects.get(user=request.user)
+    post = get_object_or_404(Post, id=id)
+    host = request.get_host()
+    if request.method == 'POST':
+    # create like object
+        like =  {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "summary": f"{author.username} Likes your post",         
+        "type": "like",
+        "author":author.as_json(host),
+        "object":f"http://{host}/author/{post.author.id}/posts/{id}"
+        }  
+    # redirect request to remote/local api
+    make_request('POST', f'http://{host}/api/author/{post.author.id}/inbox/', json.dumps(like))
+
+    return redirect('socialDistribution:home', author_id=author.id)
 
 def commentPost(request, id):
     '''

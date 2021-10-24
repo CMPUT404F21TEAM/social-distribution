@@ -135,25 +135,6 @@ class PostLikesView(View):
     def get(self, request, author_id, post_id):
         return HttpResponse("This is the authors/aid/posts/pid/likes/ endpoint")
 
-    # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-    def post(self, request, author_id, post_id):
-        #TODO refactor to use like object format in spec
-        if (not request.user):
-            return HttpResponseForbidden()
-
-        try:
-            post = get_object_or_404(Post, id=post_id)
-            author = Author.objects.get(user=request.user)
-            if post.likes.filter(id=author.id).exists():
-                post.likes.remove(author)
-            else:
-                post.likes.add(author)
-
-        except Exception:
-            return HttpResponse('Internal Server Error')
-
-        return redirect('socialDistribution:home', author_id=author.id)
-
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostCommentsView(View):
@@ -228,6 +209,8 @@ class InboxView(View):
             - if the type is “follow” then add that follow is added to the author’s inbox to approve later
             - if the type is “like” then add that like to the author’s inbox    
         """
+        if (not request.user):
+                    return HttpResponseForbidden()
 
         data = json.loads(request.body)
         try:
@@ -244,7 +227,21 @@ class InboxView(View):
                 return HttpResponse(response_data)  # okay
 
             elif data["type"] == "like":
-                return HttpResponse(status=501)  # not implemented
+                # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
+                try:
+                    postId = data["object"].split("/")[-1]
+                    likingAuthorId = data["author"]["id"].split("/")[-1]
+                    post = get_object_or_404(Post, id=postId)
+                    author = Author.objects.get(id=likingAuthorId)
+                    if post.likes.filter(id=author.id).exists():
+                        post.likes.remove(author)
+                    else:
+                        post.likes.add(author)
+
+                except Exception:
+                    return HttpResponse('Internal Server Error')
+
+                return HttpResponse(status=200)
 
             else:
                 return HttpResponseBadRequest()

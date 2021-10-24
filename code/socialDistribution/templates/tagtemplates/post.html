@@ -21,13 +21,13 @@
     <div class="card-footer bg-white d-flex justify-content-between">
         <span>
             {% if isLiked %}
-            <form method="post" action="{% url 'api:post_likes' post.author.id post.id %}" class="d-flex">
+            <form method="post" action="{% url 'socialDistribution:likePost' post.id %}" class="d-flex">
                 {% csrf_token %}
                 <button class="btn btn-secondary"><i class="fas fa-thumbs-up"></i></button>
             </form>
 
             {% else %}
-            <form method="post" action="{% url 'api:post_likes' post.author.id post.id %}" class="d-flex">
+            <form method="post" action="{% url 'socialDistribution:likePost' post.id %}" class="d-flex">
                 {% csrf_token %}
                 <button class="btn btn-primary"><i class="fas fa-thumbs-up"></i></button>
             </form>
