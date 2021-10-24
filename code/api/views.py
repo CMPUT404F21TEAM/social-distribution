@@ -133,7 +133,23 @@ class PostView(View):
 class PostLikesView(View):
 
     def get(self, request, author_id, post_id):
-        return HttpResponse("This is the authors/aid/posts/pid/likes/ endpoint")
+        """ GET - Get a list of authors who like {post_id} """
+        try:
+            post = Post.objects.get(id=post_id)
+            authors = []
+            for author in post.likes.all():
+                authorJson = author.as_json(request.get_host())
+                authors.append(authorJson)
+
+            response = {
+                "type:": "likes",
+                "likes": authors}
+
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError()
+            
+        return JsonResponse(response)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
