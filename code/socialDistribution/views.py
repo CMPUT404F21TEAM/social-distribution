@@ -1,7 +1,7 @@
 from django.http.response import *
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout, get_user_model
 
@@ -152,18 +152,23 @@ def home(request, author_id):
     return render(request, 'home/index.html', context)
 
 
-def accept_friend(request, author_id):
+def friend_request(request, author_id, action):
     author = get_object_or_404(Author, pk=author_id)
     curr_user = Author.objects.get(user=request.user)
 
-    if curr_user.id != author.id and curr_user.inbox.has_req_from(author) \
-            and not curr_user.has_follower(author):
-        curr_user.inbox.follow_requests.remove(author)
-        curr_user.followers.add(author)
-    else:
-        messages.info(request, f'Couldn\'t accept request')
+    if request.method == 'POST':
+        if action not in ['accept', 'decline']:
+            return HttpResponseNotFound()
 
-    return redirect('socialDistribution:author', author_id)
+        elif curr_user.id != author.id and curr_user.inbox.has_req_from(author) \
+            and not curr_user.has_follower(author):
+            curr_user.inbox.follow_requests.remove(author)
+            if action == 'accept':
+                curr_user.followers.add(author)
+        else:
+            messages.info(request, f'Couldn\'t {action} request')
+
+    return redirect('socialDistribution:inbox')
 
 def befriend(request, author_id):
     if request.method == 'POST':
@@ -401,3 +406,14 @@ def profile(request):
 
 def user(request):
     return render(request, 'user/index.html')
+
+
+def inbox(request):
+    author = Author.objects.get(user=request.user)
+    follow_requests = author.inbox.follow_requests.all()
+    context = {
+        'author': author,
+        'follow_requests': follow_requests
+    }
+
+    return render(request, 'author/inbox.html', context)

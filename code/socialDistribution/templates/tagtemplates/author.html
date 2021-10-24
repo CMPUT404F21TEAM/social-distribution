@@ -53,6 +53,13 @@
                                     </form>
                                 {% endif %}
                             </div>
+                        {% else %}
+                            <div class="author-card-opt d-flex ml-10">
+                                <form method="GET" action="{% url 'socialDistribution:inbox' %}">
+                                    {% csrf_token %}
+                                    <button class="btn bg-white text-primary px-1">See inbox</button>
+                                </form>
+                            </div>                            
                         {% endif %}
 
                      
