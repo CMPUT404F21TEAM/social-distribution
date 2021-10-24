@@ -165,10 +165,10 @@ class Post(models.Model):
         '''
         followed_author_set = Author.objects.filter(followers__id=author.id)
         follower_author_set = author.followers.all()
-        followed_author_set.intersection(follower_author_set)   # friends set
+        friends_set = followed_author_set and follower_author_set   # friends set
         return cls.objects.filter(
             unlisted=False,
-            author__in=followed_author_set, 
+            author__in=friends_set, 
             visibility=Post.FRIENDS,
         )
 
