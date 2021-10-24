@@ -8,6 +8,10 @@ import json
 
 from socialDistribution.models import Author
 
+# Documentation and code samples taken from the following references:
+# Django Software Foundation, https://docs.djangoproject.com/en/3.2/intro/tutorial05/
+# Django Software Foundation, https://docs.djangoproject.com/en/3.2/topics/testing/overview/
+# Python Software Foundation, https://docs.python.org/3/library/unittest.html
 
 def create_author(id, username, displayName, githubUrl):
     user = mixer.blend(User, username=username)
