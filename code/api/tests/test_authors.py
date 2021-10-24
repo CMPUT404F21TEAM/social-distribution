@@ -1,3 +1,5 @@
+# python manage.py test api
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -104,7 +106,32 @@ class AuthorsViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data.get("type"), "authors")
-        self.assertEqual(len(data.get("items")), 3, "Expected to recieve list of 3 authors")
+        self.assertEqual(len(data.get("items")), 3,
+                         "Expected to recieve list of 3 authors")
 
         items = data.get("items")
         self.assertListEqual(items, expected)
+
+    def test_get_author(self):
+        author = create_author(
+            1,
+            "user1",
+            "John Doe",
+            "https://github.com/johndoe"
+        )
+        expected = {
+            "type": "author",
+            "id": "http://127.0.0.1:8000/api/author/1",
+            "host": "http://127.0.0.1:8000/api/",
+            "displayName": "John Doe",
+            "url": "http://127.0.0.1:8000/api/author/1",
+            "github": "https://github.com/johndoe",
+            "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
+        }
+        response = self.client.get(
+            reverse("api:author", kwargs={"author_id": 1}))
+
+        actual = json.loads(response.content)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(actual, expected)
