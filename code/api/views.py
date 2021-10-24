@@ -128,7 +128,7 @@ class LikedView(View):
             for post in authorLikedPosts:
                 like =  {
                     "@context": "https://www.w3.org/ns/activitystreams",
-                    "summary": f"{author.username} Likes your post",         
+                    "summary": f"{author.displayName} Likes your post",         
                     "type": "like",
                     "author":author.as_json(host),
                     "object":f"http://{host}/author/{post.author.id}/posts/{post.id}"
@@ -274,15 +274,13 @@ class InboxView(View):
             "message": f"This is the inbox for author_id={author_id}. Only author {author_id} can read this."
         })
 
+    #TODO: authenticate user
     def post(self, request, author_id):
         """ POST - Send a post to {author_id}
             - if the type is “post” then add that post to the author’s inbox
             - if the type is “follow” then add that follow is added to the author’s inbox to approve later
             - if the type is “like” then add that like to the author’s inbox    
         """
-        if (not request.user):
-                    return HttpResponseForbidden()
-
         data = json.loads(request.body)
         try:
             if data["type"] == "post":
