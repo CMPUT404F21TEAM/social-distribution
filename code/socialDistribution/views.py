@@ -21,14 +21,11 @@ REQUIRE_SIGNUP_APPROVAL = False
     if time permits store this in database and allow change from admin dashboard.
 '''
 
-
 def get_home_context(author, error, msg=''):
     context = {}
     context['author'] = author
     context['modal_type'] = 'post'
-    latest_posts = Post.objects.filter(
-        unlisted=False).order_by("-pub_date")[:5]
-    context['latest_posts'] = latest_posts
+    context['latest_posts'] = Post.get_latest_posts(author)
     context['error'] = error
     context['error_msg'] = msg
     return context
@@ -242,7 +239,7 @@ def authors(request):
 def author(request, author_id):
     curr_user = Author.objects.get(user=request.user)
     author = get_object_or_404(Author, pk=author_id)
-    posts = Post.objects.filter(author__pk=author.id)
+    posts = author.get_visible_posts_to(curr_user)
     context = {
         'author': author,
         'author_type': 'Local',
@@ -325,7 +322,6 @@ def editPost(request, id):
                 post.visibility = form.cleaned_data.get('visibility')
                 post.unlisted = form.cleaned_data.get('unlisted')
                 post.content_media = content_media
-                post.count = 0
 
                 categories = form.cleaned_data.get('categories').split()
                 previousCategories = Category.objects.filter(post=post)

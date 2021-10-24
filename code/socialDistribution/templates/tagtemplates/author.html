@@ -32,9 +32,9 @@
 
                         {% if not profile_card %}
                             {% if author.post__count == 1 %}
-                                <p>{{author.post__count}} public post</p>
+                                <p>{{author.post__count}} post</p>
                             {% else %}
-                                <p>{{author.post__count}} public posts</p>
+                                <p>{{author.post__count}} posts</p>
                             {% endif %}
                         {% elif not author_is_user %}
                             <div class="author-card-opt d-flex ml-10">
