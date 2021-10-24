@@ -166,7 +166,11 @@ class Post(models.Model):
         followed_author_set = Author.objects.filter(followers__id=author.id)
         follower_author_set = author.followers.all()
         followed_author_set.intersection(follower_author_set)   # friends set
-        return cls.objects.filter(author__in=followed_author_set)
+        return cls.objects.filter(
+            unlisted=False,
+            author__in=followed_author_set, 
+            visibility=Post.FRIENDS,
+        )
 
     @classmethod
     def get_latest_posts(cls, author):
@@ -180,7 +184,7 @@ class Post(models.Model):
             visibility=Post.PUBLIC
         ).exclude(author=author)
 
-        # all posts created by user that are listed
+        # all listed posts created by user
         user_posts_set = cls.objects.filter(
             unlisted=False,
             author=author
