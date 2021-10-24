@@ -7,8 +7,9 @@ import json
 from socialDistribution.models import Author
 
 
-def create_author(username, displayName, githubUrl):
-    return Author.objects.create(username=username, displayName=displayName, githubUrl=githubUrl)
+def create_author(id, username, displayName, githubUrl):
+    user = mixer.blend(User, username=username)
+    return Author.objects.create(id=id, username=username, displayName=displayName, githubUrl=githubUrl, user=user)
 
 
 class AuthorsViewTests(TestCase):
@@ -22,16 +23,17 @@ class AuthorsViewTests(TestCase):
 
     def test_get_authors_single(self):
         author = create_author(
+            1,
             "user1",
             "John Doe",
             "https://github.com/johndoe"
         )
         expected = {
             "type": "author",
-            "id": "http://127.0.0.1:8000/api/author/1/",
+            "id": "http://127.0.0.1:8000/api/author/1",
             "host": "http://127.0.0.1:8000/api/",
             "displayName": "John Doe",
-            "url": "http://127.0.0.1:8000/api/author/1/",
+            "url": "http://127.0.0.1:8000/api/author/1",
             "github": "https://github.com/johndoe",
             "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
         }
@@ -47,17 +49,21 @@ class AuthorsViewTests(TestCase):
         self.assertDictEqual(author, expected)
 
     def test_get_authors_multiple(self):
+        user = mixer.blend(User)
         author1 = create_author(
+            1,
             "user1",
             "John Smith",
             "https://github.com/smith"
         )
         author2 = create_author(
+            2,
             "user2",
             "Apple J Doe",
             "https://github.com/apple"
         )
         author3 = create_author(
+            3,
             "user3",
             "Jane Smith G. Sr.",
             "https://github.com/another"
@@ -66,28 +72,28 @@ class AuthorsViewTests(TestCase):
         expected = [
             {
                 "type": "author",
-                "id": "http://127.0.0.1:8000/api/author/1/",
+                "id": "http://127.0.0.1:8000/api/author/1",
                 "host": "http://127.0.0.1:8000/api/",
                 "displayName": "John Smith",
-                "url": "http://127.0.0.1:8000/api/author/1/",
+                "url": "http://127.0.0.1:8000/api/author/1",
                 "github": "https://github.com/smith",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             },
             {
                 "type": "author",
-                "id": "http://127.0.0.1:8000/api/author/2/",
+                "id": "http://127.0.0.1:8000/api/author/2",
                 "host": "http://127.0.0.1:8000/api/",
                 "displayName": "Apple J Doe",
-                "url": "http://127.0.0.1:8000/api/author/2/",
+                "url": "http://127.0.0.1:8000/api/author/2",
                 "github": "https://github.com/apple",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             },
             {
                 "type": "author",
-                "id": "http://127.0.0.1:8000/api/author/3/",
+                "id": "http://127.0.0.1:8000/api/author/3",
                 "host": "http://127.0.0.1:8000/api/",
                 "displayName": "Jane Smith G. Sr.",
-                "url": "http://127.0.0.1:8000/api/author/3/",
+                "url": "http://127.0.0.1:8000/api/author/3",
                 "github": "https://github.com/another",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             }

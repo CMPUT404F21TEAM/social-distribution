@@ -34,13 +34,13 @@ class Author(models.Model):
         return {
             "type": "author",
             # ID of the Author
-            "id": f"http://{HOST}/{API_PREFIX}/author/{self.id}/",
+            "id": f"http://{HOST}/{API_PREFIX}/author/{self.id}",
             # the home host of the author
             "host": f'http://{HOST}/{API_PREFIX}/',
             # the display name of the author
             "displayName": self.displayName,
             # url to the authors profile
-            "url": f"http://{HOST}/{API_PREFIX}/author/{self.id}/",
+            "url": f"http://{HOST}/{API_PREFIX}/author/{self.id}",
             # HATEOS url for Github API
             "github": self.githubUrl,
             # Image from a public domain
