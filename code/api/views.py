@@ -288,12 +288,15 @@ class InboxView(View):
 
             elif data["type"] == "follow":
                 actor, obj = data["actor"], data["object"]
-                # actor want's to follow object
-                # need to add actor URL to object's inbox
-                # object decides later to add actor URL to its outward feed (followers)
-                # demo, try with spec sample data
-                response_data = str(data["actor"]) + "\n" + str(data["object"])
-                return HttpResponse(response_data)  # okay
+                # Actor requests to follow Object
+                followerId = data["actor"]["id"].split('/')[-1]
+                followeeId = data["object"]["id"].split('/')[-1]
+
+                inbox = Inbox.objects.get(author_id=followeeId)
+                followerAuthor = Author.objects.get(id=followerId)
+                inbox.follow_requests.add(followerAuthor)
+
+                return HttpResponse(status=204)  # okay
 
             elif data["type"] == "like":
                 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma

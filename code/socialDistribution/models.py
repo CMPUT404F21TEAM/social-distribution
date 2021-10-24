@@ -40,6 +40,10 @@ class Author(models.Model):
     def __str__(self):
         return self.displayName
 
+    def as_url(self):
+        host = "127.0.0.1:8080"
+        return "http://{host}/author/{self.id}"
+
     def as_json(self, host):
         return {
             "type":"author",
