@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from datetime import *
 import timeago
 
+from cmput404.constants import HOST, API_PREFIX
+
 # Create your models here.
 
 ## DUMMY
@@ -30,17 +32,17 @@ class Author(models.Model):
     def __str__(self):
         return self.displayName
 
-    def as_json(self, host):
+    def as_json(self):
         return {
             "type":"author",
             # ID of the Author
-            "id":f"http://{host}/author/{self.id}",
+            "id":f"http://{HOST}/{API_PREFIX}/author/{self.id}",
             # the home host of the author
-            "host":f'http://{host}/',
+            "host":f'http://{HOST}/{API_PREFIX}/',
             # the display name of the author
             "displayName":self.username,
             # url to the authors profile
-            "url":f"http://{host}/author/{self.id}",
+            "url":f"http://{HOST}/{API_PREFIX}/author/{self.id}",
             # HATEOS url for Github API
             "github":self.githubUrl,
             # Image from a public domain 
