@@ -13,7 +13,8 @@ from django.db.models import Count
 from django.urls import reverse
 from .models import *
 from datetime import datetime
-import base64, requests, json
+from .utility import make_request
+import base64, json
 
 REQUIRE_SIGNUP_APPROVAL = False
 ''' 
@@ -21,13 +22,6 @@ REQUIRE_SIGNUP_APPROVAL = False
     if time permits store this in database and allow change from admin dashboard.
 '''
 
-def make_request(method='GET', url='http://127.0.0.1:8000/', body=''):
-    r = None
-    print(method, url, body)
-    if method == 'GET':
-        r = requests.get(url)
-    elif method == 'POST':
-        r = requests.post(url, data=body)
 
 def get_home_context(author, error, msg=''):
     context = {}
