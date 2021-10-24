@@ -360,10 +360,7 @@ def editPost(request, id):
     return redirect('socialDistribution:home', author_id=author.id)
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-
-
 def likePost(request, id):
-    # move functionality to API
     post = get_object_or_404(Post, id=id)
     author = Author.objects.get(user=request.user)
     post = get_object_or_404(Post, id=id)

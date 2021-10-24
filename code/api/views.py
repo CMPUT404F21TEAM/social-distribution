@@ -119,7 +119,31 @@ class FollowersView(View):
 class LikedView(View):
 
     def get(self, request, author_id):
-        return HttpResponse("This is the authors/aid/liked/ endpoint")
+        """ GET - Get a list of like objects from {author_id} """
+        try:
+            author = Author.objects.get(id=author_id)
+            authorLikedPosts = Post.objects.filter(likes__exact=author)
+            host = request.get_host()
+            likes = []
+            for post in authorLikedPosts:
+                like =  {
+                    "@context": "https://www.w3.org/ns/activitystreams",
+                    "summary": f"{author.username} Likes your post",         
+                    "type": "like",
+                    "author":author.as_json(host),
+                    "object":f"http://{host}/author/{post.author.id}/posts/{post.id}"
+                    }  
+                likes.append(like)
+
+            response = {
+                "type:": "liked",
+                "items": likes}
+
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError()
+            
+        return JsonResponse(response)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -143,7 +167,7 @@ class PostLikesView(View):
 
             response = {
                 "type:": "likes",
-                "likes": authors}
+                "items": authors}
 
         except Exception as e:
             print(e)
