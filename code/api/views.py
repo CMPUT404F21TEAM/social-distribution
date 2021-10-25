@@ -79,8 +79,7 @@ class FollowersView(View):
         """ GET - Get a list of authors who are the followers of {author_id} """
 
         author = get_object_or_404(Author, pk=author_id)
-        followers = [follower.get_json()
-                     for follower in author.followers.all()]
+        followers = [follower.as_json() for follower in author.followers.all()]
 
         response = {
             "type": "followers",
