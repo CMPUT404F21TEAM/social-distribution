@@ -266,6 +266,8 @@ class CommentLikesView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class InboxView(View):
+    """ This endpoint currently only works for requests from local server.
+    """
 
     @method_decorator(authenticate_request)
     def get(self, request, author_id):
@@ -301,18 +303,14 @@ class InboxView(View):
 
             elif data["type"] == "like":
                 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-                try:
-                    postId = data["object"].split("/")[-1]
-                    likingAuthorId = data["author"]["id"].split("/")[-1]
-                    post = get_object_or_404(Post, id=postId)
-                    author = Author.objects.get(id=likingAuthorId)
-                    if post.likes.filter(id=author.id).exists():
-                        post.likes.remove(author)
-                    else:
-                        post.likes.add(author)
-
-                except Exception:
-                    return HttpResponse('Internal Server Error')
+                postId = data["object"].split("/")[-1]
+                likingAuthorId = data["author"]["id"].split("/")[-1]
+                post = get_object_or_404(Post, id=postId)
+                author = Author.objects.get(id=likingAuthorId)
+                if post.likes.filter(id=author.id).exists():
+                    post.likes.remove(author)
+                else:
+                    post.likes.add(author)
 
                 return HttpResponse(status=200)
 
@@ -321,6 +319,9 @@ class InboxView(View):
 
         except KeyError:
             return HttpResponseBadRequest()
+        
+        except:
+            return HttpResponse("Internal Server Error", status=500)
 
     def delete(self, request, author_id):
         """ DELETE - Clear the inbox """
