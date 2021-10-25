@@ -11,6 +11,7 @@ import json
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
 from .decorators import authenticate_request
+from .parsers import local_url_parser
 
 # References for entire file:
 # Django Software Foundation, "Introduction to class-based views", 2021-10-13
@@ -287,10 +288,10 @@ class InboxView(View):
                 return HttpResponse(status=501)  # not implemented
 
             elif data["type"] == "follow":
-                actor, obj = data["actor"], data["object"]
                 # Actor requests to follow Object
-                followerId = data["actor"]["id"].split('/')[-1]
-                followeeId = data["object"]["id"].split('/')[-1]
+                actor, obj = data["actor"], data["object"]
+                followerId = local_url_parser.parse_author(actor["id"])
+                followeeId = local_url_parser.parse_author(obj["id"])
 
                 inbox = Inbox.objects.get(author_id=followeeId)
                 followerAuthor = Author.objects.get(id=followerId)
