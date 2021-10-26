@@ -5,8 +5,7 @@ class LocalUrlParser():
 
     def assert_local_url(self, url):
         o = urlsplit(url)
-        host = "http://" + o.netloc + '/'
-        print(HOST, host)
+        host = o.netloc
         if (host != HOST):
             raise ValueError("URL ID does not match local host")
 

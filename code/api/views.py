@@ -259,7 +259,7 @@ class InboxView(View):
                 actor, obj = data["actor"], data["object"]
                 followerId = local_url_parser.parse_author(actor["id"])
                 followeeId = local_url_parser.parse_author(obj["id"])
-
+                
                 inbox = Inbox.objects.get(author_id=followeeId)
                 followerAuthor = Author.objects.get(id=followerId)
                 inbox.follow_requests.add(followerAuthor)
@@ -285,7 +285,8 @@ class InboxView(View):
         except KeyError:
             return HttpResponseBadRequest()
         
-        except:
+        except Exception as e:
+            logger.error(e, exc_info=True)
             return HttpResponse("Internal Server Error", status=500)
 
     def delete(self, request, author_id):
