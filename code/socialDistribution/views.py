@@ -352,7 +352,7 @@ def editPost(request, id):
 
     # if using view name, app_name: must prefix the view name
     # In this case, app_name is socialDistribution
-    return redirect('socialDistribution:home', author_id=author.id)
+    return redirect('socialDistribution:home')
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
 def likePost(request, id):
