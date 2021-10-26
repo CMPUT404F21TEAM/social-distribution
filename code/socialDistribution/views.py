@@ -366,7 +366,7 @@ def likePost(request, id):
         "@context": "https://www.w3.org/ns/activitystreams",
         "summary": f"{author.username} Likes your post",         
         "type": "like",
-        "author":author.as_json(host),
+        "author":author.as_json(),
         "object":f"http://{host}/author/{post.author.id}/posts/{id}"
         }  
     # redirect request to remote/local api
