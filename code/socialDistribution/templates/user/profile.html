@@ -1,0 +1,85 @@
+{% extends 'navBase.html' %}
+
+{% block head %}
+    <title>Profile</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'user/profile.css' %}">
+
+{% endblock %}
+
+{% block body %}
+
+<div class="row mt-5">
+
+   <div class="col col-lg-3 ">
+        <img src="{{ author.profileImageUrl }}"
+        class="profile-img align-middle" alt="Profile Image">
+   </div>
+
+   <div class="col col-lg-9">
+        <form
+            method="post"
+            action="{% url 'api:author' author.id %}" 
+        >
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input disabled type="text" class="form-control" name="username" id="username" value="{{ author.username }}">
+            </div>
+
+            <div class="mb-3">
+                <label for="first_name" class="form-label">First Name</label>
+                <input disabled type="text" class="form-control" name="first_name" id="first_name" value="{{ author.first_name }}">
+            </div>
+            
+            <div class="mb-3">
+                <label for="last_name" class="form-label">Last Name</label>
+                <input disabled type="text" class="form-control" name="last_name" id="last_name" value="{{ author.last_name }}">
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input disabled type="email" class="form-control" name="email" id="email" value="{{ author.email }}">
+            </div>
+
+            <div class="mb-3">
+                <label for="github_url" class="form-label">GitHub URL</label>
+                <input disabled type="url" class="form-control" name="github_url" id="github_url" value="{{ author.githubUrl }}">
+            </div>
+
+            <div class="mb-3">
+                <label for="profile_image_url" class="form-label">Profile Image URL</label>
+                <input disabled type="url" class="form-control" name="profile_image_url" id="profile_image_url" value="{{ author.profileImageUrl }}">
+            </div>
+
+            <button class="btn btn-primary" id="profile_edit_button">Edit Profile</button>
+            <button type="submit" id="profile_submit_button" class="btn btn-primary d-none">Submit</button>
+        </form>
+    </div>  
+
+</div>
+
+<script>
+    // Enable Edit form 
+    $( "#profile_edit_button" ).click( event => {
+        event.preventDefault(); // don't submit form
+
+        // Loop all inputs
+        for (input of $("input")) {
+            // prevent username edit
+            if (input.name === 'username') {
+                continue;
+            }
+
+            // enable input
+            input.disabled = false;
+            $('#email').focus()
+        }
+    })
+
+    $('input').on('input', () => {
+        // show submit button
+        $('#profile_submit_button').removeClass('d-none');
+    })
+
+</script>
+{% endblock %}

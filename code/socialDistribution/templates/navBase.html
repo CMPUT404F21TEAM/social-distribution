@@ -47,7 +47,9 @@
         </div>
       </div>
       <div class="wide-scr-btn d-flex nav-right justify-content-between">
-        <button class="btn btn-outline-light rounded-pill m-sm-1" type="button">Hello, {{request.user}}</button>
+        <button class="btn btn-outline-light rounded-pill m-sm-1" type="button">
+          <a id="profileLink" href="{% url 'socialDistribution:profile' %}">Hello, {{request.user}}</a>
+        </button>
         <form action="{% url 'socialDistribution:logout' %}" method="GET">
           <button class="btn btn-secondary rounded-pill m-sm-1" type="submit">Logout</button>
         </form>

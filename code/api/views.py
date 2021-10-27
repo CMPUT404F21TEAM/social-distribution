@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.http.response import *
 from django.http import HttpResponse, JsonResponse
 from django.http.response import HttpResponseBadRequest
@@ -69,7 +70,39 @@ class AuthorView(View):
 
     def post(self, request, author_id):
         """ POST - Update profile of {author_id} """
-        return HttpResponse("authors post\nupdate profile")
+        # check if authenticated
+        if (not request.user):
+            return HttpResponseForbidden()
+
+        # extract post data
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        github_url = request.POST.get('github_url')
+        email = request.POST.get('email')
+        profile_image_url = request.POST.get('profile_image_url')
+
+        djangoUser = get_object_or_404(get_user_model(), username = request.user)
+        author = get_object_or_404(Author, user=request.user)
+        
+        try:
+            # update author
+            author.displayName = f"{first_name} {last_name}"
+            author.githubUrl = github_url
+            author.profileImageUrl = profile_image_url
+            author.save()
+
+            # update django user
+            djangoUser.email = email
+            djangoUser.first_name = first_name
+            djangoUser.last_name = last_name
+            djangoUser.save()
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseServerError()
+
+        return redirect('socialDistribution:profile')
+
 
 
 @method_decorator(csrf_exempt, name='dispatch')
