@@ -59,7 +59,7 @@ class Author(models.Model):
             "github": self.githubUrl,
             # Image from a public domain
             # #TODO
-            "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
+            "profileImage": self.profileImageUrl
         }
 
 
