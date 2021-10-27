@@ -251,24 +251,25 @@ class InboxView(View):
         """
         data = json.loads(request.body)
         try:
+            # This logic still requires error checking. Refactor needed.
             if data["type"] == "post":
                 post_author_id, post_id = local_url_parser.parse_post(data["id"])   # TODO: Can't assume local post
 
                 inbox = get_object_or_404(Inbox, author_id=author_id)
                 post = Post.objects.get(id=post_id, author_id=post_author_id)       # TODO: Need to check if exists
                 inbox.posts.add(post)
-                
+
                 return HttpResponse(status=204)  # okay
 
             elif data["type"] == "follow":
                 # Actor requests to follow Object
                 actor, obj = data["actor"], data["object"]
-                followerId = local_url_parser.parse_author(actor["id"])
-                followeeId = local_url_parser.parse_author(obj["id"])
+                followerId = local_url_parser.parse_author(actor["id"])             # TODO: Can't assume follower is local
+                followeeId = local_url_parser.parse_author(obj["id"])               # TODO: Need to check if correct inbox
                 
                 inbox = Inbox.objects.get(author_id=followeeId)
-                followerAuthor = Author.objects.get(id=followerId)
-                inbox.follow_requests.add(followerAuthor)
+                followerAuthor = Author.objects.get(id=followerId)                  # TODO: Can't assume follower is local
+                inbox.follow_requests.add(followerAuthor)                           
 
                 return HttpResponse(status=204)  # okay
 
