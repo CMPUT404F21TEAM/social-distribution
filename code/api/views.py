@@ -252,50 +252,13 @@ class InboxView(View):
         data = json.loads(request.body)
         try:
             if data["type"] == "post":
-                # author=Author.objects.get(id=local_url_parser.parse_author(data["author"]["id"]))
-                # local_url_parser.parse_author(data["author"]["id"])
-                # TODO: create Post -> LocalPost and RemotePost
-                # why don't put all in post?
-                # comments, likes, author, etc not managed by us
-                #   change these to urls?
-                #   but private comments and likes are handled differently
-                # Main problem? What relations should we keep track of?
-                # Authors --> Post? Yeah
-                # Authors -> Posts --> Comments? Would make sense
-                # If not, delete a post and the commain remains. No referential 
-                # integreity 
-                # post = Post(
-                #     title=data["title"],
-                #     source=data["source"],
-                #     origin=data["origin"],
-                #     description = data["description"],
-                #     content_text=data["content"],
-                #     # categories
-                #     author=author,
-                #     visibility=data["visibility"],
-                #     pub_date=data["published"],
+                post_author_id, post_id = local_url_parser.parse_post(data["id"])   # TODO: Can't assume local post
 
-                #     unlisted=data["unlisted"],
-                #     "categories":["web","tutorial"],
-                #     "comments":"http://127.0.0.1:5454/author/9de17f29c12e8f97bcbbd34cc908f1baba40658e/posts/de305d54-75b4-431b-adb2-eb6b9e546013/comments",
-                #     "published":"2015-03-09T13:07:04+00:00",
-
-                # )
-
-                #                 post = Post.objects.create(
-                #     author_id=author_id,  # temporary
-                #     title=form.cleaned_data.get('title'), 
-                #     source=request.build_absolute_uri(request.path),    # will need to fix when moved to api
-                #     origin=request.build_absolute_uri(request.path),    # will need to fix when moved to api
-                #     description=form.cleaned_data.get('description'),
-                #     content_text=form.cleaned_data.get('content_text'),
-                #     visibility=form.cleaned_data.get('visibility'),
-                #     unlisted=true,
-                #     content_media=content_media,
-                #     pub_date=pub_date,
-                #     count=0
-                # )
-                return HttpResponse(status=501)  # not implemented
+                inbox = get_object_or_404(Inbox, author_id=author_id)
+                post = Post.objects.get(id=post_id, author_id=post_author_id)       # TODO: Need to check if exists
+                inbox.posts.add(post)
+                
+                return HttpResponse(status=204)  # okay
 
             elif data["type"] == "follow":
                 # Actor requests to follow Object

@@ -30,5 +30,22 @@ class LocalUrlParser():
 
         return path_components[1]
 
+    def parse_post(self, url):
+        """ Parse the URL of a local post and return the author_id, post_id. Throws value error if the URL
+            is not hosted on the local server.
+        """
+
+        self.assert_local_url(url)
+
+        o = urlsplit(url)
+        path_components = o.path.strip('/').split('/')
+        if path_components[0] == API_PREFIX[:-2]:
+            path_components.pop(0)
+
+        if len(path_components) != 4 or path_components[0] != "author" or path_components[2] != "posts":
+            raise ValueError("URL does not match format of post ID")
+
+        return path_components[1], path_components[3]
+
 
 local_url_parser = LocalUrlParser()
