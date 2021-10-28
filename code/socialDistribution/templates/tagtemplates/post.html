@@ -11,7 +11,7 @@
     <div class="card-body d-flex flex-column overflow-auto object-fit">
         <h4 class="card-title mx-auto">{{ post.title }}</h4>
         <p class="card-text text-center">
-            <span class="mx-auto">{{ post.description }}<span>
+            <span class="mx-auto">{{ post.description }}<span><br>
             <span class="p-1 content-markdown">{{ post.content_text | safe}}</span>
         </p>
         {% if content_media %}

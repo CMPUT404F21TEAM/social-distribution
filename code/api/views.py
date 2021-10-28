@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.http.response import *
 from django.http import HttpResponse, JsonResponse
 from django.http.response import HttpResponseBadRequest
@@ -68,9 +69,43 @@ class AuthorView(View):
         response = author.as_json()
         return JsonResponse(response)
 
+    @method_decorator(authenticate_request)
     def post(self, request, author_id):
         """ POST - Update profile of {author_id} """
-        return HttpResponse("authors post\nupdate profile")
+
+        # extract post data
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        github_url = request.POST.get('github_url')
+        email = request.POST.get('email')
+        profile_image_url = request.POST.get('profile_image_url')
+
+        # check data for empty string
+        if (not first_name or not last_name or not email):
+            return HttpResponseBadRequest()
+
+        djangoUser = get_object_or_404(get_user_model(), username = request.user)
+        author = get_object_or_404(Author, user=request.user)
+        
+        try:
+            # update author
+            author.displayName = f"{first_name} {last_name}"
+            author.githubUrl = github_url
+            author.profileImageUrl = profile_image_url
+            author.save()
+
+            # update django user
+            djangoUser.email = email
+            djangoUser.first_name = first_name
+            djangoUser.last_name = last_name
+            djangoUser.save()
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseServerError()
+
+        return redirect('socialDistribution:profile')
+
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -158,32 +193,15 @@ class PostCommentsView(View):
     def get(self, request, author_id, post_id):
         # Send all comments
         try:
-            comments = Comment.objects.filter(
-                post=post_id).order_by('-pub_date')
-
             page = request.GET.get("page")
             size = request.GET.get("size")
+            post = get_object_or_404(Post, id=post_id)
+            author = get_object_or_404(Author, id=author_id)
+            # Check if the post author match with author in url
+            if post.author.id != author.id:
+                return HttpResponseNotFound()
 
-            commentsList = []
-            for comment in comments:
-                # add comment to list
-                commentsList.append({
-                    "type": "comment",
-                    "author": comment.author.as_json(),
-                    "comment": comment.comment,
-                    "contentType": "text/markdown",
-                    "published": comment.pub_date,
-                    "id": f"http://{HOST}/{API_PREFIX}author/{author_id}/posts/{comment.post.id}/comments/{comment.id}",
-                })
-
-            response = {
-                "type": "comments",
-                "page": 1,
-                "size": 5,
-                "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}",
-                "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}/comments",
-                "comments": commentsList
-            }
+            response = post.get_comments_as_json()
 
         except Exception as e:
             logger.error(e, exc_info=True)
