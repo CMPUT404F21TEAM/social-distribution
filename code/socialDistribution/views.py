@@ -325,7 +325,7 @@ def editPost(request, id):
             if bin_content is not None:
                 content_media = base64.b64encode(bin_content.read())
             else:
-                content_media = None
+                content_media = post.content_media
 
 
             try:

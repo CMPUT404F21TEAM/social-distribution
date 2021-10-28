@@ -61,6 +61,7 @@ class PostForm(forms.Form):
             self.fields['categories'].initial = previousCategoriesNames
             
             self.fields['content_text'].initial = post.content_text
+            
             self.fields['content_media'].initial = post.content_media
             self.fields['unlisted'].initial = post.unlisted
             self.fields['visibility'].initial = post.visibility
