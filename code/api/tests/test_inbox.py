@@ -43,19 +43,19 @@ class InboxViewTests(TestCase):
             "summary": "Greg wants to follow Lara",
             "actor": {
                 "type": "author",
-                "id": "http://127.0.0.1:8000/author/1",
-                "url": "http://127.0.0.1:8000/author/1",
-                "host": "http://127.0.0.1:8000/",
+                "id": "http://127.0.0.1:8000/api/author/1",
+                "url": "http://127.0.0.1:8000/api/author/1",
+                "host": "http://127.0.0.1:8000/api/",
                 "displayName": "Greg Johnson",
                 "github": "http://github.com/gjohnson",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             },
             "object": {
                 "type": "author",
-                "id": "http://127.0.0.1:8000/author/2",
-                "host": "http://127.0.0.1:8000/",
+                "id": "http://127.0.0.1:8000/api/author/2",
+                "host": "http://127.0.0.1:8000/api/",
                 "displayName": "Lara Croft",
-                "url": "http://127.0.0.1:8000/author/2",
+                "url": "http://127.0.0.1:8000/api/author/2",
                 "github": "http://github.com/laracroft",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             }
@@ -67,7 +67,7 @@ class InboxViewTests(TestCase):
             data=body
         )
 
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 200)
 
         query_set = author2.inbox.follow_requests.all()
         self.assertEqual(query_set.count(), 1)
@@ -95,7 +95,7 @@ class InboxViewTests(TestCase):
         body = {
             "type": "post",
             "title": "A Friendly post title about a post about web dev",
-            "id": "http://127.0.0.1:8000/author/1/posts/1",  # this is the only line being parsed right now!
+            "id": "http://127.0.0.1:8000/api/author/1/posts/1",  # this is the only line being parsed right now!
             "source": "http://lastplaceigotthisfrom.com/posts/yyyyy",
             "origin": "http://whereitcamefrom.com/posts/zzzzz",
             "description": "This post discusses stuff -- brief",
@@ -124,7 +124,7 @@ class InboxViewTests(TestCase):
             data=body
         )
 
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 200)
 
         # Check the received posts of author2
         query_set = author2.inbox.posts.all()
