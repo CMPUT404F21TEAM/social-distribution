@@ -97,8 +97,7 @@ class Comment(models.Model):
             "author": self.author.as_json(),
             "comment": self.comment,
             "contentType": "text/markdown",
-            # ISO 8601 TIMESTAMP
-            "published": self.pub_date.replace(microsecond=0).isoformat(),
+            "published": str(self.pub_date),
             "id": f"http://{HOST}/{API_PREFIX}/author/{self.post.author.id}/posts/{self.post.id}/comments/{self.id}",
         }
 
