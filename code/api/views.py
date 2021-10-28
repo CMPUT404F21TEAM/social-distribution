@@ -69,11 +69,9 @@ class AuthorView(View):
         response = author.as_json()
         return JsonResponse(response)
 
+    @method_decorator(authenticate_request)
     def post(self, request, author_id):
         """ POST - Update profile of {author_id} """
-        # check if authenticated
-        if (not request.user):
-            return HttpResponseForbidden()
 
         # extract post data
         first_name = request.POST.get('first_name')
@@ -81,6 +79,10 @@ class AuthorView(View):
         github_url = request.POST.get('github_url')
         email = request.POST.get('email')
         profile_image_url = request.POST.get('profile_image_url')
+
+        # check data for empty string
+        if (not first_name or not last_name or not email):
+            return HttpResponseBadRequest()
 
         djangoUser = get_object_or_404(get_user_model(), username = request.user)
         author = get_object_or_404(Author, user=request.user)

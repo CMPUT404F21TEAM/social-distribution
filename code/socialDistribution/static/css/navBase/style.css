@@ -77,6 +77,10 @@ h1 {
 }
 
 #profileLink {
-    color: inherit;
+    color: white;
     text-decoration: none;
+}
+
+#profileLink:hover {
+    color: inherit;
 }
