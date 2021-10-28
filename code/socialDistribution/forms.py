@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django import forms
-from .models import Post, Author
+from .models import Post, Author, Category
 
 class CreateUserForm(UserCreationForm):
     """
@@ -28,6 +28,7 @@ class PostForm(forms.Form):
         required=False,
         widget=forms.Textarea
     )
+    
     content_media = forms.FileField(required=False)
     unlisted = forms.BooleanField(required=False)
     visibility = forms.ChoiceField(
@@ -43,8 +44,26 @@ class PostForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user')
+        postId = 0
+        if 'postId' in kwargs:
+            postId = kwargs.pop('postId')
+        post = None
+        if postId > 0:
+            post = Post.objects.get(id=postId)
         super(PostForm, self).__init__(*args, **kwargs)
         self.fields['post_recipients'].queryset = Author.objects.all().exclude(id=user)
+        if post:
+            self.fields['title'].initial = post.title
+            self.fields['description'].initial = post.description
+            
+            previousCategories = Category.objects.filter(post=post)
+            previousCategoriesNames = " ".join([cat.category for cat in previousCategories])
+            self.fields['categories'].initial = previousCategoriesNames
+            
+            self.fields['content_text'].initial = post.content_text
+            self.fields['content_media'].initial = post.content_media
+            self.fields['unlisted'].initial = post.unlisted
+            self.fields['visibility'].initial = post.visibility
         
     def clean_visibility(self):
         data = self.cleaned_data['visibility']
