@@ -137,7 +137,6 @@ class LikedView(View):
             likes = []
             for post in authorLikedPosts:
                 like = {
-                    "@context": "https://www.w3.org/ns/activitystreams",
                     "summary": f"{author.displayName} Likes your post",
                     "type": "like",
                     "author": author.as_json(),
