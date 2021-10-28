@@ -63,21 +63,13 @@
     {% endblock %}
   </div>
 
-  <!-- source: https://www.youtube.com/watch?v=ha88SKZL8Pc&ab_channel=CodingEntrepreneurs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/0.0.2/marked.min.js"></script>
-  <script type="text/javascript">
-    $(document).ready(function(){
-      $(".content-markdown").each(function(){
-        var content = $(this).text()
-        var markedContent = marked(content)
-        $(this).html(markedContent)
-      })
-    })
-  </script>
-
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.2/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-kQtW33rZJAHjgefvhyyzcGF3C5TFyBQBA13V1RKPf4uH+bwyzQxZ6CmMZHmNBEfJ" crossorigin="anonymous">
   </script>
+
+  <!-- source: https://www.youtube.com/watch?v=ha88SKZL8Pc&ab_channel=CodingEntrepreneurs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/0.0.2/marked.min.js"></script>
+  <script type="text/javascript" src="{% static 'admin/js/markdown.js' %}"></script>
 </body>
 
 </html>
