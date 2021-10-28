@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import *
@@ -90,6 +91,16 @@ class Comment(models.Model):
         '''
         now = datetime.now(timezone.utc)
         return timeago.format(self.pub_date, now)
+
+    def as_json(self):
+        return {
+            "type": "comment",
+            "author": self.author.as_json(),
+            "comment": self.comment,
+            "contentType": "text/markdown",
+            "published": str(self.pub_date),
+            "id": f"http://{HOST}/{API_PREFIX}/author/{self.post.author.id}/posts/{self.post.id}/comments/{self.id}",
+        }
 
 
 class Category(models.Model):
@@ -218,6 +229,20 @@ class Post(models.Model):
             user_posts_set
         ).order_by("-pub_date")[:]
 
+    def get_comments_as_json(self):
+        author_id = self.author.id
+        comments_set = Comment.objects.filter(
+            post=self.id).order_by('-pub_date')[:5]
+        comment_list = [comment.as_json() for comment in comments_set]
+        return {
+            "type": "comments",
+            "page": 1,
+            "size": 5,
+            "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}",
+            "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}/comments",
+            "comments": comment_list
+        }
+
     def has_media(self):
         '''
         Check if post has an attached image
@@ -268,3 +293,9 @@ class Inbox(models.Model):
 
     def has_req_from(self, author):
         return self.follow_requests.filter(pk=author.id).exists()
+
+    def add_post(self, post):
+        try:
+            self.posts.add(post)
+        except ValidationError:
+            raise
