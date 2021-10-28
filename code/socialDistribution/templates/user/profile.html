@@ -12,8 +12,13 @@
 <div class="row mt-5">
 
    <div class="col col-lg-3 ">
+    {% if author.profileImageUrl %}
         <img src="{{ author.profileImageUrl }}"
         class="profile-img align-middle" alt="Profile Image">
+    {% else %}
+        <img src="{% static 'assets/blank-profile-picture.png' %}"
+        class="profile-img align-middle" alt="Profile Imag">
+    {% endif %}
    </div>
 
    <div class="col col-lg-9">
@@ -28,17 +33,17 @@
 
             <div class="mb-3">
                 <label for="first_name" class="form-label">First Name</label>
-                <input disabled type="text" class="form-control" name="first_name" id="first_name" value="{{ author.first_name }}">
+                <input required disabled type="text" class="form-control" name="first_name" id="first_name" value="{{ author.first_name }}">
             </div>
             
             <div class="mb-3">
                 <label for="last_name" class="form-label">Last Name</label>
-                <input disabled type="text" class="form-control" name="last_name" id="last_name" value="{{ author.last_name }}">
+                <input required disabled type="text" class="form-control" name="last_name" id="last_name" value="{{ author.last_name }}">
             </div>
 
             <div class="mb-3">
                 <label for="email" class="form-label">Email</label>
-                <input disabled type="email" class="form-control" name="email" id="email" value="{{ author.email }}">
+                <input required disabled type="email" class="form-control" name="email" id="email" value="{{ author.email }}">
             </div>
 
             <div class="mb-3">

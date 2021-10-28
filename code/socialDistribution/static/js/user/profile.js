@@ -11,8 +11,12 @@
 
             // enable input
             input.disabled = false;
-            $('#email').focus()
         }
+
+        // set focus and cursor to first editable input end
+        firstNameInput = $('#first_name')
+        firstNameInputValue = firstNameInput.focus().val();
+        firstNameInput.val('').val(firstNameInputValue);
     })
 
     $('input').on('input', () => {
