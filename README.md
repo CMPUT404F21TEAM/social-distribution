@@ -11,8 +11,11 @@ pip install -r requirements.txt
 Build locally
 ```
 python manage.py collectstatic --noinput
+python manage.py migrate
 python manage.py runserver
 ```
+
+`.env` file must be placed in `./code` directory.
 
 #  General Web Service API Information
 ```
