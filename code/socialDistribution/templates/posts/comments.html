@@ -35,6 +35,10 @@
     {% csrf_token %}
     {% modal id="edit_post_modal" type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
 </form>
+<form method="POST" action="{% url 'socialDistribution:deletePost' post.id %}">
+    {% csrf_token %}
+    {% modal id="delete_post_modal" type="delete" label="Delete Post" title="Delete Post" btn="Delete"%}
+</form>
 
 <script>
     // https://stackoverflow.com/a/40233358 - Shuhad zaman "urlParam"
@@ -44,8 +48,12 @@
     }
 
     $(function () {
-        if ($.urlParam('edit') == 'edit') {
+        var param = $.urlParam('action');
+        console.log(param);
+        if (param == 'edit') {
             $('#edit_post_modal').modal('show');
+        } else if (param == 'delete') {
+            $('#delete_post_modal').modal('show');
         }
     });
 
