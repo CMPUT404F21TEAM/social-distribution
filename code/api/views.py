@@ -159,20 +159,17 @@ class LikedView(View):
 class PostsView(View):
 
     def get(self, request, author_id):
-        # Send all comments
+        # Send all posts
         try:
             #TODO handle pagination
             page = request.GET.get("page")
             size = request.GET.get("size")
             author = get_object_or_404(Author, id=author_id)
             posts = Post.objects.filter(author=author)
-            print('posts endpoint')
-            
-            
+        
             jsonPosts = []
             for post in posts:
                 jsonPosts.append(post.as_json())
-            
 
             response = {
                 "type": "post",

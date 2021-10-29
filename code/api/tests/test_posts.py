@@ -75,7 +75,6 @@ class PostsViewTest(TestCase):
         self.maxDiff = None
         post = mixer.blend(Post, content_type='PL')
         expected = get_post_json(post)
-        #expected_data = json.dumps(expected)
 
         response = self.client.get(reverse('api:posts', args=(post.author.id,)))
         self.assertEqual(response.status_code, 200)
