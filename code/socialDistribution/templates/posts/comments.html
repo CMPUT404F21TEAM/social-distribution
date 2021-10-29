@@ -37,8 +37,14 @@
 </form>
 
 <script>
+    // https://stackoverflow.com/a/40233358 - Shuhad zaman "urlParam"
+    $.urlParam = function (name) {
+        var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+        return results[1] || 0;
+    }
+
     $(function () {
-        if (true) {
+        if ($.urlParam('edit') == 'edit') {
             $('#edit_post_modal').modal('show');
         }
     });
