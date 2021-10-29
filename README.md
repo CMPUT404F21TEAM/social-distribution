@@ -13,9 +13,10 @@ Build locally
 python manage.py collectstatic --noinput
 python manage.py runserver
 ```
-See project.org (plain-text/org-mode) for a description of the project.
 
-Make a distributed social network!
+# Documentation
+To learn more about the Web Service API and the app features check out the [documentation](https://github.com/CMPUT404F21TEAM/social-distribution/wiki/Web-Service-API-Documentation)
+
 
 # Team Members 
 The team members and their GitHub usernames
