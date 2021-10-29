@@ -172,7 +172,7 @@ class PostsView(View):
                 jsonPosts.append(post.as_json())
 
             response = {
-                "type": "post",
+                "type": "posts",
                 "page": page,
                 "size": size,
                 "items": jsonPosts

@@ -17,7 +17,7 @@ def get_post_json(post):
     previousCategories = Category.objects.filter(post=post)
     previousCategoriesNames = [cat.category for cat in previousCategories]
     return {
-        "type":"post",
+        "type":"posts",
         "page": None,
         "size": None,
         "items": [{
