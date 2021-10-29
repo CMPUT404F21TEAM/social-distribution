@@ -15,7 +15,9 @@ python manage.py runserver
 ```
 
 # Documentation
-To learn more about the Web Service API and the app features check out the [documentation](https://github.com/CMPUT404F21TEAM/social-distribution/wiki/Web-Service-API-Documentation)
+To learn more about the Web Service API and the app features check out the [documentation](https://github.com/CMPUT404F21TEAM/social-distribution/wiki/Web-Service-API-Documentation) and the [wiki page](https://github.com/CMPUT404F21TEAM/social-distribution/wiki). Design UI mockups can be found [here](https://www.figma.com/file/4V0nM5Zv7Zb3c8Mt4BMW3P/SocialDistributionMockUps?node-id=0%3A1).
+
+# 
 
 
 # Team Members 
