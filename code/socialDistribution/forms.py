@@ -67,6 +67,9 @@ class PostForm(forms.Form):
             self.fields['visibility'].initial = post.visibility
         
     def clean_visibility(self):
+        """
+            Ensure post's visilibity is valid
+        """
         data = self.cleaned_data['visibility']
         if data in [Post.FRIENDS, Post.PUBLIC, Post.PRIVATE]:
             return data
