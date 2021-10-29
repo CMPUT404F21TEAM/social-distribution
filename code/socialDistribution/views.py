@@ -350,7 +350,7 @@ def editPost(request, id):
             if bin_content is not None:
                 content_media = base64.b64encode(bin_content.read())
             else:
-                content_media = None
+                content_media = post.content_media
 
 
             try:
@@ -423,6 +423,7 @@ def commentPost(request, id):
     '''
     post = get_object_or_404(Post, id = id)
     author = get_object_or_404(Author, user=request.user)
+    showEditModal = request.GET.get('edit') == 'edit'
 
     try:
         comments = Comment.objects.filter(post=post).order_by('-pub_date')

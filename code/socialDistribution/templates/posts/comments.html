@@ -1,48 +1,70 @@
 {% extends 'navBase.html' %}
 
 {% block head %}
-    <title>Comment Post</title>
-    {% load static %}
-        <link rel="stylesheet" type="text/css" href="{% static 'css/posts/style.css' %}">
-        <link rel="stylesheet" type="text/css" href="{% static 'css/author/style.css' %}">
-        <link rel="stylesheet" type="text/css" href="{% static 'css/posts/comments.css' %}">
+<title>Comment Post</title>
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/posts/style.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/author/style.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/posts/comments.css' %}">
 {% endblock %}
 
 {% load author %}
 {% load post %}
 {% block body %}
-    <!-- post -->
-    <div class="conatiner">
-        {% card_post post author %}
-    </div>
+<!-- post -->
+<div class="conatiner">
+    {% card_post post author %}
+</div>
 
-    <!-- comments -->
-    <div class="author-prof">
-        <h2>Comments</h2>
+<!-- comments -->
+<div class="author-prof">
+    <h2>Comments</h2>
 
-        <form         
-            method="post"
-            action="{% url 'api:post_comments' author.id post.id %}" 
-            class="d-flex"
-        >
-            {% csrf_token %}
-            <textarea name="comment" id="newCommentTextArea" class="m-2" placeholder="Add New Comment."></textarea>
-            <button type="submit" class="btn btn-primary" disabled id="newCommentButton" >Post Comment</button>
-        </form>
-        {% for comment in comments %}
-            {% card_author author=author author_type=author_type curr_user=author profile_card=False comment_card=True comment=comment %}
-        {% endfor %}
-    </div>
+    <form method="post" action="{% url 'api:post_comments' author.id post.id %}" class="d-flex">
+        {% csrf_token %}
+        <textarea name="comment" id="newCommentTextArea" class="m-2" placeholder="Add New Comment."></textarea>
+        <button type="submit" class="btn btn-primary" disabled id="newCommentButton">Post Comment</button>
+    </form>
+    {% for comment in comments %}
+    {% card_author author=author author_type=author_type curr_user=author profile_card=False comment_card=True comment=comment %}
+    {% endfor %}
+</div>
 
-    <script>
-        $('#newCommentTextArea').on('input propertychange', function() {
-            // enable button if comment not empty
-            if (this.value.length) {
-                $('#newCommentButton').prop('disabled', false);
-            } else {
-                $('#newCommentButton').prop('disabled', true);
-            }
-        })
-    </script>
+{% load modal %}
+<form method="POST" action="{% url 'socialDistribution:editPost' post.id %}">
+    {% csrf_token %}
+    {% modal id="edit_post_modal" type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
+</form>
+<form method="POST" action="{% url 'socialDistribution:deletePost' post.id %}">
+    {% csrf_token %}
+    {% modal id="delete_post_modal" type="delete" label="Delete Post" title="Delete Post" btn="Delete"%}
+</form>
+
+<script>
+    // https://stackoverflow.com/a/40233358 - Shuhad zaman "urlParam"
+    $.urlParam = function (name) {
+        var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+        return results[1] || 0;
+    }
+
+    $(function () {
+        var param = $.urlParam('action');
+        console.log(param);
+        if (param == 'edit') {
+            $('#edit_post_modal').modal('show');
+        } else if (param == 'delete') {
+            $('#delete_post_modal').modal('show');
+        }
+    });
+
+    $('#newCommentTextArea').on('input propertychange', function () {
+        // enable button if comment not empty
+        if (this.value.length) {
+            $('#newCommentButton').prop('disabled', false);
+        } else {
+            $('#newCommentButton').prop('disabled', true);
+        }
+    })
+</script>
 
 {% endblock %}

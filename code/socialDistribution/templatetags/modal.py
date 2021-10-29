@@ -7,9 +7,9 @@ register = template.Library()
 # https://docs.djangoproject.com/en/3.2/howto/custom-template-tags/#inclusion-tags
 @register.inclusion_tag('tagtemplates/modal.html')
 def modal(*args, **kwargs):
-    """
-        Returns basic modal information 
-    """
+    postid = 0
+    if 'postid' in kwargs:
+        postid = kwargs['postid']
     return {
             'user': kwargs.get('user'),
             'modal_id': kwargs['id'],
@@ -17,4 +17,5 @@ def modal(*args, **kwargs):
             'modal_label': kwargs['label'],
             'modal_title': kwargs['title'],
             'submit_btn_text': kwargs['btn'],
+            'post_id': postid,
         }
