@@ -45,10 +45,8 @@
         {% if isAuthor %}
         <span>
             <!-- Launch Edit Modal -->
-            <button type="button" class="btn btn btn-secondary" data-bs-toggle="modal"
-                data-bs-target="#edit_post_modal">
-                <i class="fas fa-edit"></i></button>
-            </button>
+            <a href="{% url 'socialDistribution:commentPost' post.id %}?edit=edit"> <button class="btn btn-secondary"><i
+                        class="fas fa-edit"></i></button></a>
             <!-- Launch Delete Modal -->
             <button type="button" class="btn btn btn-danger" data-bs-toggle="modal" data-bs-target="#delete_post_modal">
                 <i class="fas fa-trash-alt"></i></button>
@@ -60,9 +58,5 @@
     <form method="POST" action="{% url 'socialDistribution:deletePost' post.id %}">
         {% csrf_token %}
         {% modal id="delete_post_modal" type="delete" label="Delete Post" title="Delete Post" btn="Delete"%}
-    </form>
-    <form method="POST" action="{% url 'socialDistribution:editPost' post.id %}">
-        {% csrf_token %}
-        {% modal id="edit_post_modal" type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
     </form>
 </div>
