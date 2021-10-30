@@ -10,81 +10,6 @@ from .comment import Comment
 from .category import Category
 
 
-class Author(models.Model):
-    '''
-    Author model:
-        user                Author's corresponding Django User (text)
-        username            Author's username (text)
-        displayName         Author's displayName (text)
-        githubUrl           Author's github url (text)
-        profileImageUrl     Author's profile image url (text)
-
-        posts               Posts created by the author
-        friend_requests     fksdjfskl;jfaskdf
-        followers           Author's followers (array)
-    '''
-    user = models.OneToOneField(User, null=True, on_delete=models.CASCADE)
-    username = models.CharField(max_length=50, default='', unique=True)
-    displayName = models.CharField(max_length=50)
-    githubUrl = models.CharField(max_length=50, null=True)
-    profileImageUrl = models.CharField(max_length=50, null=True)
-
-    followers = models.ManyToManyField('Author', blank=True)
-
-    def has_follower(self, author):
-        """
-        Returns True if an author follows a user, False otherwise 
-        """
-        return self.followers.filter(pk=author.id).exists()
-
-    def is_friends_with(self, author):
-        """
-        Returns True if an author is friends wtih a user, False otherwise 
-        """
-        return self.followers.filter(pk=author.id).exists() and \
-            author.followers.filter(pk=self.id).exists()
-
-    # depreciated
-    def get_visible_posts_to(self, author):
-        """ 
-            @depreciated due to too much coupling between posts and author
-            author to author method yet still relies on Post
-
-            Returns valid posts
-        """
-        visible_posts = None
-        if author.id == self.id:
-            visible_posts = Post.objects.filter(author__pk=author.id)
-        elif self.is_friends_with(author):
-            visible_posts = Post.objects.filter(
-                author__pk=self.id).exclude(visibility=Post.PRIVATE)
-        else:
-            visible_posts = Post.objects.filter(
-                author__pk=self.id, visibility=Post.PUBLIC)
-
-        return visible_posts.order_by('-pub_date')[:]
-
-    def __str__(self):
-        return self.displayName
-
-    def as_json(self):
-        return {
-            "type": "author",
-            # ID of the Author
-            "id": f"http://{HOST}/{API_PREFIX}/author/{self.id}",
-            # the home host of the author
-            "host": f'http://{HOST}/{API_PREFIX}/',
-            # the display name of the author
-            "displayName": self.displayName,
-            # url to the authors profile
-            "url": f"http://{HOST}/{API_PREFIX}/author/{self.id}",
-            # HATEOS url for Github API
-            "github": self.githubUrl,
-            # Image from a public domain
-            # #TODO
-            "profileImage": self.profileImageUrl
-        }
-
 class PostQuerySet(models.QuerySet):
 
     def listed(self):
@@ -100,15 +25,17 @@ class PostQuerySet(models.QuerySet):
     def get_friend(self):
         """ Get all friend posts.
         """
-        # Django Software Foundation, https://docs.djangoproject.com/en/dev/topics/db/queries/#complex-lookups-with-q-objects
+        # Django Software Foundation, "Complex lookups with Q objects", 2021-10-30
+        # https://docs.djangoproject.com/en/3.2/topics/db/queries/#complex-lookups-with-q-objects
         return self.filter(
-            Q(visibility=Post.PUBLIC) | Q(visibility=Post.PRIVATE)
+            Q(visibility=Post.PUBLIC) | Q(visibility=Post.FRIENDS)
         )
 
     def chronological(self):
         """ Order results in chronological order in terms of published date.
         """
-        self.order_by('-pub_date')[:]
+        return self.order_by('-pub_date')[:]
+
 
 class Post(models.Model):
     '''
@@ -170,7 +97,8 @@ class Post(models.Model):
     # Base64 encoded binary field (image/png, image/jpg, application/base64)
     content_media = models.BinaryField(
         max_length=CONTENT_MEDIA_MAXLEN, null=True, blank=True)
-    author = models.ForeignKey('Author', on_delete=models.CASCADE, related_name="posts")
+    author = models.ForeignKey(
+        'Author', on_delete=models.CASCADE, related_name="posts")
 
     count = models.PositiveSmallIntegerField(default=0)
     pub_date = models.DateTimeField()
@@ -187,46 +115,50 @@ class Post(models.Model):
     visibility = models.CharField(
         max_length=10, choices=VISIBILITY_CHOICES, default=PUBLIC)
     unlisted = models.BooleanField()
-    likes = models.ManyToManyField('Author', related_name="liked_post", blank=True)
+    likes = models.ManyToManyField(
+        'Author', related_name="liked_post", blank=True)
 
-    # REFACTOR --? Move to author.get_friends_friend_posts
-    @classmethod
-    def get_all_friends_posts(cls, author):
-        '''
-        Get the posts created by friends of author
-        '''
-        followed_author_set = Author.objects.filter(followers__id=author.id)
-        follower_author_set = author.followers.all()
-        friends_set = followed_author_set and follower_author_set   # friends set
-        return cls.objects.filter(
-            unlisted=False,
-            author__in=friends_set,
-            visibility=Post.FRIENDS,
-        )
+    # DEPRECIATED to remove coupling to Author
+    # Post does not need to query all authors
+    # @classmethod
+    # def get_all_friends_posts(cls, author):
+    #     '''
+    #     Get the posts created by friends of author
+    #     '''
+    #     followed_author_set = Author.objects.filter(followers__id=author.id)
+    #     follower_author_set = author.followers.all()
+    #     friends_set = followed_author_set and follower_author_set   # friends set
+    #     return cls.objects.filter(
+    #         unlisted=False,
+    #         author__in=friends_set,
+    #         visibility=Post.FRIENDS,
+    #     )
 
-    @classmethod
-    def get_latest_posts(cls, author):
-        '''
-        Get the author's posts and all the posts created by
-        author's friends
-        '''
-        # public posts not created by user
-        public_posts_set = cls.objects.filter(
-            unlisted=False,
-            visibility=Post.PUBLIC
-        ).exclude(author=author)
+    # @classmethod
+    # def get_latest_posts(cls, author):
+    #     '''
+    #     Get the author's posts and all the posts created by
+    #     author's friends
+    #     '''
+    #     # public posts not created by user
+    #     public_posts_set = cls.objects.filter(
+    #         unlisted=False,
+    #         visibility=Post.PUBLIC
+    #     ).exclude(author=author)
 
-        # all listed posts created by user
-        user_posts_set = cls.objects.filter(
-            unlisted=False,
-            author=author
-        )
+    #     # all listed posts created by user
+    #     user_posts_set = cls.objects.filter(
+    #         unlisted=False,
+    #         author=author
+    #     )
 
-        friends_posts_set = cls.get_all_friends_posts(author)
-        return public_posts_set.union(
-            friends_posts_set,
-            user_posts_set
-        ).order_by("-pub_date")[:]
+        
+
+    #     friends_posts_set = cls.get_all_friends_posts(author)
+    #     return public_posts_set.union(
+    #         friends_posts_set,
+    #         user_posts_set
+    #     ).order_by("-pub_date")[:]
 
     def get_comments_as_json(self):
         author_id = self.author.id

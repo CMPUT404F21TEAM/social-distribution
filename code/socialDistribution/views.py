@@ -14,7 +14,8 @@ from django.urls import reverse
 from .models import *
 from datetime import datetime
 from .utility import make_request
-import base64, json
+import base64
+import json
 
 REQUIRE_SIGNUP_APPROVAL = False
 ''' 
@@ -22,17 +23,6 @@ REQUIRE_SIGNUP_APPROVAL = False
     if time permits store this in database and allow change from admin dashboard.
 '''
 
-def get_home_context(author, error, msg=''):
-    """
-    Returns context fot the homepage 
-    """
-    context = {}
-    context['author'] = author
-    context['modal_type'] = 'post'
-    context['latest_posts'] = Post.get_latest_posts(author)
-    context['error'] = error
-    context['error_msg'] = msg
-    return context
 
 def index(request):
     """
@@ -44,7 +34,7 @@ def index(request):
     else:
         return redirect('socialDistribution:login')
 
-        
+
 @unauthenticated_user
 def loginPage(request):
     """
@@ -65,7 +55,8 @@ def loginPage(request):
 
         if REQUIRE_SIGNUP_APPROVAL and not user.is_active:
             # user inactive
-            messages.info(request, "Your account is currently pending approval. Please check back later.")
+            messages.info(
+                request, "Your account is currently pending approval. Please check back later.")
         else:
             # user active, proceed to authentication
             user = authenticate(request, username=username, password=password)
@@ -106,15 +97,15 @@ def register(request):
 
                 # check github url
                 if (github_url and not github_url.startswith('https://github.com/')):
-                    context = { 'form': form }
+                    context = {'form': form}
                     form.errors['github_url'] = 'Invalid github url, must be of format: https://github.com/username'
                     return render(request, 'user/register.html', context)
 
                 user = form.save()
 
                 if REQUIRE_SIGNUP_APPROVAL:
-                    # admin must approve user from console 
-                    user.is_active = False 
+                    # admin must approve user from console
+                    user.is_active = False
 
                 user.save()
 
@@ -131,16 +122,17 @@ def register(request):
                 Inbox.objects.create(author=author)
             except:
                 return HttpResponse("Sign up failed. Internal Server Error. Please Try again.", status=500)
-            
+
             if REQUIRE_SIGNUP_APPROVAL:
-                messages.success(request, f'Account creation request sent to admin for {username}.')
+                messages.success(
+                    request, f'Account creation request sent to admin for {username}.')
             else:
                 messages.success(request, f'Account created for {username}.')
 
             # On successful sign up request, redirect to login page
             return redirect('socialDistribution:login')
-        
-    context = { 'form': form }
+
+    context = {'form': form}
     return render(request, 'user/register.html', context)
 
 
@@ -153,11 +145,36 @@ def logoutUser(request):
 
 
 def home(request):
+    """ Renders an author's homepage.
+
+    Display posts sent to the feed of the author that is logged in. The feed will include public 
+    posts of local authors, public posts of followed authors, and friends posts of friends.
     """
-        Renders an author's homepage
-    """
-    author = get_object_or_404(Author, user = request.user)
-    context = get_home_context(author, False)
+
+    author = get_object_or_404(Author, user=request.user)
+
+    # get all local public posts
+    posts = Post.objects.listed().get_public()
+
+    # get all posts created by author
+    my_posts = author.posts.listed()
+    posts = posts.union(my_posts)
+
+    # get all friend posts from authors friends
+    # this should probably just get from recieved_posts (TODO)
+    for other in author.followers.all():
+        if author.is_friends_with(other):
+            friend_posts = other.posts.listed().get_friend()
+            posts = posts.union(friend_posts)
+    
+    context = {
+        'author': author,
+        'modal_type': 'post',
+        'latest_posts': posts.chronological(),
+        'error': False,
+        'error_msg': ""
+    } 
+
     return render(request, 'home/index.html', context)
 
 
@@ -173,7 +190,7 @@ def friend_request(request, author_id, action):
             return HttpResponseNotFound()
 
         elif curr_user.id != author.id and curr_user.inbox.has_req_from(author) \
-            and not curr_user.has_follower(author):
+                and not curr_user.has_follower(author):
             curr_user.inbox.follow_requests.remove(author)
             if action == 'accept':
                 curr_user.followers.add(author)
@@ -181,6 +198,7 @@ def friend_request(request, author_id, action):
             messages.info(request, f'Couldn\'t {action} request')
 
     return redirect('socialDistribution:inbox')
+
 
 def befriend(request, author_id):
     """
@@ -273,7 +291,7 @@ def author(request, author_id):
     author = get_object_or_404(Author, pk=author_id)
 
     # TODO: Should become an API request since won't know if author is local/remote
-    
+
     if author.is_friends_with(curr_user):
         posts = author.posts.listed().get_friend()
     else:
@@ -291,6 +309,7 @@ def author(request, author_id):
 
 def create(request):
     return render(request, 'create/index.html')
+
 
 def posts(request, author_id):
     """
@@ -313,9 +332,11 @@ def posts(request, author_id):
             try:
                 post = Post.objects.create(
                     author_id=author_id,  # temporary
-                    title=form.cleaned_data.get('title'), 
-                    source=request.build_absolute_uri(request.path),    # will need to fix when moved to api
-                    origin=request.build_absolute_uri(request.path),    # will need to fix when moved to api
+                    title=form.cleaned_data.get('title'),
+                    # will need to fix when moved to api
+                    source=request.build_absolute_uri(request.path),
+                    # will need to fix when moved to api
+                    origin=request.build_absolute_uri(request.path),
                     description=form.cleaned_data.get('description'),
                     content_text=form.cleaned_data.get('content_text'),
                     visibility=form.cleaned_data.get('visibility'),
@@ -344,6 +365,7 @@ def posts(request, author_id):
     # In this case, app_name is socialDistribution
     return redirect('socialDistribution:home')
 
+
 def editPost(request, id):
     """
         Edits an existing post
@@ -360,11 +382,12 @@ def editPost(request, id):
             else:
                 content_media = post.content_media
 
-
             try:
                 post.title = form.cleaned_data.get('title')
-                post.source = request.build_absolute_uri(request.path)    # will need to fix when moved to api
-                post.origin = request.build_absolute_uri(request.path)    # will need to fix when moved to api
+                post.source = request.build_absolute_uri(
+                    request.path)    # will need to fix when moved to api
+                post.origin = request.build_absolute_uri(
+                    request.path)    # will need to fix when moved to api
                 post.description = form.cleaned_data.get('description')
                 post.content_text = form.cleaned_data.get('content_text')
                 post.visibility = form.cleaned_data.get('visibility')
@@ -373,7 +396,8 @@ def editPost(request, id):
 
                 categories = form.cleaned_data.get('categories').split()
                 previousCategories = Category.objects.filter(post=post)
-                previousCategoriesNames = [cat.category for cat in previousCategories]
+                previousCategoriesNames = [
+                    cat.category for cat in previousCategories]
 
                 # Create new categories
                 for category in categories:
@@ -385,7 +409,7 @@ def editPost(request, id):
                 # Remove old categories that were deleted
                 for category in previousCategoriesNames:
                     Category.objects.get(category=category, post=post).delete()
-                
+
                 post.save()
 
             except ValidationError:
@@ -396,6 +420,8 @@ def editPost(request, id):
     return redirect('socialDistribution:home')
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
+
+
 def likePost(request, id):
     """
         Like a specific post
@@ -405,16 +431,17 @@ def likePost(request, id):
     post = get_object_or_404(Post, id=id)
     host = request.get_host()
     if request.method == 'POST':
-    # create like object
-        like =  {
-        "@context": "https://www.w3.org/ns/activitystreams",
-        "summary": f"{author.username} Likes your post",         
-        "type": "like",
-        "author":author.as_json(),
-        "object":f"http://{host}/author/{post.author.id}/posts/{id}"
-        }  
+        # create like object
+        like = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "summary": f"{author.username} Likes your post",
+            "type": "like",
+            "author": author.as_json(),
+            "object": f"http://{host}/author/{post.author.id}/posts/{id}"
+        }
     # redirect request to remote/local api
-    make_request('POST', f'http://{host}/api/author/{post.author.id}/inbox/', json.dumps(like))
+    make_request(
+        'POST', f'http://{host}/api/author/{post.author.id}/inbox/', json.dumps(like))
     prev_page = request.META['HTTP_REFERER']
 
     if prev_page is None:
@@ -429,7 +456,7 @@ def commentPost(request, id):
     '''
         Render Post and comments
     '''
-    post = get_object_or_404(Post, id = id)
+    post = get_object_or_404(Post, id=id)
     author = get_object_or_404(Author, user=request.user)
     showEditModal = request.GET.get('edit') == 'edit'
 
@@ -445,9 +472,8 @@ def commentPost(request, id):
         'post': post,
         'comments': comments
     }
-    
-    return render(request, 'posts/comments.html', context)
 
+    return render(request, 'posts/comments.html', context)
 
 
 def deletePost(request, id):
