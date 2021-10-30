@@ -55,8 +55,7 @@ def loginPage(request):
 
         if REQUIRE_SIGNUP_APPROVAL and not user.is_active:
             # user inactive
-            messages.info(
-                request, "Your account is currently pending approval. Please check back later.")
+            messages.info(request, "Your account is currently pending approval. Please check back later.")
         else:
             # user active, proceed to authentication
             user = authenticate(request, username=username, password=password)
@@ -440,8 +439,7 @@ def likePost(request, id):
             "object": f"http://{host}/author/{post.author.id}/posts/{id}"
         }
     # redirect request to remote/local api
-    make_request(
-        'POST', f'http://{host}/api/author/{post.author.id}/inbox/', json.dumps(like))
+    make_request('POST', f'http://{host}/api/author/{post.author.id}/inbox/', json.dumps(like))
     prev_page = request.META['HTTP_REFERER']
 
     if prev_page is None:
