@@ -1,6 +1,6 @@
 from django.test import TestCase
 from mixer.backend.django import mixer
-from datetime import timedelta
+from datetime import timedelta, timezone
 from .models import *
 from .builders import *
 

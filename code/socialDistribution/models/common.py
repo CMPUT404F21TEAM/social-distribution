@@ -5,6 +5,8 @@ from datetime import *
 import timeago
 
 from cmput404.constants import HOST, API_PREFIX
+from .comment import Comment
+from .category import Category
 
 
 class Author(models.Model):
@@ -37,6 +39,7 @@ class Author(models.Model):
         return self.followers.filter(pk=author.id).exists() and \
             author.followers.filter(pk=self.id).exists()
 
+    # REFACTOR --> Should just be via inbox (temp: Posts.get_visible_to(author))
     def get_visible_posts_to(self, author):
         """
         Returns valid posts
@@ -45,9 +48,11 @@ class Author(models.Model):
         if author.id == self.id:
             visible_posts = Post.objects.filter(author__pk=author.id)
         elif self.is_friends_with(author):
-            visible_posts = Post.objects.filter(author__pk=self.id).exclude(visibility=Post.PRIVATE)
+            visible_posts = Post.objects.filter(
+                author__pk=self.id).exclude(visibility=Post.PRIVATE)
         else:
-            visible_posts = Post.objects.filter(author__pk=self.id, visibility=Post.PUBLIC)
+            visible_posts = Post.objects.filter(
+                author__pk=self.id, visibility=Post.PUBLIC)
 
         return visible_posts.order_by('-pub_date')[:]
 
@@ -71,59 +76,6 @@ class Author(models.Model):
             # #TODO
             "profileImage": self.profileImageUrl
         }
-
-
-class Comment(models.Model):
-    '''
-    Comment model:
-        author              Comment author (reference to author)
-        content_type        Markdown or Text
-        comment             Comment content (markdown or text)
-        pub_date            Published date (datetime)
-        post                Post related to the comment (reference to post)
-        id                  Auto-generated id
-    '''
-    class CommentContentType(models.TextChoices):
-        PLAIN = 'PL', 'text/plain'
-        MARKDOWN = 'MD', 'text/markdown'
-
-    author = models.ForeignKey('Author', on_delete=models.CASCADE)
-    content_type = models.CharField(
-        max_length=2,
-        choices=CommentContentType.choices
-    )
-    comment = models.CharField(max_length=200)
-
-    post = models.ForeignKey('Post', on_delete=models.CASCADE)
-    pub_date = models.DateTimeField()
-
-    def when(self):
-        '''
-        Returns string describing when the comment was created
-        '''
-        now = datetime.now(timezone.utc)
-        return timeago.format(self.pub_date, now)
-
-    def as_json(self):
-        return {
-            "type": "comment",
-            "author": self.author.as_json(),
-            "comment": self.comment,
-            "contentType": "text/markdown",
-            "published": str(self.pub_date),
-            "id": f"http://{HOST}/{API_PREFIX}/author/{self.post.author.id}/posts/{self.post.id}/comments/{self.id}",
-        }
-
-
-class Category(models.Model):
-    '''
-    Categories model:
-        id                  Auto-generated id
-        category            Category name
-        post                reference to post (Many-to-One relationship)
-    '''
-    category = models.CharField(max_length=50)
-    post = models.ForeignKey('Post', on_delete=models.CASCADE)
 
 
 class Post(models.Model):
@@ -202,7 +154,8 @@ class Post(models.Model):
     unlisted = models.BooleanField()
     likes = models.ManyToManyField(
         'Author', related_name="liked_post", blank=True)
-
+    
+    # REFACTOR --? Move to author.get_friends_friend_posts
     @classmethod
     def get_all_friends_posts(cls, author):
         '''
@@ -213,7 +166,7 @@ class Post(models.Model):
         friends_set = followed_author_set and follower_author_set   # friends set
         return cls.objects.filter(
             unlisted=False,
-            author__in=friends_set, 
+            author__in=friends_set,
             visibility=Post.FRIENDS,
         )
 
@@ -225,7 +178,7 @@ class Post(models.Model):
         '''
         # public posts not created by user
         public_posts_set = cls.objects.filter(
-            unlisted=False, 
+            unlisted=False,
             visibility=Post.PUBLIC
         ).exclude(author=author)
 
@@ -290,22 +243,22 @@ class Post(models.Model):
         Returns total likes
         """
         return self.likes.count()
-    
+
     def as_json(self):
         previousCategories = Category.objects.filter(post=self)
         previousCategoriesNames = [cat.category for cat in previousCategories]
         return {
-            "type":"post",
+            "type": "post",
             # title of a post
-            "title":self.title,
+            "title": self.title,
             # id of the post
             "id": f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}",
             # where did you get this post from?
-            "source":self.source,
+            "source": self.source,
             # where is it actually from
-            "origin":self.origin,
+            "origin": self.origin,
             # a brief description of the post
-            "description":self.description,
+            "description": self.description,
             # The content type of the post
             # assume either
             # text/markdown -- common mark
@@ -314,59 +267,30 @@ class Post(models.Model):
             # image/png;base64 # this is an embedded png -- images are POSTS. So you might have a user make 2 posts if a post includes an image!
             # image/jpeg;base64 # this is an embedded jpeg
             # for HTML you will want to strip tags before displaying
-            "contentType":self.content_type,
-            "content":self.content_text, # 
+            "contentType": self.content_type,
+            "content": self.content_text,
             # the author has an ID where by authors can be disambiguated
-            "author":self.author.as_json(),
+            "author": self.author.as_json(),
             # categories this post fits into (a list of strings
-            "categories":previousCategoriesNames,
+            "categories": previousCategoriesNames,
             # comments about the post
             # return a maximum number of comments
             # total number of comments for this post
             "count": self.count,
             # the first page of comments
-            "comments":f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}/comments/",
+            "comments": f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}/comments/",
             # commentsSrc is OPTIONAL and can be missing
             # You should return ~ 5 comments per post.
             # should be sorted newest(first) to oldest(last)
             # this is to reduce API call counts
-            "commentsSrc":self.get_comments_as_json(),
+            "commentsSrc": self.get_comments_as_json(),
             # ISO 8601 TIMESTAMP
-            "published":str(self.pub_date),
+            "published": str(self.pub_date),
             # visibility ["PUBLIC","FRIENDS"]
-            "visibility":self.visibility,
+            "visibility": self.visibility,
             # for visibility PUBLIC means it is open to the wild web
             # FRIENDS means if we're direct friends I can see the post
             # FRIENDS should've already been sent the post so they don't need this
-            "unlisted":self.unlisted
+            "unlisted": self.unlisted
             # unlisted means it is public if you know the post name -- use this for images, it's so images don't show up in timelines
         }
-
-class Inbox(models.Model):
-    '''
-    Inbox model:
-        author          author associated with the inbox (primary key)
-        posts           posts pushed to this inbox (M2M)
-        followRequests  follow requests pushed to this inbox (M2M)
-    '''
-    author = models.OneToOneField(
-        'Author', on_delete=models.CASCADE, primary_key=True)
-    posts = models.ManyToManyField(
-        'Post', related_name='pushed_posts', blank=True)
-    follow_requests = models.ManyToManyField(
-        'Author', related_name='follow_requests', blank=True)
-
-    def has_req_from(self, author):
-        """
-        Returns True if the user has a request from a specific author, False otherwise 
-        """
-        return self.follow_requests.filter(pk=author.id).exists()
-
-    def add_post(self, post):
-        """
-        Adds a pushed post
-        """
-        try:
-            self.posts.add(post)
-        except ValidationError:
-            raise
