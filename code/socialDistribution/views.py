@@ -123,8 +123,7 @@ def register(request):
                 return HttpResponse("Sign up failed. Internal Server Error. Please Try again.", status=500)
 
             if REQUIRE_SIGNUP_APPROVAL:
-                messages.success(
-                    request, f'Account creation request sent to admin for {username}.')
+                messages.success(request, f'Account creation request sent to admin for {username}.')
             else:
                 messages.success(request, f'Account created for {username}.')
 
@@ -165,14 +164,14 @@ def home(request):
         if author.is_friends_with(other):
             friend_posts = other.posts.listed().get_friend()
             posts = posts.union(friend_posts)
-    
+
     context = {
         'author': author,
         'modal_type': 'post',
         'latest_posts': posts.chronological(),
         'error': False,
         'error_msg': ""
-    } 
+    }
 
     return render(request, 'home/index.html', context)
 
@@ -211,8 +210,7 @@ def befriend(request, author_id):
             messages.info(request, f'Already following {author.displayName}')
 
         if author.inbox.has_req_from(curr_user):
-            messages.info(
-                request, f'Follow request to {author.displayName} is pending')
+            messages.info(request, f'Follow request to {author.displayName} is pending')
 
         if author.id != curr_user.id:
             # send follow request
@@ -235,8 +233,6 @@ def un_befriend(request, author_id):
             messages.info(f'Couldn\'t un-befriend {author.displayName}')
 
     return redirect('socialDistribution:author', author_id)
-
-# @allowedUsers(allowed_roles=['author']) # just for demonstration
 
 
 def authors(request):
@@ -332,10 +328,8 @@ def posts(request, author_id):
                 post = Post.objects.create(
                     author_id=author_id,  # temporary
                     title=form.cleaned_data.get('title'),
-                    # will need to fix when moved to api
-                    source=request.build_absolute_uri(request.path),
-                    # will need to fix when moved to api
-                    origin=request.build_absolute_uri(request.path),
+                    source=request.build_absolute_uri(request.path),  # will need to fix when moved to api
+                    origin=request.build_absolute_uri(request.path),  # will need to fix when moved to api
                     description=form.cleaned_data.get('description'),
                     content_text=form.cleaned_data.get('content_text'),
                     visibility=form.cleaned_data.get('visibility'),
@@ -383,10 +377,8 @@ def editPost(request, id):
 
             try:
                 post.title = form.cleaned_data.get('title')
-                post.source = request.build_absolute_uri(
-                    request.path)    # will need to fix when moved to api
-                post.origin = request.build_absolute_uri(
-                    request.path)    # will need to fix when moved to api
+                post.source = request.build_absolute_uri(request.path)    # will need to fix when moved to api
+                post.origin = request.build_absolute_uri(request.path)    # will need to fix when moved to api
                 post.description = form.cleaned_data.get('description')
                 post.content_text = form.cleaned_data.get('content_text')
                 post.visibility = form.cleaned_data.get('visibility')
