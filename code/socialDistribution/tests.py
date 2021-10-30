@@ -21,6 +21,8 @@ class PostTest(TestCase):
         post = PostBuilder().likes(likes).build()
         self.assertTrue(post.total_likes() == likes)
 
+    # TODO test all PostQuerySet methods
+
 
 class CommentModelTests(TestCase):
 

@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models import Q, manager
 from datetime import *
 import timeago
 
@@ -17,6 +18,9 @@ class Author(models.Model):
         displayName         Author's displayName (text)
         githubUrl           Author's github url (text)
         profileImageUrl     Author's profile image url (text)
+
+        posts               Posts created by the author
+        friend_requests     fksdjfskl;jfaskdf
         followers           Author's followers (array)
     '''
     user = models.OneToOneField(User, null=True, on_delete=models.CASCADE)
@@ -24,6 +28,7 @@ class Author(models.Model):
     displayName = models.CharField(max_length=50)
     githubUrl = models.CharField(max_length=50, null=True)
     profileImageUrl = models.CharField(max_length=50, null=True)
+
     followers = models.ManyToManyField('Author', blank=True)
 
     def has_follower(self, author):
@@ -39,10 +44,13 @@ class Author(models.Model):
         return self.followers.filter(pk=author.id).exists() and \
             author.followers.filter(pk=self.id).exists()
 
-    # REFACTOR --> Should just be via inbox (temp: Posts.get_visible_to(author))
+    # depreciated
     def get_visible_posts_to(self, author):
-        """
-        Returns valid posts
+        """ 
+            @depreciated due to too much coupling between posts and author
+            author to author method yet still relies on Post
+
+            Returns valid posts
         """
         visible_posts = None
         if author.id == self.id:
@@ -77,6 +85,30 @@ class Author(models.Model):
             "profileImage": self.profileImageUrl
         }
 
+class PostQuerySet(models.QuerySet):
+
+    def listed(self):
+        """ Get all listed posts.
+        """
+        return self.filter(unlisted=False)
+
+    def get_public(self):
+        """ Get all public posts.
+        """
+        return self.filter(visibility=Post.PUBLIC)
+
+    def get_friend(self):
+        """ Get all friend posts.
+        """
+        # Django Software Foundation, https://docs.djangoproject.com/en/dev/topics/db/queries/#complex-lookups-with-q-objects
+        return self.filter(
+            Q(visibility=Post.PUBLIC) | Q(visibility=Post.PRIVATE)
+        )
+
+    def chronological(self):
+        """ Order results in chronological order in terms of published date.
+        """
+        self.order_by('-pub_date')[:]
 
 class Post(models.Model):
     '''
@@ -106,6 +138,9 @@ class Post(models.Model):
         likes               Authors that liked this post
 
     '''
+
+    objects = PostQuerySet.as_manager()
+
     class PostContentType(models.TextChoices):
         MARKDOWN = 'MD', 'text/markdown'
         PLAIN = 'PL', 'text/plain'
@@ -135,7 +170,7 @@ class Post(models.Model):
     # Base64 encoded binary field (image/png, image/jpg, application/base64)
     content_media = models.BinaryField(
         max_length=CONTENT_MEDIA_MAXLEN, null=True, blank=True)
-    author = models.ForeignKey('Author', on_delete=models.CASCADE)
+    author = models.ForeignKey('Author', on_delete=models.CASCADE, related_name="posts")
 
     count = models.PositiveSmallIntegerField(default=0)
     pub_date = models.DateTimeField()
@@ -152,9 +187,8 @@ class Post(models.Model):
     visibility = models.CharField(
         max_length=10, choices=VISIBILITY_CHOICES, default=PUBLIC)
     unlisted = models.BooleanField()
-    likes = models.ManyToManyField(
-        'Author', related_name="liked_post", blank=True)
-    
+    likes = models.ManyToManyField('Author', related_name="liked_post", blank=True)
+
     # REFACTOR --? Move to author.get_friends_friend_posts
     @classmethod
     def get_all_friends_posts(cls, author):

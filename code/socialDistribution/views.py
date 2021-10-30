@@ -254,7 +254,7 @@ def authors(request):
 
     # Django Software Foundation, "Generating aggregates for each item in a QuerySet", 2021-10-13
     # https://docs.djangoproject.com/en/3.2/topics/db/aggregation/#generating-aggregates-for-each-item-in-a-queryset
-    authors = Author.objects.all().annotate(Count("post"))
+    authors = Author.objects.all().annotate(Count("posts"))
     local_authors = [{
         "data": author,
         "type": "Local"
@@ -265,12 +265,20 @@ def authors(request):
 
 
 def author(request, author_id):
+    """ Display author's public profile and any posts created by the author that the current 
+        user is premitted to view.
     """
-        Returns an author's info 
-    """
+
     curr_user = Author.objects.get(user=request.user)
     author = get_object_or_404(Author, pk=author_id)
-    posts = author.get_visible_posts_to(curr_user)
+
+    # TODO: Should become an API request since won't know if author is local/remote
+    
+    if author.is_friends_with(curr_user):
+        posts = author.posts.listed().get_friend()
+    else:
+        posts = author.posts.listed().get_public()
+
     context = {
         'author': author,
         'author_type': 'Local',
