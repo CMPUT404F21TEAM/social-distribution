@@ -1,10 +1,6 @@
-
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models import Q, manager
 from datetime import *
-import timeago
 
 from cmput404.constants import HOST, API_PREFIX
 
@@ -42,26 +38,6 @@ class Author(models.Model):
         """
         return self.followers.filter(pk=author.id).exists() and \
             author.followers.filter(pk=self.id).exists()
-
-    # depreciated
-    # def get_visible_posts_to(self, author):
-    #     """ 
-    #         @depreciated due to too much coupling between posts and author
-    #         author to author method yet still relies on Post
-
-    #         Returns valid posts
-    #     """
-    #     visible_posts = None
-    #     if author.id == self.id:
-    #         visible_posts = Post.objects.filter(author__pk=author.id)
-    #     elif self.is_friends_with(author):
-    #         visible_posts = Post.objects.filter(
-    #             author__pk=self.id).exclude(visibility=Post.PRIVATE)
-    #     else:
-    #         visible_posts = Post.objects.filter(
-    #             author__pk=self.id, visibility=Post.PUBLIC)
-
-    #     return visible_posts.order_by('-pub_date')[:]
 
     def __str__(self):
         return self.displayName

@@ -1,9 +1,4 @@
-from django.core.exceptions import ValidationError
 from django.db import models
-from django.contrib.auth.models import User
-from datetime import *
-
-from cmput404.constants import HOST, API_PREFIX
 
 class Category(models.Model):
     '''

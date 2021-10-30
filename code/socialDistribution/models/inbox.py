@@ -1,8 +1,5 @@
 from django.core.exceptions import ValidationError
 from django.db import models
-from datetime import *
-
-from cmput404.constants import HOST, API_PREFIX
 
 class Inbox(models.Model):
     '''
