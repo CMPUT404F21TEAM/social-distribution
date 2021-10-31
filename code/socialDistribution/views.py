@@ -423,7 +423,6 @@ def commentPost(request, id):
     '''
     post = get_object_or_404(Post, id = id)
     author = get_object_or_404(Author, user=request.user)
-    showEditModal = request.GET.get('edit') == 'edit'
 
     try:
         comments = Comment.objects.filter(post=post).order_by('-pub_date')

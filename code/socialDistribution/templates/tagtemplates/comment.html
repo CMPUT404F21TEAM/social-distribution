@@ -1,0 +1,37 @@
+{% load static %}
+<div class="author-title card shadow bg-white m-2">
+    <div class="card-body">
+
+        <div class="row">
+            <!-- Profile Image -->
+            <div class="col col-sm-6 col-md-4 col-lg-3 d-flex align-items-center justify-content-center ml-2">
+
+                {% if comment.author.profileImageUrl %}
+                    <img src="{{ comment.author.profileImageUrl }}"
+                        class="profile-img align-middle" alt="Profile Image">
+                {% else %}
+                    <img src="{% static 'assets/blank-profile-picture.png' %}"
+                    class="profile-img align-middle" alt="Profile Imag">
+                {% endif %}
+            </div>
+
+            <!-- Card details -->
+            <div class="col col-sm-6 col-md-8 col-lg-9">
+
+                <h4 class="card-title">{{comment.author.displayName}}&nbsp; <span class="text-muted fs-6">•&nbsp;{{comment.when}}</span> </h4>
+
+                <h6 class="card-subtitle mb-2 text-muted px-1">
+                    <span class="badge bg-secondary">{{author_type}}&nbsp;</span>
+                    {% if is_friend %}
+                        <span class="badge bg-success">Friend</span>
+                    {% endif %}
+                </h6>
+
+                <div class="border rounded-3 p-2 ps-2 me-4 ">
+                    <p >{{ comment.comment }}</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
