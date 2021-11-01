@@ -165,9 +165,3 @@ class InboxViewTests(TestCase):
 
         liker = comment.likes.all()[0]
         self.assertEqual(liker.id, author1.id)
-
-
-
-
-
-
