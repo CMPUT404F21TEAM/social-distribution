@@ -23,6 +23,7 @@ urlpatterns = [
 
   path('like-post/<int:id>', views.likePost, name='likePost'),
   path('comment-post/<int:id>', views.commentPost, name='commentPost'),
+  path('like-comment/<int:id>', views.likeComment, name='likeComment'),
   path('delete-post/<int:id>', views.deletePost, name='deletePost'),
   path('edit-post/<int:id>', views.editPost, name='editPost'),
 ]

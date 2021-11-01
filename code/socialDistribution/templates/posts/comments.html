@@ -26,9 +26,13 @@
         <textarea name="comment" id="newCommentTextArea" class="m-2" placeholder="Add New Comment."></textarea>
         <button type="submit" class="btn btn-primary" disabled id="newCommentButton">Post Comment</button>
     </form>
+    
     {% for comment in comments %}
-        {% comment_card comment=comment author_type=author_type %}
+        {% comment_card author=author comment=comment author_type=author_type post=post %}
     {% endfor %}
+
+    <!-- Workaround for bottom spacing -->
+    <div class="mb-1">&nbsp;</div>
 </div>
 
 {% load modal %}

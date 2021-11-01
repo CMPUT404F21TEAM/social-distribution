@@ -82,6 +82,7 @@ class Comment(models.Model):
         pub_date            Published date (datetime)
         post                Post related to the comment (reference to post)
         id                  Auto-generated id
+        likes               Authors that liked this post
     '''
     class CommentContentType(models.TextChoices):
         PLAIN = 'PL', 'text/plain'
@@ -96,6 +97,7 @@ class Comment(models.Model):
 
     post = models.ForeignKey('Post', on_delete=models.CASCADE)
     pub_date = models.DateTimeField()
+    likes = models.ManyToManyField('Author', related_name="comment_likes")
 
     def when(self):
         '''
@@ -113,6 +115,12 @@ class Comment(models.Model):
             "published": str(self.pub_date),
             "id": f"http://{HOST}/{API_PREFIX}/author/{self.post.author.id}/posts/{self.post.id}/comments/{self.id}",
         }
+    
+    def total_likes(self):
+        '''
+            Returns total likes
+        '''
+        return self.likes.count()
 
 
 class Category(models.Model):
