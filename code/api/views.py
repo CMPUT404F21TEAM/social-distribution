@@ -7,6 +7,7 @@ from django.core import serializers
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
+from datetime import datetime, timezone
 import json
 import logging
 
@@ -345,14 +346,27 @@ class InboxView(View):
 
             elif data["type"] == "like":
                 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-                postId = data["object"].split("/")[-1]
+                # extract data from reqest body
+                splitObject = data["object"].split("/")
+                object = data["object"].split("/")[-2]
+                id = splitObject[-1]
+                
+                # retrieve author
                 likingAuthorId = data["author"]["id"].split("/")[-1]
-                post = get_object_or_404(Post, id=postId)
                 author = Author.objects.get(id=likingAuthorId)
-                if post.likes.filter(id=author.id).exists():
-                    post.likes.remove(author)
+
+                # check if liking post or comment
+                if object == 'comments':
+                    contextObject = get_object_or_404(Comment, id=id)
+                elif (object == 'posts'):
+                    contextObject = get_object_or_404(Post, id=id)
                 else:
-                    post.likes.add(author)
+                    return HttpResponseBadRequest()
+                
+                if contextObject.likes.filter(id=author.id).exists():
+                    contextObject.likes.remove(author) # if already liked unlike 
+                else:
+                    contextObject.likes.add(author)
 
                 return HttpResponse(status=200)
 

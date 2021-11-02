@@ -448,7 +448,6 @@ def commentPost(request, id):
     '''
     post = get_object_or_404(Post, id=id)
     author = get_object_or_404(Author, user=request.user)
-    showEditModal = request.GET.get('edit') == 'edit'
 
     try:
         comments = Comment.objects.filter(post=post).order_by('-pub_date')
@@ -464,6 +463,35 @@ def commentPost(request, id):
     }
 
     return render(request, 'posts/comments.html', context)
+
+def likeComment(request, id):
+    '''
+        Likes a comment
+    '''
+
+    comment = get_object_or_404(Comment, id = id)
+    author = get_object_or_404(Author, user=request.user)
+
+    host = request.get_host()
+    prev_page = request.META['HTTP_REFERER']
+
+    if request.method == 'POST':
+    # create like object
+        like =  {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "summary": f"{author.username} Likes your comment",         
+        "type": "like",
+        "author":author.as_json(),
+        "object":f"http://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
+        }  
+
+    # redirect request to remote/local api
+    make_request('POST', f'http://{host}/api/author/{comment.author.id}/inbox/', json.dumps(like))
+
+    if prev_page is None:
+        return redirect('socialDistribution:home')
+    else:
+        return redirect(prev_page)
 
 
 def deletePost(request, id):
