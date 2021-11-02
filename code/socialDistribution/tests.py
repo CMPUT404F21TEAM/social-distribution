@@ -30,7 +30,7 @@ class CommentModelTests(TestCase):
         '''
             comment.when() returns just now right after post creation
         '''
-        author = mixer.blend(Author)
+        author = mixer.blend(LocalAuthor)
         post = mixer.blend(Post, author = author)
         comment = mixer.blend(Comment, author=author, post=post, pub_date = datetime.now(timezone.utc) )
 
@@ -40,7 +40,7 @@ class CommentModelTests(TestCase):
         '''
             comment.when() returns 10 seconds ago after the time has passed
         '''
-        author = mixer.blend(Author)
+        author = mixer.blend(LocalAuthor)
         post = mixer.blend(Post, author = author)
 
         pub_date = datetime.now(timezone.utc) - timedelta(seconds=10)

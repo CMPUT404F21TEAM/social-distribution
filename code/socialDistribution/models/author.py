@@ -6,8 +6,34 @@ from cmput404.constants import HOST, API_PREFIX
 
 
 class Author(models.Model):
-    '''
-    Author model:
+    """ Author model which represents all authors. 
+
+        All authors that interact with the application will be stored as an author. That is, 
+        the Author model can store both remote and local authors. Methods on an Author instance primarily 
+        rely on API calls to get the data corresponding to the author from a remote server.
+
+        In the future, caching can be used with this model to reduce the number of API calls being sent out.
+    """
+
+    _url = models.URLField()
+
+    @property
+    def url(self):
+        """ Gets the URL ID of the author """
+
+        if self._url:
+            return self._url
+        else:
+            return f"http://{HOST}/{API_PREFIX}/author/{self.id}"
+
+
+class LocalAuthor(Author):
+    ''' LocalAuthor model which represents an author hosted on the local server.
+
+    Any authors hosted on the local server will be stored as a LocalAuthor instance. This class overrides
+    methods defined in Author to provide more efficient, local access (no API) to author data.
+
+    LocalAuthor model:
         user                Author's corresponding Django User (text)
         username            Author's username (text)
         displayName         Author's displayName (text)
@@ -24,7 +50,7 @@ class Author(models.Model):
     githubUrl = models.CharField(max_length=50, null=True)
     profileImageUrl = models.CharField(max_length=50, null=True)
 
-    followers = models.ManyToManyField('Author', blank=True)
+    followers = models.ManyToManyField('Author', blank=True, related_name="followers")
 
     def has_follower(self, author):
         """

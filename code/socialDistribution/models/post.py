@@ -98,7 +98,7 @@ class Post(models.Model):
     content_media = models.BinaryField(
         max_length=CONTENT_MEDIA_MAXLEN, null=True, blank=True)
     author = models.ForeignKey(
-        'Author', on_delete=models.CASCADE, related_name="posts")
+        'LocalAuthor', on_delete=models.CASCADE, related_name="posts")
 
     count = models.PositiveSmallIntegerField(default=0)
     pub_date = models.DateTimeField()
@@ -119,7 +119,7 @@ class Post(models.Model):
     )
     unlisted = models.BooleanField()
     likes = models.ManyToManyField(
-        'Author', related_name="liked_post", blank=True)
+        'LocalAuthor', related_name="liked_post", blank=True)
 
     def get_comments_as_json(self):
         author_id = self.author.id

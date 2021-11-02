@@ -49,7 +49,7 @@ class AuthorsView(View):
         page = request.GET.get("page")
         size = request.GET.get("size")
 
-        authors = [author.as_json() for author in Author.objects.all()]
+        authors = [author.as_json() for author in LocalAuthor.objects.all()]
 
         response = {
             "type": "authors",
@@ -65,7 +65,7 @@ class AuthorView(View):
     def get(self, request, author_id):
         """ GET - Retrieve profile of {author_id} """
 
-        author = get_object_or_404(Author, pk=author_id)
+        author = get_object_or_404(LocalAuthor, pk=author_id)
         response = author.as_json()
         return JsonResponse(response)
 
@@ -85,7 +85,7 @@ class AuthorView(View):
             return HttpResponseBadRequest()
 
         djangoUser = get_object_or_404(get_user_model(), username = request.user)
-        author = get_object_or_404(Author, user=request.user)
+        author = get_object_or_404(LocalAuthor, user=request.user)
         
         try:
             # update author
@@ -114,7 +114,7 @@ class FollowersView(View):
     def get(self, request, author_id):
         """ GET - Get a list of authors who are the followers of {author_id} """
 
-        author = get_object_or_404(Author, pk=author_id)
+        author = get_object_or_404(LocalAuthor, pk=author_id)
         followers = [follower.as_json() for follower in author.followers.all()]
 
         response = {
@@ -131,7 +131,7 @@ class LikedView(View):
     def get(self, request, author_id):
         """ GET - Get a list of like objects from {author_id} """
         try:
-            author = Author.objects.get(id=author_id)
+            author = LocalAuthor.objects.get(id=author_id)
             authorLikedPosts = Post.objects.filter(likes__exact=author)
             host = request.get_host()
             likes = []
@@ -164,7 +164,7 @@ class PostsView(View):
             #TODO handle pagination
             page = request.GET.get("page")
             size = request.GET.get("size")
-            author = get_object_or_404(Author, id=author_id)
+            author = get_object_or_404(LocalAuthor, id=author_id)
             posts = Post.objects.filter(author=author)
         
             jsonPosts = []
@@ -227,7 +227,7 @@ class PostCommentsView(View):
             page = request.GET.get("page")
             size = request.GET.get("size")
             post = get_object_or_404(Post, id=post_id)
-            author = get_object_or_404(Author, id=author_id)
+            author = get_object_or_404(LocalAuthor, id=author_id)
             # Check if the post author match with author in url
             if post.author.id != author.id:
                 return HttpResponseNotFound()
@@ -254,7 +254,7 @@ class PostCommentsView(View):
         pub_date = datetime.now(timezone.utc)
 
         try:
-            author = get_object_or_404(Author, pk=author_id)
+            author = get_object_or_404(LocalAuthor, pk=author_id)
             post = get_object_or_404(Post, id=post_id)
 
             comment = Comment.objects.create(
@@ -336,9 +336,9 @@ class InboxView(View):
 
                 # add follow request to inbox
                 try:
-                    followerAuthor = Author.objects.get(id=follower_id)
+                    followerAuthor = LocalAuthor.objects.get(id=follower_id)
                     inbox.follow_requests.add(followerAuthor)
-                except Author.DoesNotExist:
+                except LocalAuthor.DoesNotExist:
                     raise ValueError()                      
 
                 return HttpResponse(status=200)
@@ -348,7 +348,7 @@ class InboxView(View):
                 postId = data["object"].split("/")[-1]
                 likingAuthorId = data["author"]["id"].split("/")[-1]
                 post = get_object_or_404(Post, id=postId)
-                author = Author.objects.get(id=likingAuthorId)
+                author = LocalAuthor.objects.get(id=likingAuthorId)
                 if post.likes.filter(id=author.id).exists():
                     post.likes.remove(author)
                 else:

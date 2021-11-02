@@ -29,7 +29,7 @@ def index(request):
         Redirect User on visiting /
     """
     if request.user.is_authenticated:
-        author_id = get_object_or_404(Author, user=request.user).id
+        author_id = get_object_or_404(LocalAuthor, user=request.user).id
         return redirect('socialDistribution:home')
     else:
         return redirect('socialDistribution:login')
@@ -61,7 +61,7 @@ def loginPage(request):
             user = authenticate(request, username=username, password=password)
 
             try:
-                author_id = Author.objects.get(user=user).id
+                author_id = LocalAuthor.objects.get(user=user).id
 
                 if user is not None:
                     login(request, user)
@@ -69,7 +69,7 @@ def loginPage(request):
                 else:
                     raise KeyError
 
-            except (KeyError, Author.DoesNotExist):
+            except (KeyError, LocalAuthor.DoesNotExist):
                 messages.info(request, "Username or Password is incorrect.")
 
     return render(request, 'user/login.html')
@@ -111,7 +111,7 @@ def register(request):
                 # add user to author group by default
                 group, created = Group.objects.get_or_create(name="author")
                 user.groups.add(group)
-                author = Author.objects.create(
+                author = LocalAuthor.objects.create(
                     user=user,
                     username=username,
                     displayName=full_name,
@@ -149,7 +149,7 @@ def home(request):
     posts of local authors, public posts of followed authors, and friends posts of friends.
     """
 
-    author = get_object_or_404(Author, user=request.user)
+    author = get_object_or_404(LocalAuthor, user=request.user)
 
     # get all local public posts
     posts = Post.objects.listed().get_public()
@@ -180,8 +180,8 @@ def friend_request(request, author_id, action):
     """
         Displays an author's friend requests 
     """
-    author = get_object_or_404(Author, pk=author_id)
-    curr_user = Author.objects.get(user=request.user)
+    author = get_object_or_404(LocalAuthor, pk=author_id)
+    curr_user = LocalAuthor.objects.get(user=request.user)
 
     if request.method == 'POST':
         if action not in ['accept', 'decline']:
@@ -203,8 +203,8 @@ def befriend(request, author_id):
         User can send an author a follow request
     """
     if request.method == 'POST':
-        author = get_object_or_404(Author, pk=author_id)
-        curr_user = Author.objects.get(user=request.user)
+        author = get_object_or_404(LocalAuthor, pk=author_id)
+        curr_user = LocalAuthor.objects.get(user=request.user)
 
         if author.has_follower(curr_user):
             messages.info(request, f'Already following {author.displayName}')
@@ -224,8 +224,8 @@ def un_befriend(request, author_id):
         User can unfriend an author
     """
     if request.method == 'POST':
-        author = get_object_or_404(Author, pk=author_id)
-        curr_user = Author.objects.get(user=request.user)
+        author = get_object_or_404(LocalAuthor, pk=author_id)
+        curr_user = LocalAuthor.objects.get(user=request.user)
 
         if author.has_follower(curr_user):
             author.followers.remove(curr_user)
@@ -267,7 +267,7 @@ def authors(request):
 
     # Django Software Foundation, "Generating aggregates for each item in a QuerySet", 2021-10-13
     # https://docs.djangoproject.com/en/3.2/topics/db/aggregation/#generating-aggregates-for-each-item-in-a-queryset
-    authors = Author.objects.all().annotate(Count("posts"))
+    authors = LocalAuthor.objects.all().annotate(Count("posts"))
     local_authors = [{
         "data": author,
         "type": "Local"
@@ -282,8 +282,8 @@ def author(request, author_id):
         user is premitted to view.
     """
 
-    curr_user = Author.objects.get(user=request.user)
-    author = get_object_or_404(Author, pk=author_id)
+    curr_user = LocalAuthor.objects.get(user=request.user)
+    author = get_object_or_404(LocalAuthor, pk=author_id)
 
     # TODO: Should become an API request since won't know if author is local/remote
 
@@ -310,8 +310,8 @@ def posts(request, author_id):
     """
         Allows user to create a post. The newly created post will also be rendered. 
     """
-    author = get_object_or_404(Author, pk=author_id)
-    user_id = Author.objects.get(user=request.user).id
+    author = get_object_or_404(LocalAuthor, pk=author_id)
+    user_id = LocalAuthor.objects.get(user=request.user).id
 
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES, user=user_id)
@@ -363,7 +363,7 @@ def editPost(request, id):
     """
         Edits an existing post
     """
-    author = Author.objects.get(user=request.user)
+    author = LocalAuthor.objects.get(user=request.user)
     post = Post.objects.get(id=id)
 
     if request.method == 'POST':
@@ -418,7 +418,7 @@ def likePost(request, id):
         Like a specific post
     """
     post = get_object_or_404(Post, id=id)
-    author = Author.objects.get(user=request.user)
+    author = LocalAuthor.objects.get(user=request.user)
     post = get_object_or_404(Post, id=id)
     host = request.get_host()
     if request.method == 'POST':
@@ -447,7 +447,7 @@ def commentPost(request, id):
         Render Post and comments
     '''
     post = get_object_or_404(Post, id=id)
-    author = get_object_or_404(Author, user=request.user)
+    author = get_object_or_404(LocalAuthor, user=request.user)
     showEditModal = request.GET.get('edit') == 'edit'
 
     try:
@@ -472,7 +472,7 @@ def deletePost(request, id):
     """
     # move functionality to API
     post = get_object_or_404(Post, id=id)
-    author = Author.objects.get(user=request.user)
+    author = LocalAuthor.objects.get(user=request.user)
     if post.author == author:
         post.delete()
     return redirect('socialDistribution:home')
@@ -482,7 +482,7 @@ def profile(request):
     '''
         Render user profile
     '''
-    author = get_object_or_404(Author, user=request.user)
+    author = get_object_or_404(LocalAuthor, user=request.user)
     djangoUser = get_object_or_404(get_user_model(), username=request.user)
 
     # add missing information to author
@@ -501,7 +501,7 @@ def inbox(request):
     """
         Renders info in a user's inbox
     """
-    author = Author.objects.get(user=request.user)
+    author = LocalAuthor.objects.get(user=request.user)
     follow_requests = author.inbox.follow_requests.all()
     posts = author.inbox.posts.all()
     context = {
