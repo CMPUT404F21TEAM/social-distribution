@@ -97,8 +97,7 @@ class Post(models.Model):
     # Base64 encoded binary field (image/png, image/jpg, application/base64)
     content_media = models.BinaryField(
         max_length=CONTENT_MEDIA_MAXLEN, null=True, blank=True)
-    author = models.ForeignKey(
-        'LocalAuthor', on_delete=models.CASCADE, related_name="posts")
+    author = models.ForeignKey('LocalAuthor', on_delete=models.CASCADE, related_name="posts")
 
     count = models.PositiveSmallIntegerField(default=0)
     pub_date = models.DateTimeField()
@@ -118,8 +117,7 @@ class Post(models.Model):
         default=PUBLIC
     )
     unlisted = models.BooleanField()
-    likes = models.ManyToManyField(
-        'LocalAuthor', related_name="liked_post", blank=True)
+    # likes = models.ManyToManyField('LocalAuthor', related_name="liked_post", blank=True)
 
     def get_comments_as_json(self):
         author_id = self.author.id

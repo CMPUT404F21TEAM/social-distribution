@@ -8,4 +8,5 @@ from .author import LocalAuthor
 from .post import Post
 from .category import Category
 from .comment import Comment
+from .like import Like
 from .inbox import Inbox

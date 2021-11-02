@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 import json
 import logging
+import datetime
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
@@ -251,7 +252,7 @@ class PostCommentsView(View):
         if not len(comment):
             return HttpResponseBadRequest("Comment cannot be empty.")
 
-        pub_date = datetime.now(timezone.utc)
+        pub_date = datetime.now(datetime.timezone.utc)
 
         try:
             author = get_object_or_404(LocalAuthor, pk=author_id)
@@ -347,12 +348,20 @@ class InboxView(View):
                 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
                 postId = data["object"].split("/")[-1]
                 likingAuthorId = data["author"]["id"].split("/")[-1]
+                
+                likingAuthor, created = Author.objects.get_or_create(
+                    _url=data["author"]["id"]
+                    # error here
+                    # can't use @property
+                )
                 post = get_object_or_404(Post, id=postId)
                 author = LocalAuthor.objects.get(id=likingAuthorId)
-                if post.likes.filter(id=author.id).exists():
-                    post.likes.remove(author)
+
+                if post.likes.filter(author__id=likingAuthorId).exists():
+                    like = post.likes.get(author__id=likingAuthorId)
+                    like.delete()
                 else:
-                    post.likes.add(author)
+                    post.likes.create(author=author, post=post)
 
                 return HttpResponse(status=200)
 

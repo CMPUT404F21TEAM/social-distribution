@@ -44,13 +44,14 @@ class LocalAuthor(Author):
         friend_requests     fksdjfskl;jfaskdf
         followers           Author's followers (array)
     '''
+
     user = models.OneToOneField(User, null=True, on_delete=models.CASCADE)
     username = models.CharField(max_length=50, default='', unique=True)
     displayName = models.CharField(max_length=50)
     githubUrl = models.CharField(max_length=50, null=True)
     profileImageUrl = models.CharField(max_length=50, null=True)
 
-    followers = models.ManyToManyField('Author', blank=True, related_name="followers")
+    followers = models.ManyToManyField('LocalAuthor', blank=True)
 
     def has_follower(self, author):
         """
