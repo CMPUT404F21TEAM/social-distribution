@@ -462,6 +462,8 @@ def commentPost(request, id):
         'comments': comments
     }
 
+    return render(request, 'posts/comments.html', context)
+
 def likeComment(request, id):
     '''
         Likes a comment

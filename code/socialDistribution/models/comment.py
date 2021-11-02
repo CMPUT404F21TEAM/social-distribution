@@ -13,7 +13,7 @@ class Comment(models.Model):
         pub_date            Published date (datetime)
         post                Post related to the comment (reference to post)
         id                  Auto-generated id
-        likes               Authors that liked this post
+        likes               Authors that liked this comment
     '''
     class CommentContentType(models.TextChoices):
         PLAIN = 'PL', 'text/plain'
