@@ -1,6 +1,6 @@
 from django.test import TestCase
 from mixer.backend.django import mixer
-from datetime import timedelta
+from datetime import timedelta, timezone
 from .models import *
 from .builders import *
 
@@ -20,6 +20,8 @@ class PostTest(TestCase):
         likes = 25
         post = PostBuilder().likes(likes).build()
         self.assertTrue(post.total_likes() == likes)
+
+    # TODO test all PostQuerySet methods
 
 
 class CommentModelTests(TestCase):

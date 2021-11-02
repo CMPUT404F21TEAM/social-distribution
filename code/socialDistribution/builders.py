@@ -1,6 +1,7 @@
-from .models import *
 from mixer.backend.django import mixer
-from datetime import datetime
+from datetime import datetime, timezone
+
+from .models import *
 
 
 class PostBuilder:
