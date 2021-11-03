@@ -512,8 +512,6 @@ def profile(request):
     djangoUser = get_object_or_404(get_user_model(), username=request.user)
 
     # add missing information to author
-    author.first_name = djangoUser.first_name
-    author.last_name = djangoUser.last_name
     author.email = djangoUser.email
 
     return render(request, 'user/profile.html', {'author': author})

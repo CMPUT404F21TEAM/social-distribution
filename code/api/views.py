@@ -75,14 +75,13 @@ class AuthorView(View):
         """ POST - Update profile of {author_id} """
 
         # extract post data
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
+        display_name = request.POST.get('display_name')
         github_url = request.POST.get('github_url')
         email = request.POST.get('email')
         profile_image_url = request.POST.get('profile_image_url')
 
         # check data for empty string
-        if (not first_name or not last_name or not email):
+        if (not display_name or not email):
             return HttpResponseBadRequest()
 
         djangoUser = get_object_or_404(get_user_model(), username = request.user)
@@ -90,15 +89,13 @@ class AuthorView(View):
         
         try:
             # update author
-            author.displayName = f"{first_name} {last_name}"
+            author.displayName = display_name
             author.githubUrl = github_url
             author.profileImageUrl = profile_image_url
             author.save()
 
             # update django user
             djangoUser.email = email
-            djangoUser.first_name = first_name
-            djangoUser.last_name = last_name
             djangoUser.save()
 
         except Exception as e:
