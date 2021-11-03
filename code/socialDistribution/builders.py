@@ -84,5 +84,5 @@ class PostBuilder:
         for i in range(likes):
             # ensure unique by adding numbers
             author = mixer.blend(LocalAuthor, id=i+2453245, username=i+2453245)
-            self.__post.likes.add(author)
+            self.__post.likes.create(author=author)
         return self

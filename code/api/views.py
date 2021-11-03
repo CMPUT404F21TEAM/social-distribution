@@ -350,10 +350,9 @@ class InboxView(View):
                 likingAuthorId = data["author"]["id"].split("/")[-1]
                 
                 likingAuthor, created = Author.objects.get_or_create(
-                    _url=data["author"]["id"]
-                    # error here
-                    # can't use @property
+                    url=data["author"]["id"]
                 )
+                
                 post = get_object_or_404(Post, id=postId)
                 author = LocalAuthor.objects.get(id=likingAuthorId)
 

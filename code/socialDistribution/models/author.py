@@ -13,20 +13,11 @@ class Author(models.Model):
         rely on API calls to get the data corresponding to the author from a remote server.
 
         In the future, caching can be used with this model to reduce the number of API calls being sent out.
+        
+        When a local author is created, it must be re-fetched from the database in order to access the auto-generated author.url attribute.
     """
 
     url = models.URLField()
-
-    
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)  # Call the "real" save() method.
-        self.update_url()
-
-    def update_url(self):
-        # https://stackoverflow.com/a/66271445
-        url = f"http://{HOST}/{API_PREFIX}/author/{self.id}"
-        if self.url != url:
-            Author.objects.filter(id=self.id).update(url=url)
 
 
 class LocalAuthor(Author):
@@ -88,3 +79,18 @@ class LocalAuthor(Author):
             # #TODO
             "profileImage": self.profileImageUrl
         }
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)  # Call the "real" save() method.
+        self._set_url()
+
+    
+    def _set_url(self):
+        """ Sets the URL of the author to be "http://{HOST}/{API_PREFIX}/author/{self.id}" if one was not set when created. This 
+            sets the URL attribute of all local authors.
+        """
+        # Clark, https://stackoverflow.com/users/10424244/clark, "Django - How to get self.id when saving a new object?", 
+        # 2021-02-19, https://stackoverflow.com/a/66271445, CC BY-SA 4.0
+        url = f"http://{HOST}/{API_PREFIX}/author/{self.id}"
+        if self.url != url:
+            Author.objects.filter(id=self.id).update(url=url)
