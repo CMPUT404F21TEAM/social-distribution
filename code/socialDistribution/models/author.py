@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, update_last_login
 from datetime import *
 
 from cmput404.constants import HOST, API_PREFIX
@@ -15,16 +15,18 @@ class Author(models.Model):
         In the future, caching can be used with this model to reduce the number of API calls being sent out.
     """
 
-    _url = models.URLField()
+    url = models.URLField()
 
-    @property
-    def url(self):
-        """ Gets the URL ID of the author """
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)  # Call the "real" save() method.
+        self.update_url()
 
-        if self._url:
-            return self._url
-        else:
-            return f"http://{HOST}/{API_PREFIX}/author/{self.id}"
+    def update_url(self):
+        # https://stackoverflow.com/a/66271445
+        url = f"http://{HOST}/{API_PREFIX}/author/{self.id}"
+        if self.url != url:
+            Author.objects.filter(id=self.id).update(url=url)
 
 
 class LocalAuthor(Author):
