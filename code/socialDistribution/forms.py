@@ -10,9 +10,18 @@ class CreateUserForm(UserCreationForm):
     """
         Create User Form Configuration
     """
+    # ref: https://stackoverflow.com/questions/48049498/django-usercreationform-custom-fields - Chirdeep Tomar
+    username = forms.CharField(widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Username...'}))
+    display_name = forms.CharField(max_length=50, widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Full Name...', 'required': 'True'}))
+    email = forms.EmailField(widget = forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email...'}))
+    password1 = forms.CharField(widget = forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter password...'}))
+    password2 = forms.CharField(widget = forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Re-enter Password...'}))
+    github_url = forms.URLField(max_length=50, required = False, widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Github URL...'}))
+    profile_image_url = forms.URLField(max_length=50, required = False, widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Profile Image URL...'}))
+
     class Meta: 
         model = User
-        fields = ['username', 'email', 'password1', 'password2', 'first_name', 'last_name']
+        fields = ['username', 'display_name', 'email', 'password1', 'password2', 'github_url', 'profile_image_url']
 
 # MDN Web Docs, "Django Tutorial Part 9: Working with forms",
 # https://developer.mozilla.org/en-US/docs/Learn/Server-side/Django/Forms, 2021-10-15, CC BY-SA 2.5
