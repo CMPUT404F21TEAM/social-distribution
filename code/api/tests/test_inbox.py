@@ -75,7 +75,7 @@ class InboxViewTests(TestCase):
 
     def test_post_local_post(self):
         # NOTE: This test is very basic. More work needed on this endpoint.
-        
+
         author1, inbox1 = create_author(
             1,
             "user1",
@@ -131,3 +131,44 @@ class InboxViewTests(TestCase):
         self.assertEqual(query_set.count(), 1)
         self.assertEqual(query_set[0], dummy_post)
 
+    def test_post_like(self):
+        author, inbox = create_author(
+            1,
+            "user1",
+            "Greg Johnson",
+            "http://github.com/gjohnson"
+        )
+        post = mixer.blend(Post, id=1, author=author)
+
+        body = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "summary": "Diego Becerra Likes your post",
+            "type": "like",
+            "author": {
+                "type": "author",
+                "id": "http://remote.com/author/432423432",
+                "host": "http://remote.com/author/432423432",
+                "displayName": "Diego Becerra",
+                "url": "http://remote.com/author/432423432",
+                "github": "http://github.com/diego",
+                "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
+            },
+            "object": "http://127.0.0.1:5454/author/1/posts/1"
+        }
+
+        # Send the like to author
+        response = self.client.post(
+            reverse("api:inbox", kwargs={"author_id": 1}),
+            content_type="application/json",
+            data=body
+        )
+
+        self.assertEqual(response.status_code, 200)
+        
+        # Check that the post received a like
+        post = Post.objects.get(id=1)
+        self.assertEqual(1, post.likes.count())
+
+        # Check that the like was from the right author
+        like = post.likes.first()
+        self.assertEqual("http://remote.com/author/432423432", like.author.url)

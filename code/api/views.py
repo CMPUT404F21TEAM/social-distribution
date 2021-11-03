@@ -346,21 +346,20 @@ class InboxView(View):
 
             elif data["type"] == "like":
                 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-                postId = data["object"].split("/")[-1]
-                likingAuthorId = data["author"]["id"].split("/")[-1]
+                post_author_id, post_id = url_parser.parse_post(data["object"])
+                liking_author_url = data["author"]["id"]
                 
                 likingAuthor, created = Author.objects.get_or_create(
-                    url=data["author"]["id"]
+                    url=liking_author_url
                 )
-                
-                post = get_object_or_404(Post, id=postId)
-                author = LocalAuthor.objects.get(id=likingAuthorId)
 
-                if post.likes.filter(author__id=likingAuthorId).exists():
-                    like = post.likes.get(author__id=likingAuthorId)
+                post = get_object_or_404(Post, id=post_id)
+
+                if post.likes.filter(author=likingAuthor).exists():
+                    like = post.likes.get(author=likingAuthor)
                     like.delete()
                 else:
-                    post.likes.create(author=author, post=post)
+                    post.likes.create(author=likingAuthor, post=post)
 
                 return HttpResponse(status=200)
 
