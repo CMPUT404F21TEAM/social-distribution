@@ -13,6 +13,7 @@ class Like(models.Model):
         object              Object related to the like (should be immplemented by child class)
     '''
 
+    # Django Software Foundation, "Abstract base classes", 2021-11-04,
     # https://docs.djangoproject.com/en/3.2/topics/db/models/#abstract-base-classes
     class Meta:
         abstract = True
