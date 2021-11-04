@@ -28,7 +28,7 @@ class Comment(models.Model):
 
     post = models.ForeignKey('Post', on_delete=models.CASCADE)
     pub_date = models.DateTimeField()
-    likes = models.ManyToManyField('Author', related_name="comment_likes")
+    # likes = models.ManyToManyField('LocalAuthor', related_name="comment_likes")
 
     def when(self):
         '''

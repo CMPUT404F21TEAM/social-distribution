@@ -347,56 +347,41 @@ class InboxView(View):
 
             elif data["type"] == "like":
                 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-                # post_author_id, post_id = url_parser.parse_post(data["object"])
-                # liking_author_url = data["author"]["id"]
-                
-                # likingAuthor, created = Author.objects.get_or_create(
-                #     url=liking_author_url
-                # )
+                # For what was this reference used?
 
-                # post = get_object_or_404(Post, id=post_id)
-
-                # if post.likes.filter(author=likingAuthor).exists():
-                #     like = post.likes.get(author=likingAuthor)
-                #     like.delete()
-                # else:
-                #     post.likes.create(author=likingAuthor, post=post)
-
-                # NEW
-
-                # extract data from reqest body
+                # extract data from request body
                 splitObject = data["object"].split("/")
                 object = data["object"].split("/")[-2]  # Feels a bit dangerous, what if there is a trailing '/'?
                 id = splitObject[-1] # Dangerous
-                # post_author_id, post_id = url_parser.parse_post(data["object"])
                 liking_author_url = data["author"]["id"]
+
+                # let's try to use url_parser.parse_something(data["object"]) for parsing url
                 
                 # retrieve author
-                likingAuthor, created = Author.objects.get_or_create(
+                liking_author, created = Author.objects.get_or_create(
                     url=liking_author_url
                 )
-                # likingAuthorId = data["author"]["id"].split("/")[-1]
-                # author = Author.objects.get(id=likingAuthorId)
 
                 # check if liking post or comment
                 if object == 'comments':
-                    contextObject = get_object_or_404(Comment, id=id)
+                    context_object = get_object_or_404(Comment, id=id)
                 elif (object == 'posts'):
-                    contextObject = get_object_or_404(Post, id=id)
+                    context_object = get_object_or_404(Post, id=id)
                 else:
-                    return HttpResponseBadRequest()
+                    raise ValueError()
                 
-                if contextObject.likes.filter(id=likingAuthor.id).exists():
-                    # if already liked unlike
-                    like = contextObject.likes.get(author=likingAuthor)
+                if context_object.likes.filter(id=liking_author.id).exists():
+                    # if like already exists, remove it
+                    like = context_object.likes.get(author=liking_author)
                     like.delete()
                 else:
-                    contextObject.likes.create(author=likingAuthor, post=post)
+                    # create a new like from liking_author on object 
+                    context_object.likes.create(author=liking_author, object=context_object)
 
                 return HttpResponse(status=200)
 
             else:
-                return HttpResponseBadRequest()
+                raise ValueError()
 
         except KeyError as e:
             return HttpResponseBadRequest("Unknown data format")
