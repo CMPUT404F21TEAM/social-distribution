@@ -4,9 +4,10 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 from mixer.backend.django import mixer
-import json
+from datetime import datetime, timezone
 
-from socialDistribution.models import LocalAuthor, Inbox, Post
+from socialDistribution.models import LocalAuthor, Inbox, Post, Comment
+from cmput404.constants import *
 
 # Documentation and code samples taken from the following references:
 # Django Software Foundation, https://docs.djangoproject.com/en/3.2/intro/tutorial05/
@@ -130,6 +131,39 @@ class InboxViewTests(TestCase):
         query_set = author2.inbox.posts.all()
         self.assertEqual(query_set.count(), 1)
         self.assertEqual(query_set[0], dummy_post)
+    
+    def test_post_comment_local_like(self):
+        '''
+            Test liking a comment from a local author
+        '''
+        author1, inbox1 = create_author(
+            1,
+            "user1",
+            "Greg Johnson",
+            "http://github.com/gjohnson"
+        ) 
+
+        post = mixer.blend(Post, author = author1)
+        comment = mixer.blend(Comment, author=author1, post=post, pub_date = datetime.now(timezone.utc) )
+
+        body = {
+                   "@context": "https://www.w3.org/ns/activitystreams",
+                    "summary": f"{author1.username} Likes your post",         
+                    "type": "like",
+                    "author": author1.as_json(),
+                    "object":f"http://{HOST}/author/{post.author.id}/posts/{post.id}/comments/{comment.id}"
+        }
+
+        response = self.client.post(
+            reverse("api:inbox", kwargs={"author_id": 1}),
+            content_type="application/json",
+            data=body
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(comment.total_likes(), 1)
+        liker = comment.likes.all()[0]
+        self.assertEqual(liker.id, author1.id)
 
     def test_post_like(self):
         author, inbox = create_author(

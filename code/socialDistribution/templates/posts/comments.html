@@ -8,8 +8,9 @@
 <link rel="stylesheet" type="text/css" href="{% static 'css/posts/comments.css' %}">
 {% endblock %}
 
-{% load author %}
 {% load post %}
+{% load comment %}
+
 {% block body %}
 <!-- post -->
 <div class="conatiner">
@@ -25,9 +26,13 @@
         <textarea name="comment" id="newCommentTextArea" class="m-2" placeholder="Add New Comment."></textarea>
         <button type="submit" class="btn btn-primary" disabled id="newCommentButton">Post Comment</button>
     </form>
+    
     {% for comment in comments %}
-    {% card_author author=author author_type=author_type curr_user=author profile_card=False comment_card=True comment=comment %}
+        {% comment_card author=author comment=comment author_type=author_type post=post %}
     {% endfor %}
+
+    <!-- Workaround for bottom spacing -->
+    <div class="mb-1">&nbsp;</div>
 </div>
 
 {% load modal %}
@@ -44,12 +49,16 @@
     // https://stackoverflow.com/a/40233358 - Shuhad zaman "urlParam"
     $.urlParam = function (name) {
         var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
-        return results[1] || 0;
+        
+        if (results && results.length > 1) {
+            return results[1];
+        }
+        return 0;
     }
 
     $(function () {
         var param = $.urlParam('action');
-        console.log(param);
+
         if (param == 'edit') {
             $('#edit_post_modal').modal('show');
         } else if (param == 'delete') {

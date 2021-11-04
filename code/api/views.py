@@ -7,6 +7,7 @@ from django.core import serializers
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
+from datetime import datetime, timezone
 import json
 import logging
 import datetime
@@ -346,20 +347,51 @@ class InboxView(View):
 
             elif data["type"] == "like":
                 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-                post_author_id, post_id = url_parser.parse_post(data["object"])
+                # post_author_id, post_id = url_parser.parse_post(data["object"])
+                # liking_author_url = data["author"]["id"]
+                
+                # likingAuthor, created = Author.objects.get_or_create(
+                #     url=liking_author_url
+                # )
+
+                # post = get_object_or_404(Post, id=post_id)
+
+                # if post.likes.filter(author=likingAuthor).exists():
+                #     like = post.likes.get(author=likingAuthor)
+                #     like.delete()
+                # else:
+                #     post.likes.create(author=likingAuthor, post=post)
+
+                # NEW
+
+                # extract data from reqest body
+                splitObject = data["object"].split("/")
+                object = data["object"].split("/")[-2]  # Feels a bit dangerous, what if there is a trailing '/'?
+                id = splitObject[-1] # Dangerous
+                # post_author_id, post_id = url_parser.parse_post(data["object"])
                 liking_author_url = data["author"]["id"]
                 
+                # retrieve author
                 likingAuthor, created = Author.objects.get_or_create(
                     url=liking_author_url
                 )
+                # likingAuthorId = data["author"]["id"].split("/")[-1]
+                # author = Author.objects.get(id=likingAuthorId)
 
-                post = get_object_or_404(Post, id=post_id)
-
-                if post.likes.filter(author=likingAuthor).exists():
-                    like = post.likes.get(author=likingAuthor)
+                # check if liking post or comment
+                if object == 'comments':
+                    contextObject = get_object_or_404(Comment, id=id)
+                elif (object == 'posts'):
+                    contextObject = get_object_or_404(Post, id=id)
+                else:
+                    return HttpResponseBadRequest()
+                
+                if contextObject.likes.filter(id=likingAuthor.id).exists():
+                    # if already liked unlike
+                    like = contextObject.likes.get(author=likingAuthor)
                     like.delete()
                 else:
-                    post.likes.create(author=likingAuthor, post=post)
+                    contextObject.likes.create(author=likingAuthor, post=post)
 
                 return HttpResponse(status=200)
 
