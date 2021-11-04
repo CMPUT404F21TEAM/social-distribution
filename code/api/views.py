@@ -321,7 +321,7 @@ class InboxView(View):
                 return HttpResponse(status=200)
 
             elif data["type"] == "follow":
-                # Actor requests to follow Object
+                # actor requests to follow Object
 
                 actor, obj = data["actor"], data["object"]
                 if not url_parser.is_local_url(actor["id"]) or not url_parser.is_local_url(obj["id"]):
@@ -332,7 +332,7 @@ class InboxView(View):
 
                 # check if this is the correct endpoint
                 if followee_id != author_id:
-                    raise ValueError()
+                    raise ValueError("Object ID does not match inbox ID")
                 
                 inbox = get_object_or_404(Inbox, author_id=followee_id)
 
@@ -368,7 +368,7 @@ class InboxView(View):
                 elif (object == 'posts'):
                     context_object = get_object_or_404(Post, id=id)
                 else:
-                    raise ValueError()
+                    raise ValueError("Unknown object for like")
                 
                 if context_object.likes.filter(id=liking_author.id).exists():
                     # if like already exists, remove it
@@ -381,17 +381,21 @@ class InboxView(View):
                 return HttpResponse(status=200)
 
             else:
-                raise ValueError()
+                raise ValueError("Unknown object received by inbox")
 
         except KeyError as e:
-            return HttpResponseBadRequest("Unknown data format")
+            return HttpResponseBadRequest("JSON body could not be parsed")
 
         except ValueError as e:
-            return HttpResponseBadRequest()
+            return JsonResponse({
+                    "error": e.args[0]
+                }, status=400)
         
         except Exception as e:
             logger.error(e, exc_info=True)
-            return HttpResponse("Internal Server Error", status=500)
+            return JsonResponse({
+                    "error": "Internal Server Error"
+                }, status=500)
 
     def delete(self, request, author_id):
         """ DELETE - Clear the inbox """
