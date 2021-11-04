@@ -7,13 +7,13 @@ from cmput404.constants import HOST, API_PREFIX
 class Comment(models.Model):
     '''
     Comment model:
-        author              Comment author (reference to author)
+        id                  Auto-generated id
+        author              Comment author (reference to LocalAuthor)
         content_type        Markdown or Text
         comment             Comment content (markdown or text)
         pub_date            Published date (datetime)
         post                Post related to the comment (reference to post)
-        id                  Auto-generated id
-        likes               Authors that liked this comment
+        likes               Likes created by Authors that liked this comment
     '''
     class CommentContentType(models.TextChoices):
         PLAIN = 'PL', 'text/plain'
@@ -28,7 +28,6 @@ class Comment(models.Model):
 
     post = models.ForeignKey('Post', on_delete=models.CASCADE)
     pub_date = models.DateTimeField()
-    # likes = models.ManyToManyField('LocalAuthor', related_name="comment_likes")
 
     def when(self):
         '''

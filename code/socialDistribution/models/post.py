@@ -62,7 +62,7 @@ class Post(models.Model):
         pub_date            Post published date (datetime)
         visibility          PUBLIC or FRIENDS
         unlisted            Boolean indicating whether post is listed or not
-        likes               Authors that liked this post
+        likes               Likes created by Authors that liked this post
 
     '''
 
@@ -117,7 +117,6 @@ class Post(models.Model):
         default=PUBLIC
     )
     unlisted = models.BooleanField()
-    # likes = models.ManyToManyField('LocalAuthor', related_name="liked_post", blank=True)
 
     def get_comments_as_json(self):
         author_id = self.author.id
