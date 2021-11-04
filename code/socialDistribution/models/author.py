@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User, update_last_login
+from django.contrib.auth.models import User
 from datetime import *
 
 from cmput404.constants import HOST, API_PREFIX
@@ -18,6 +18,12 @@ class Author(models.Model):
     """
 
     url = models.URLField()
+
+    def as_json(self):
+        # This method is an example, not yet implemented
+        # Makes a GET request to URL to get the Author data
+        # The LocalAuthor method will override this, making it more efficient by fetching data
+        # straight from the database instead of an HTTP request
 
 
 class LocalAuthor(Author):
