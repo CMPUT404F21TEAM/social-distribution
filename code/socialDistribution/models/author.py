@@ -24,6 +24,7 @@ class Author(models.Model):
         # Makes a GET request to URL to get the Author data
         # The LocalAuthor method will override this, making it more efficient by fetching data
         # straight from the database instead of an HTTP request
+        pass
 
 
 class LocalAuthor(Author):
