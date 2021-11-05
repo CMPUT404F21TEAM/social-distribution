@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django import forms
-from .models import Post, Author, Category
+from .models import Post, LocalAuthor, Category
 
 class CreateUserForm(UserCreationForm):
     """
@@ -47,7 +47,7 @@ class PostForm(forms.Form):
     post_recipients = forms.ModelMultipleChoiceField(
             required=False,
             widget=forms.CheckboxSelectMultiple,
-            queryset=Author.objects.all(),
+            queryset=LocalAuthor.objects.all(),
             label="Share with:"
         )
 
@@ -60,7 +60,7 @@ class PostForm(forms.Form):
         if postId > 0:
             post = Post.objects.get(id=postId)
         super(PostForm, self).__init__(*args, **kwargs)
-        self.fields['post_recipients'].queryset = Author.objects.all().exclude(id=user)
+        self.fields['post_recipients'].queryset = LocalAuthor.objects.all().exclude(id=user)
         if post:
             self.fields['title'].initial = post.title
             self.fields['description'].initial = post.description

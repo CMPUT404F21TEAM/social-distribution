@@ -9,11 +9,11 @@ class Inbox(models.Model):
         followRequests  follow requests pushed to this inbox (M2M)
     '''
     author = models.OneToOneField(
-        'Author', on_delete=models.CASCADE, primary_key=True)
+        'LocalAuthor', on_delete=models.CASCADE, primary_key=True)
     posts = models.ManyToManyField(
         'Post', related_name='pushed_posts', blank=True)
     follow_requests = models.ManyToManyField(
-        'Author', related_name='follow_requests', blank=True)
+        'LocalAuthor', related_name='follow_requests', blank=True)
 
     def has_req_from(self, author):
         """
