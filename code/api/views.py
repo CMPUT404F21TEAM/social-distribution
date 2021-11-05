@@ -350,7 +350,7 @@ class InboxView(View):
                 object = split_url[-2]
                 id = split_url[-1]
                 
-                # retrieve author urlparse(data['author']['id']).path
+                # retrieve author
                 liking_author_id = urlparse(data['author']['id']).path.strip('/').split("/")[-1]
                 author = Author.objects.get(id=liking_author_id)
 
