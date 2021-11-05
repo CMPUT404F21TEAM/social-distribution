@@ -88,11 +88,9 @@ def register(request):
             try:
                 # extract form data
                 username = form.cleaned_data.get('username')
-                first_name = form.cleaned_data.get('first_name')
-                last_name = form.cleaned_data.get('last_name')
-                github_url = request.POST.get('github_url', '')
-                profile_image_url = request.POST.get('profile_image_url', '')
-                full_name = f"{first_name} {last_name}"
+                display_name = form.cleaned_data.get('display_name')
+                github_url = form.cleaned_data.get('github_url', '')
+                profile_image_url = form.cleaned_data.get('profile_image_url', '')
 
                 # check github url
                 if (github_url and not github_url.startswith('https://github.com/')):
@@ -114,7 +112,7 @@ def register(request):
                 author = Author.objects.create(
                     user=user,
                     username=username,
-                    displayName=full_name,
+                    displayName=display_name,
                     githubUrl=github_url,
                     profileImageUrl=profile_image_url
                 )
@@ -514,8 +512,6 @@ def profile(request):
     djangoUser = get_object_or_404(get_user_model(), username=request.user)
 
     # add missing information to author
-    author.first_name = djangoUser.first_name
-    author.last_name = djangoUser.last_name
     author.email = djangoUser.email
 
     return render(request, 'user/profile.html', {'author': author})

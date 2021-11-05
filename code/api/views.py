@@ -8,6 +8,7 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 import json
 import logging
 
@@ -75,14 +76,13 @@ class AuthorView(View):
         """ POST - Update profile of {author_id} """
 
         # extract post data
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
+        display_name = request.POST.get('display_name')
         github_url = request.POST.get('github_url')
         email = request.POST.get('email')
         profile_image_url = request.POST.get('profile_image_url')
 
         # check data for empty string
-        if (not first_name or not last_name or not email):
+        if (not display_name or not email):
             return HttpResponseBadRequest()
 
         djangoUser = get_object_or_404(get_user_model(), username = request.user)
@@ -90,15 +90,13 @@ class AuthorView(View):
         
         try:
             # update author
-            author.displayName = f"{first_name} {last_name}"
+            author.displayName = display_name
             author.githubUrl = github_url
             author.profileImageUrl = profile_image_url
             author.save()
 
             # update django user
             djangoUser.email = email
-            djangoUser.first_name = first_name
-            djangoUser.last_name = last_name
             djangoUser.save()
 
         except Exception as e:
@@ -347,13 +345,14 @@ class InboxView(View):
             elif data["type"] == "like":
                 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
                 # extract data from reqest body
-                splitObject = data["object"].split("/")
-                object = data["object"].split("/")[-2]
-                id = splitObject[-1]
+                object_url = urlparse(data['object']).path.strip('/')
+                split_url = object_url.split('/')
+                object = split_url[-2]
+                id = split_url[-1]
                 
                 # retrieve author
-                likingAuthorId = data["author"]["id"].split("/")[-1]
-                author = Author.objects.get(id=likingAuthorId)
+                liking_author_id = urlparse(data['author']['id']).path.strip('/').split("/")[-1]
+                author = Author.objects.get(id=liking_author_id)
 
                 # check if liking post or comment
                 if object == 'comments':
