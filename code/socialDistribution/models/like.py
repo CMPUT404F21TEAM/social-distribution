@@ -13,9 +13,9 @@ class Like(models.Model):
         object              Object related to the like (should be immplemented by child class)
     '''
 
-    # Django Software Foundation, "Abstract base classes", 2021-11-04,
-    # https://docs.djangoproject.com/en/3.2/topics/db/models/#abstract-base-classes
     class Meta:
+        # Django Software Foundation, "Abstract base classes", 2021-11-04,
+        # https://docs.djangoproject.com/en/3.2/topics/db/models/#abstract-base-classes
         abstract = True
 
     author = models.ForeignKey('Author', on_delete=models.CASCADE)
@@ -33,6 +33,7 @@ class Like(models.Model):
             "type": "like",
         }
 
+
 class PostLike(Like):
     '''
     PostLike model:
@@ -40,6 +41,13 @@ class PostLike(Like):
         author              Like author (reference to Author)
         object              Post related to the like (reference to Post)
     '''
+
+    class Meta:
+        # https://docs.djangoproject.com/en/3.2/ref/models/constraints/#uniqueconstraint
+        constraints = [
+            # do not allow author to like same object more than once
+            models.UniqueConstraint(fields=['author', 'object'], name='unique_post_like'),
+        ]
 
     object = models.ForeignKey('Post', on_delete=models.CASCADE, related_name="likes")
 
@@ -51,5 +59,12 @@ class CommentLike(Like):
         author              Like author (reference to Author)
         object              Comment related to the like (reference to Comment)
     '''
+
+    class Meta:
+        # https://docs.djangoproject.com/en/3.2/ref/models/constraints/#uniqueconstraint
+        constraints = [
+            # do not allow author to like same object more than once
+            models.UniqueConstraint(fields=['author', 'object'], name='unique_comment_like')
+        ]
 
     object = models.ForeignKey('Comment', on_delete=models.CASCADE, related_name="likes")
