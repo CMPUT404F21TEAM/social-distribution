@@ -16,7 +16,7 @@ def comment_card(*args, **kwargs):
     is_friend = author.is_friends_with(comment.author)
 
     # manage comment like data
-    isLiked = comment.likes.filter(id=author.id).exists()
+    isLiked = comment.likes.filter(author=author).exists()
 
     likeText = ''
     likes = comment.total_likes()
