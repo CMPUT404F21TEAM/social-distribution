@@ -9,9 +9,13 @@
 
 {% load post %}
 {% load modal %}
+{% load github_event %}
 {% block body %}
     {% if latest_posts %}
         <div class="container align-self-center" id="post_container">
+            {% for github_event in github_events %}
+                {% card_gh_event github_event %}
+            {% endfor %}
             {% for post in latest_posts %}
                 {% card_post post author %}
             {% endfor %}
