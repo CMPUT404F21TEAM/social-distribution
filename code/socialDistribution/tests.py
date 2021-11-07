@@ -10,6 +10,7 @@ from .builders import *
 
 
 class AuthorTests(TestCase):
+    """ Unit tests for Author. """
 
     def test_create_author(self):
         url = "http://notmyserver.com/author/839028403"
@@ -23,35 +24,24 @@ class AuthorTests(TestCase):
 
 
 class LocalAuthorTests(TestCase):
+    """ Unit tests for LocalAuthor """
 
     def test_create_local_author(self):
-        user = mixer.blend(User, username="user1")
-        username = "user1"
-        display_name = "John Doe"
-        github_url = "http://github.com/john"
-        profile_image_url = ""
+        author = mixer.blend(LocalAuthor)
+        
+        fetched = LocalAuthor.objects.get(username=author.username)
 
-        author = LocalAuthor.objects.create(
-            user=user,
-            username=username,
-            displayName=display_name,
-            githubUrl=github_url,
-            profileImageUrl=profile_image_url
-        )
+        self.assertEqual(author.id, fetched.id)
+        self.assertEqual(author.user, fetched.user)
+        self.assertEqual(author.username, fetched.username)
+        self.assertEqual(author.displayName, fetched.displayName)
+        self.assertEqual(author.githubUrl, fetched.githubUrl)
+        self.assertEqual(author.profileImageUrl, fetched.profileImageUrl)
+        self.assertEqual(f"http://127.0.0.1:8000/api/author/{author.id}", fetched.url)
 
-        id = author.id
+        vanilla_author = Author.objects.get(id=author.id)
+        self.assertEqual(f"http://127.0.0.1:8000/api/author/{author.id}", vanilla_author.url)
 
-        fetched = LocalAuthor.objects.get(username=username)
-
-        self.assertEqual(user, fetched.user)
-        self.assertEqual(username, fetched.username)
-        self.assertEqual(display_name, fetched.displayName)
-        self.assertEqual(github_url, fetched.githubUrl)
-        self.assertEqual(profile_image_url, fetched.profileImageUrl)
-        self.assertEqual(f"http://127.0.0.1:8000/api/author/{id}", fetched.url)
-
-        vanilla_author = Author.objects.get(id=id)
-        self.assertEqual(f"http://127.0.0.1:8000/api/author/{id}", vanilla_author.url)
 
 
 class PostTest(TestCase):
