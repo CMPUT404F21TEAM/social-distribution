@@ -17,7 +17,7 @@ def card_post(post, author):
     isAuthor = post.author == author
 
     # Likes
-    isLiked = post.likes.filter(id=author.id).exists()
+    isLiked = post.likes.filter(author=author).exists()
     likeText = ''
     likes = post.total_likes()
     if isLiked:

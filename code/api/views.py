@@ -365,7 +365,7 @@ class InboxView(View):
                 else:
                     raise ValueError("Unknown object for like")
                 
-                if context_object.likes.filter(id=liking_author.id).exists():
+                if context_object.likes.filter(author=liking_author).exists():
                     # if like already exists, remove it
                     like = context_object.likes.get(author=liking_author)
                     like.delete()
