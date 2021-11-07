@@ -9,7 +9,7 @@ from .forms import CreateUserForm, PostForm
 from .decorators import allowedUsers, unauthenticated_user
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.urls import reverse
 from .models import *
 from datetime import datetime
@@ -265,7 +265,8 @@ def authors(request):
 
     # Django Software Foundation, "Generating aggregates for each item in a QuerySet", 2021-10-13
     # https://docs.djangoproject.com/en/3.2/topics/db/aggregation/#generating-aggregates-for-each-item-in-a-queryset
-    authors = LocalAuthor.objects.all().annotate(Count("posts"))
+    authors = LocalAuthor.objects.annotate(
+        posts__count=Count("posts", filter=Q(posts__visibility=Post.PUBLIC)))
     local_authors = [{
         "data": author,
         "type": "Local"
