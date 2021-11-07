@@ -4,3 +4,7 @@ textarea {
     -moz-box-sizing: border-box;
     box-sizing: border-box;
 }
+
+.profile-img, .comment-card__display-name {
+    cursor: pointer;
+}

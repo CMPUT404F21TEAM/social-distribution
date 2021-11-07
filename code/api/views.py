@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 import json
 import logging
-import datetime
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
@@ -251,7 +250,7 @@ class PostCommentsView(View):
         if not len(comment):
             return HttpResponseBadRequest("Comment cannot be empty.")
 
-        pub_date = datetime.now(datetime.timezone.utc)
+        pub_date = datetime.now(timezone.utc)
 
         try:
             author = get_object_or_404(LocalAuthor, pk=author_id)
@@ -366,7 +365,7 @@ class InboxView(View):
                 else:
                     raise ValueError("Unknown object for like")
                 
-                if context_object.likes.filter(id=liking_author.id).exists():
+                if context_object.likes.filter(author=liking_author).exists():
                     # if like already exists, remove it
                     like = context_object.likes.get(author=liking_author)
                     like.delete()

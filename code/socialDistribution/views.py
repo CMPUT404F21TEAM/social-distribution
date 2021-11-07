@@ -468,7 +468,7 @@ def likeComment(request, id):
     '''
 
     comment = get_object_or_404(Comment, id = id)
-    author = get_object_or_404(Author, user=request.user)
+    author = get_object_or_404(LocalAuthor, user=request.user)
 
     host = request.get_host()
     prev_page = request.META['HTTP_REFERER']
