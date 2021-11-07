@@ -15,7 +15,7 @@ class GithubEvent:
         ''' Extract event information from event_data object of type dictionary
         '''
         self.payload = event_data["payload"]
-        self.actor = event_data["actor"]
+        self.actor = event_data["actor"]["login"]
         self.repo = event_data["repo"]
         self.repo_name = self.repo["name"].split("/")[-1]   # get repo name only
         self.action = self.payload.get("action")            # defaults to None
@@ -23,7 +23,9 @@ class GithubEvent:
 
     def time_ago(self):
         now = datetime.now(timezone.utc)
-        return timeago.format(self.created_at, now)
+        dt_created_at = datetime.strptime(
+            self.created_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        return timeago.format(dt_created_at, now)
 
     def get_description(self):
         ''' Must be implemented by sub-class
@@ -67,7 +69,11 @@ class PushEvent(GithubEvent):
     def get_description(self):
         remote = self.payload["ref"].split("/")[-1]  # only get branch name
         num_commits = self.payload["distinct_size"]
-        return f"{self.actor} pushed {num_commits} commits to {remote} in {self.repo_name}"
+
+        if num_commits == 1:
+            return f"{self.actor} pushed {num_commits} commit to {remote} in {self.repo_name}"
+        else:
+            return f"{self.actor} pushed {num_commits} commits to {remote} in {self.repo_name}"
 
 
 class ForkEvent(GithubEvent):
@@ -85,6 +91,7 @@ class IssuesEvent(GithubEvent):
     def get_description(self):
         issue_num = self.payload["issue"]["number"]
         issue_title = self.payload["issue"]["title"]
+        descr = ""
 
         if self.action == "labelled":
             label_name = self.payload["label"]["name"]
@@ -97,7 +104,7 @@ class IssuesEvent(GithubEvent):
         else:
             descr = f"{self.actor} {self.action}"
 
-        descr += f" issue {issue_num}, \'{issue_title}\', in {self.repo_name}"
+        descr += f" issue #{issue_num}, \'{issue_title}\', in {self.repo_name}"
         return descr
 
 
@@ -123,6 +130,7 @@ class PullRequestEvent(GithubEvent):
     def get_description(self):
         pull_request = self.payload["pull_request"]
         pr_title = pull_request["title"]
+        descr = ""
 
         if self.action in ["assigned", "unassigned"]:
             assignee = pull_request["assignee"]["login"]
@@ -143,13 +151,16 @@ class PullRequestEvent(GithubEvent):
             descr += f" on the pull request, \'{pr_title}\',"
 
         elif self.action == "labelled":
-            descr = f"{self.actor} added a label to the pull request, '\{pr_title}\',"
+            descr = f"{self.actor} added a label to the pull request, \'{pr_title}\',"
 
         elif self.action == "unlabelled":
-            descr = f"{self.actor} removed a label from the pull request, '\{pr_title}\',"
+            descr = f"{self.actor} removed a label from the pull request, \'{pr_title}\',"
 
         elif self.action == "synchronize":
             descr = f"{self.actor} synchronized the pull request, \'{pr_title}\', with its source branch"
+        
+        else:
+            descr = f"{self.actor} {self.action} a pull request, \'{pr_title}\',"
 
         descr += f" for {self.repo_name}"
         return descr
@@ -161,7 +172,7 @@ class PullRequestReviewEvent(GithubEvent):
         pull_request = self.payload["pull_request"]
         pr_title = pull_request["title"]
 
-        return f"{self.actor} {self.action} a pull request review for {pr_title} in {self.repo_name}"
+        return f"{self.actor} {self.action} a pull request review for \'{pr_title}\' in {self.repo_name}"
 
 
 class PullRequestReviewCommentEvent(GithubEvent):
@@ -172,7 +183,7 @@ class PullRequestReviewCommentEvent(GithubEvent):
         pull_request = self.payload["pull_request"]
         pr_title = pull_request["title"]
 
-        return f"{self.actor} commented \'{comment}\' on the pull request, {pr_title}, in {self.repo_name}"
+        return f"{self.actor} commented \'{comment}\' on the pull request, \'{pr_title}\', in {self.repo_name}"
 
 
 class ReleaseEvent(GithubEvent):
