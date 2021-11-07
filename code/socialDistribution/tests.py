@@ -1,7 +1,6 @@
 from django.test import TestCase, TransactionTestCase
 from django.contrib.auth.models import User
 from django.db.utils import IntegrityError
-from django.db import transaction
 from mixer.backend.django import mixer
 
 from datetime import timedelta, timezone
@@ -28,7 +27,7 @@ class LocalAuthorTests(TestCase):
 
     def test_create_local_author(self):
         author = mixer.blend(LocalAuthor)
-        
+
         fetched = LocalAuthor.objects.get(username=author.username)
 
         self.assertEqual(author.id, fetched.id)

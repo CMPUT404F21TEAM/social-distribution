@@ -43,6 +43,7 @@ class PostLike(Like):
     '''
 
     class Meta:
+        # Django Software Foundation, "UniqueConstraint", 2021-11-06,
         # https://docs.djangoproject.com/en/3.2/ref/models/constraints/#uniqueconstraint
         constraints = [
             # do not allow author to like same object more than once
@@ -61,6 +62,7 @@ class CommentLike(Like):
     '''
 
     class Meta:
+        # Django Software Foundation, "UniqueConstraint", 2021-11-06,
         # https://docs.djangoproject.com/en/3.2/ref/models/constraints/#uniqueconstraint
         constraints = [
             # do not allow author to like same object more than once
