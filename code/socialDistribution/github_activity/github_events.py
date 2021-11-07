@@ -228,3 +228,6 @@ class EventFactory:
 
         elif event_name == "ReleaseEvent":
             return ReleaseEvent()
+        
+        else:
+            raise Exception("Unsupported event type")
