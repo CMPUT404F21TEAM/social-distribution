@@ -22,6 +22,8 @@ class GithubEvent:
         self.created_at = event_data["created_at"]
 
     def time_ago(self):
+        ''' Get when the event in question was created
+        '''
         now = datetime.now(timezone.utc)
         dt_created_at = datetime.strptime(
             self.created_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
