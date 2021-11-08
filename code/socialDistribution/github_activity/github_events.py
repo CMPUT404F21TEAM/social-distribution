@@ -227,7 +227,7 @@ class EventFactory:
             return ForkEvent()
 
         elif event_name == "PublicEvent":
-            return PublicEvent
+            return PublicEvent()
 
         elif event_name == "MemberEvent":
             return MemberEvent()
