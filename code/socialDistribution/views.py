@@ -116,7 +116,6 @@ def register(request):
                     githubUrl=github_url,
                     profileImageUrl=profile_image_url
                 )
-                Inbox.objects.create(author=author)
             except:
                 return HttpResponse("Sign up failed. Internal Server Error. Please Try again.", status=500)
 
@@ -175,9 +174,13 @@ def home(request):
 
 
 def friend_request(request, author_id, action):
+    """ Handles POST request to resolve a pending follow request.
+
+        author_id: The ID of the author who created the friend request
+        action: The resolution of the friend request. Must be "accept" or "decline"
+
     """
-        Displays an author's friend requests 
-    """
+
     author = get_object_or_404(LocalAuthor, pk=author_id)
     curr_user = LocalAuthor.objects.get(user=request.user)
 
@@ -185,9 +188,9 @@ def friend_request(request, author_id, action):
         if action not in ['accept', 'decline']:
             return HttpResponseNotFound()
 
-        elif curr_user.id != author.id and curr_user.inbox.has_req_from(author) \
+        elif curr_user.id != author.id and curr_user.has_req_from(author) \
                 and not curr_user.has_follower(author):
-            curr_user.inbox.follow_requests.remove(author)
+            curr_user.follow_requests.remove(author)
             if action == 'accept':
                 curr_user.followers.add(author)
         else:
@@ -207,12 +210,12 @@ def befriend(request, author_id):
         if author.has_follower(curr_user):
             messages.info(request, f'Already following {author.displayName}')
 
-        if author.inbox.has_req_from(curr_user):
+        if author.has_req_from(curr_user):
             messages.info(request, f'Follow request to {author.displayName} is pending')
 
         if author.id != curr_user.id:
             # send follow request
-            author.inbox.follow_requests.add(curr_user)
+            author.follow_requests.add(curr_user)
 
     return redirect('socialDistribution:author', author_id)
 
@@ -341,7 +344,7 @@ def posts(request, author_id):
                 if form.cleaned_data.get('visibility') == Post.PRIVATE:
                     recipients = form.cleaned_data.get('post_recipients')
                     for recipient in recipients:
-                        recipient.inbox.add_post(post)
+                        recipient.add_post_to_inbox(post)
 
                 categories = form.cleaned_data.get('categories')
                 if categories is not None:
@@ -527,8 +530,8 @@ def inbox(request):
         Renders info in a user's inbox
     """
     author = LocalAuthor.objects.get(user=request.user)
-    follow_requests = author.inbox.follow_requests.all()
-    posts = author.inbox.posts.all()
+    follow_requests = author.follow_requests.all()
+    posts = author.inbox_posts.all()
     context = {
         'author': author,
         'follow_requests': follow_requests,
