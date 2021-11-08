@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django import forms
-from .models import Post, LocalAuthor, Category
+from .models import LocalPost, LocalAuthor, Category
 
 class CreateUserForm(UserCreationForm):
     """
@@ -29,11 +29,11 @@ class PostForm(forms.Form):
     """
         Create Post Form Configuration
     """
-    title = forms.CharField(max_length=Post.TITLE_MAXLEN, required=True)
+    title = forms.CharField(max_length=LocalPost.TITLE_MAXLEN, required=True)
     categories = forms.CharField(required=False)
-    description = forms.CharField(max_length=Post.DESCRIPTION_MAXLEN, required=True)
+    description = forms.CharField(max_length=LocalPost.DESCRIPTION_MAXLEN, required=True)
     content_text = forms.CharField(
-        max_length=Post.CONTEXT_TEXT_MAXLEN, 
+        max_length=LocalPost.CONTEXT_TEXT_MAXLEN, 
         required=False,
         widget=forms.Textarea
     )
@@ -41,7 +41,7 @@ class PostForm(forms.Form):
     content_media = forms.FileField(required=False)
     unlisted = forms.BooleanField(required=False)
     visibility = forms.ChoiceField(
-        choices=Post.VISIBILITY_CHOICES, 
+        choices=LocalPost.VISIBILITY_CHOICES, 
         required=True,
     )
     post_recipients = forms.ModelMultipleChoiceField(
@@ -58,7 +58,7 @@ class PostForm(forms.Form):
             postId = kwargs.pop('postId')
         post = None
         if postId > 0:
-            post = Post.objects.get(id=postId)
+            post = LocalPost.objects.get(id=postId)
         super(PostForm, self).__init__(*args, **kwargs)
         self.fields['post_recipients'].queryset = LocalAuthor.objects.all().exclude(id=user)
         if post:
@@ -80,7 +80,7 @@ class PostForm(forms.Form):
             Ensure post's visilibity is valid
         """
         data = self.cleaned_data['visibility']
-        if data in [Post.FRIENDS, Post.PUBLIC, Post.PRIVATE]:
+        if data in [LocalPost.FRIENDS, LocalPost.PUBLIC, LocalPost.PRIVATE]:
             return data
         else:
             raise ValidationError('Invalid visibility')

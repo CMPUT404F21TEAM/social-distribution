@@ -20,7 +20,7 @@ class PostQuerySet(models.QuerySet):
     def get_public(self):
         """ Get all public posts.
         """
-        return self.filter(visibility=Post.PUBLIC)
+        return self.filter(visibility=LocalPost.PUBLIC)
 
     def get_friend(self):
         """ Get all friend posts.
@@ -28,7 +28,7 @@ class PostQuerySet(models.QuerySet):
         # Django Software Foundation, "Complex lookups with Q objects", 2021-10-30
         # https://docs.djangoproject.com/en/3.2/topics/db/queries/#complex-lookups-with-q-objects
         return self.filter(
-            Q(visibility=Post.PUBLIC) | Q(visibility=Post.FRIENDS)
+            Q(visibility=LocalPost.PUBLIC) | Q(visibility=LocalPost.FRIENDS)
         )
 
     def chronological(self):
@@ -37,7 +37,7 @@ class PostQuerySet(models.QuerySet):
         return self.order_by('-pub_date')[:]
 
 
-class Post(models.Model):
+class LocalPost(models.Model):
     '''
     Post model:
         title               Post title (a Text)

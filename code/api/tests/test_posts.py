@@ -7,7 +7,7 @@ from django.utils import timezone
 from mixer.backend.django import mixer
 import json
 
-from socialDistribution.models import Post, Category
+from socialDistribution.models import LocalPost, Category
 from .test_authors import create_author
 from cmput404.constants import HOST, API_PREFIX
 from datetime import datetime
@@ -73,7 +73,7 @@ class PostsViewTest(TestCase):
 
     def test_get_posts_basic(self):
         self.maxDiff = None
-        post = mixer.blend(Post, content_type='PL')
+        post = mixer.blend(LocalPost, content_type='PL')
         expected = get_post_json(post)
 
         response = self.client.get(reverse('api:posts', args=(post.author.id,)))

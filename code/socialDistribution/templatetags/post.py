@@ -1,7 +1,6 @@
 from django import template
 import base64
 from socialDistribution.forms import PostForm
-from socialDistribution.models import Post
 
 register = template.Library()
 

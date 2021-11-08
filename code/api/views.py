@@ -131,7 +131,7 @@ class LikedView(View):
         """ GET - Get a list of like objects from {author_id} """
         try:
             author = LocalAuthor.objects.get(id=author_id)
-            authorLikedPosts = Post.objects.filter(likes__exact=author)
+            authorLikedPosts = LocalPost.objects.filter(likes__exact=author)
             host = request.get_host()
             likes = []
             for post in authorLikedPosts:
@@ -164,7 +164,7 @@ class PostsView(View):
             page = request.GET.get("page")
             size = request.GET.get("size")
             author = get_object_or_404(LocalAuthor, id=author_id)
-            posts = Post.objects.filter(author=author)
+            posts = LocalPost.objects.filter(author=author)
         
             jsonPosts = []
             for post in posts:
@@ -199,7 +199,7 @@ class PostLikesView(View):
     def get(self, request, author_id, post_id):
         """ GET - Get a list of authors who like {post_id} """
         try:
-            post = Post.objects.get(id=post_id)
+            post = LocalPost.objects.get(id=post_id)
             authors = [author.as_json() for author in post.likes.all()]
 
             response = {
@@ -225,7 +225,7 @@ class PostCommentsView(View):
         try:
             page = request.GET.get("page")
             size = request.GET.get("size")
-            post = get_object_or_404(Post, id=post_id)
+            post = get_object_or_404(LocalPost, id=post_id)
             author = get_object_or_404(LocalAuthor, id=author_id)
             # Check if the post author match with author in url
             if post.author.id != author.id:
@@ -254,7 +254,7 @@ class PostCommentsView(View):
 
         try:
             author = get_object_or_404(LocalAuthor, pk=author_id)
-            post = get_object_or_404(Post, id=post_id)
+            post = get_object_or_404(LocalPost, id=post_id)
 
             comment = Comment.objects.create(
                 author=author,
@@ -306,13 +306,13 @@ class InboxView(View):
                     raise ValueError() # only works for local posts right now
 
                 post_author_id, post_id = url_parser.parse_post(data["id"])
-                inbox = get_object_or_404(Inbox, author_id=author_id)
+                receiving_author = get_object_or_404(LocalAuthor, id=author_id)
 
                 # push post to inbox of author
                 try:
-                    post = Post.objects.get(id=post_id, author_id=post_author_id)
-                    inbox.posts.add(post)
-                except Post.DoesNotExist:
+                    post = LocalPost.objects.get(id=post_id, author_id=post_author_id)
+                    receiving_author.inbox_posts.add(post)
+                except LocalPost.DoesNotExist:
                     raise ValueError()
 
                 return HttpResponse(status=200)
@@ -331,12 +331,12 @@ class InboxView(View):
                 if followee_id != author_id:
                     raise ValueError("Object ID does not match inbox ID")
                 
-                inbox = get_object_or_404(Inbox, author_id=followee_id)
+                followee_author = get_object_or_404(LocalAuthor, id=followee_id)
 
                 # add follow request to inbox
                 try:
-                    followerAuthor = LocalAuthor.objects.get(id=follower_id)
-                    inbox.follow_requests.add(followerAuthor)
+                    follower_author = LocalAuthor.objects.get(id=follower_id)
+                    followee_author.follow_requests.add(follower_author)
                 except LocalAuthor.DoesNotExist:
                     raise ValueError()                      
 
@@ -361,7 +361,7 @@ class InboxView(View):
                 if object == 'comments':
                     context_object = get_object_or_404(Comment, id=id)
                 elif (object == 'posts'):
-                    context_object = get_object_or_404(Post, id=id)
+                    context_object = get_object_or_404(LocalPost, id=id)
                 else:
                     raise ValueError("Unknown object for like")
                 

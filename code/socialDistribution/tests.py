@@ -45,7 +45,7 @@ class LocalAuthorTests(TestCase):
 
 class PostTest(TestCase):
     def test_post_is_public(self):
-        visibility = Post.FRIENDS
+        visibility = LocalPost.FRIENDS
         post = PostBuilder().visibility(visibility).build()
         self.assertFalse(post.is_public())
 
@@ -69,7 +69,7 @@ class CommentModelTests(TestCase):
             comment.when() returns just now right after post creation
         '''
         author = mixer.blend(LocalAuthor)
-        post = mixer.blend(Post, author=author)
+        post = mixer.blend(LocalPost, author=author)
         comment = mixer.blend(Comment, author=author, post=post, pub_date=datetime.now(timezone.utc))
 
         self.assertIs(comment.when() == 'just now', True)
@@ -79,7 +79,7 @@ class CommentModelTests(TestCase):
             comment.when() returns 10 seconds ago after the time has passed
         '''
         author = mixer.blend(LocalAuthor)
-        post = mixer.blend(Post, author=author)
+        post = mixer.blend(LocalPost, author=author)
 
         pub_date = datetime.now(timezone.utc) - timedelta(seconds=10)
         comment = mixer.blend(Comment, author=author, post=post, pub_date=pub_date)
@@ -93,7 +93,7 @@ class LikeTests(TransactionTestCase):
     def test_post_like(self):
         """ Test successfully liking a Post """
 
-        post = mixer.blend(Post)
+        post = mixer.blend(LocalPost)
         author = mixer.blend(Author)
 
         # like a post
@@ -115,7 +115,7 @@ class LikeTests(TransactionTestCase):
     def test_no_author(self):
         """ Test creating a Like with no Author """
 
-        post = mixer.blend(Post)
+        post = mixer.blend(LocalPost)
         with self.assertRaises(IntegrityError):
             post.likes.create()
 
@@ -132,7 +132,7 @@ class LikeTests(TransactionTestCase):
     def test_double_like(self):
         """ Test liking a post multiple times """
 
-        post = mixer.blend(Post)
+        post = mixer.blend(LocalPost)
         author = mixer.blend(Author)
 
         # add a like

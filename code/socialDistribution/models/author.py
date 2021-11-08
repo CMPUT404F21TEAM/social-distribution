@@ -58,7 +58,7 @@ class LocalAuthor(Author):
     followers = models.ManyToManyField('LocalAuthor', blank=True)
 
     follow_requests = models.ManyToManyField('LocalAuthor', related_name="follow_requests_reverse")
-    inbox_posts = models.ManyToManyField('Post')
+    inbox_posts = models.ManyToManyField('LocalPost')
 
     def has_follower(self, author):
         """

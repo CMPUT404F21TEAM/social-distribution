@@ -11,15 +11,15 @@ class PostBuilder:
 
     def __init__(self):
         author = mixer.blend(LocalAuthor)
-        self.__post = Post.objects.create(
+        self.__post = LocalPost.objects.create(
             author_id=author.id,
             title="testPost",
             source="",
             origin="",
             description="testDesc",
-            content_type=Post.PostContentType.PLAIN,
+            content_type=LocalPost.PostContentType.PLAIN,
             content_text="testContexxt",
-            visibility=Post.PUBLIC,
+            visibility=LocalPost.PUBLIC,
             unlisted=False,
             content_media=None,
             pub_date=datetime.now(timezone.utc),

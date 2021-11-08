@@ -6,7 +6,7 @@ from django.urls import reverse
 from mixer.backend.django import mixer
 from datetime import datetime, timezone
 
-from socialDistribution.models import LocalAuthor, Inbox, Post, Comment
+from socialDistribution.models import LocalAuthor, LocalPost, Comment
 from cmput404.constants import *
 
 # Documentation and code samples taken from the following references:
@@ -19,20 +19,19 @@ def create_author(id, username, displayName, githubUrl):
     user = mixer.blend(User, username=username)
     author = LocalAuthor.objects.create(
         id=id, username=username, displayName=displayName, githubUrl=githubUrl, user=user)
-    inbox = Inbox.objects.create(author=author)
-    return author, inbox
+    return author
 
 
 class InboxViewTests(TestCase):
 
     def test_post_local_follow(self):
-        author1, inbox1 = create_author(
+        author1 = create_author(
             1,
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
         )
-        author2, inbox2 = create_author(
+        author2 = create_author(
             2,
             "user2",
             "Lara Croft",
@@ -70,20 +69,20 @@ class InboxViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
 
-        query_set = author2.inbox.follow_requests.all()
+        query_set = author2.follow_requests.all()
         self.assertEqual(query_set.count(), 1)
         self.assertEqual(query_set[0], author1)
 
     def test_post_local_post(self):
         # NOTE: This test is very basic. More work needed on this endpoint.
 
-        author1, inbox1 = create_author(
+        author1 = create_author(
             1,
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
         )
-        author2, inbox2 = create_author(
+        author2 = create_author(
             2,
             "user2",
             "Lara Croft",
@@ -91,7 +90,7 @@ class InboxViewTests(TestCase):
         )
 
         # Create a post from author1
-        dummy_post = mixer.blend(Post, id=1, author=author1)
+        dummy_post = mixer.blend(LocalPost, id=1, author=author1)
 
         body = {
             "type": "post",
@@ -128,7 +127,7 @@ class InboxViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         # Check the received posts of author2
-        query_set = author2.inbox.posts.all()
+        query_set = author2.inbox_posts.all()
         self.assertEqual(query_set.count(), 1)
         self.assertEqual(query_set[0], dummy_post)
     
@@ -136,14 +135,14 @@ class InboxViewTests(TestCase):
         '''
             Test liking a comment from a local author
         '''
-        author1, inbox1 = create_author(
+        author1 = create_author(
             1,
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
         ) 
 
-        post = mixer.blend(Post, author = author1)
+        post = mixer.blend(LocalPost, author = author1)
         comment = mixer.blend(Comment, author=author1, post=post, pub_date = datetime.now(timezone.utc) )
 
         body = {
@@ -166,13 +165,13 @@ class InboxViewTests(TestCase):
         self.assertEqual(liker.id, author1.id)
 
     def test_post_like(self):
-        author, inbox = create_author(
+        author = create_author(
             1,
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
         )
-        post = mixer.blend(Post, id=1, author=author)
+        post = mixer.blend(LocalPost, id=1, author=author)
 
         body = {
             "@context": "https://www.w3.org/ns/activitystreams",
@@ -200,7 +199,7 @@ class InboxViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         
         # Check that the post received a like
-        post = Post.objects.get(id=1)
+        post = LocalPost.objects.get(id=1)
         self.assertEqual(1, post.likes.count())
 
         # Check that the like was from the right author

@@ -149,7 +149,7 @@ def home(request):
     author = get_object_or_404(LocalAuthor, user=request.user)
 
     # get all local public posts
-    posts = Post.objects.listed().get_public()
+    posts = LocalPost.objects.listed().get_public()
 
     # get all posts created by author
     my_posts = author.posts.listed()
@@ -269,7 +269,7 @@ def authors(request):
     # Django Software Foundation, "Generating aggregates for each item in a QuerySet", 2021-10-13
     # https://docs.djangoproject.com/en/3.2/topics/db/aggregation/#generating-aggregates-for-each-item-in-a-queryset
     authors = LocalAuthor.objects.annotate(
-        posts__count=Count("posts", filter=Q(posts__visibility=Post.PUBLIC)))
+        posts__count=Count("posts", filter=Q(posts__visibility=LocalPost.PUBLIC)))
     local_authors = [{
         "data": author,
         "type": "Local"
@@ -327,7 +327,7 @@ def posts(request, author_id):
             pub_date = datetime.now()
 
             try:
-                post = Post.objects.create(
+                post = LocalPost.objects.create(
                     author_id=author_id,  # temporary
                     title=form.cleaned_data.get('title'),
                     source=request.build_absolute_uri(request.path),  # will need to fix when moved to api
@@ -341,7 +341,7 @@ def posts(request, author_id):
                     count=0
                 )
 
-                if form.cleaned_data.get('visibility') == Post.PRIVATE:
+                if form.cleaned_data.get('visibility') == LocalPost.PRIVATE:
                     recipients = form.cleaned_data.get('post_recipients')
                     for recipient in recipients:
                         recipient.add_post_to_inbox(post)
@@ -366,7 +366,7 @@ def editPost(request, id):
         Edits an existing post
     """
     author = LocalAuthor.objects.get(user=request.user)
-    post = Post.objects.get(id=id)
+    post = LocalPost.objects.get(id=id)
 
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES, user=author.id)
@@ -419,9 +419,9 @@ def likePost(request, id):
     """
         Like a specific post
     """
-    post = get_object_or_404(Post, id=id)
+    post = get_object_or_404(LocalPost, id=id)
     author = LocalAuthor.objects.get(user=request.user)
-    post = get_object_or_404(Post, id=id)
+    post = get_object_or_404(LocalPost, id=id)
     host = request.get_host()
     if request.method == 'POST':
         # create like object
@@ -448,7 +448,7 @@ def commentPost(request, id):
     '''
         Render Post and comments
     '''
-    post = get_object_or_404(Post, id=id)
+    post = get_object_or_404(LocalPost, id=id)
     author = get_object_or_404(LocalAuthor, user=request.user)
 
     try:
@@ -501,7 +501,7 @@ def deletePost(request, id):
         Deletes a post
     """
     # move functionality to API
-    post = get_object_or_404(Post, id=id)
+    post = get_object_or_404(LocalPost, id=id)
     author = LocalAuthor.objects.get(user=request.user)
     if post.author == author:
         post.delete()
