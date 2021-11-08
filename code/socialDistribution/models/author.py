@@ -46,7 +46,7 @@ class LocalAuthor(Author):
     '''
 
     user = models.OneToOneField(User, null=True, on_delete=models.CASCADE)
-    username = models.CharField(max_length=50, default='', unique=True)
+    username = models.CharField(max_length=50, unique=True, blank=False)
     displayName = models.CharField(max_length=50)
     githubUrl = models.CharField(max_length=50, null=True)
     profileImageUrl = models.CharField(max_length=50, null=True)
