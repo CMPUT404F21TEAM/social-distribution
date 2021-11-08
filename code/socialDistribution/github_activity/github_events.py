@@ -67,13 +67,13 @@ class CommitCommentEvent(GithubEvent):
 class PushEvent(GithubEvent):
 
     def get_description(self):
-        remote = self.payload["ref"].split("/")[-1]  # only get branch name
+        remote_branch = self.payload["ref"].split("/", 2)[-1]   # remove refs/head/ part
         num_commits = self.payload["distinct_size"]
 
         if num_commits == 1:
-            return f"{self.actor} pushed {num_commits} commit to {remote} in {self.repo_name}"
+            return f"{self.actor} pushed {num_commits} commit to {remote_branch} in {self.repo_name}"
         else:
-            return f"{self.actor} pushed {num_commits} commits to {remote} in {self.repo_name}"
+            return f"{self.actor} pushed {num_commits} commits to {remote_branch} in {self.repo_name}"
 
 
 class ForkEvent(GithubEvent):
@@ -85,6 +85,14 @@ class ForkEvent(GithubEvent):
 
         return f"{self.actor} forked the repository, {self.repo_name}, from {repo_owner}: {repo_html_url}"
 
+
+class GollumEvent(GithubEvent):
+
+    def get_description(self):
+        page = self.payload["pages"][0]
+        page_action = page["action"]
+        page_name = page["page_name"]
+        return f"{self.actor} {page_action} the \'{page_name}\' wiki page"
 
 class IssuesEvent(GithubEvent):
 
