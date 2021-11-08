@@ -81,6 +81,15 @@ class LocalPost(models.Model):
     CONTENT_MEDIA_MAXLEN = 1000
     URL_MAXLEN = 2048
 
+    PUBLIC = "PB"
+    FRIENDS = "FRD"
+    PRIVATE = "PR"
+    VISIBILITY_CHOICES = (
+        (PUBLIC, 'PUBLIC'),
+        (FRIENDS, 'FRIENDS'),
+        (PRIVATE, 'PRIVATE')
+    )
+
     title = models.CharField(max_length=TITLE_MAXLEN)
     source = models.URLField(max_length=URL_MAXLEN)
     origin = models.URLField(max_length=URL_MAXLEN)
@@ -95,21 +104,11 @@ class LocalPost(models.Model):
     content_text = models.TextField(max_length=CONTEXT_TEXT_MAXLEN)
 
     # Base64 encoded binary field (image/png, image/jpg, application/base64)
-    content_media = models.BinaryField(
-        max_length=CONTENT_MEDIA_MAXLEN, null=True, blank=True)
+    content_media = models.BinaryField(max_length=CONTENT_MEDIA_MAXLEN, null=True, blank=True)
     author = models.ForeignKey('LocalAuthor', on_delete=models.CASCADE, related_name="posts")
 
     count = models.PositiveSmallIntegerField(default=0)
     pub_date = models.DateTimeField()
-
-    PUBLIC = "PB"
-    FRIENDS = "FRD"
-    PRIVATE = "PR"
-    VISIBILITY_CHOICES = (
-        (PUBLIC, 'PUBLIC'),
-        (FRIENDS, 'FRIENDS'),
-        (PRIVATE, 'PRIVATE')
-    )
 
     visibility = models.CharField(
         max_length=10,
@@ -218,3 +217,43 @@ class LocalPost(models.Model):
             "unlisted": self.unlisted
             # unlisted means it is public if you know the post name -- use this for images, it's so images don't show up in timelines
         }
+
+
+class InboxPost(models.Model):
+    '''
+    InboxPost model:
+        title               Title of the post
+        public_id           URL id of the post when it was recieved
+        source              Location from which the post was received (a URL)
+        origin              Location from which the post originated (a URL)
+        description         Text description
+        content_type        Type of post's content:
+                                - markdown
+                                - plain text
+                                - png
+                                - jpeg
+                                - base64
+
+        content             Content of the post
+        categories          Categories encoded as a JSON array
+        author              Author of the post
+        count               Total number of comments (small integer)
+        published           Post published date (datetime)
+        visibility          PUBLIC or FRIENDS
+        unlisted            Boolean indicating whether post is listed or not
+
+    '''
+
+    title = models.CharField(max_length=50)
+    public_id = models.URLField()
+    source = models.URLField()
+    origin = models.URLField()
+    description = models.CharField()
+    content_type = models.CharField()
+    content = models.CharField()
+    categories = models.CharField()
+    author = models.URLField()
+    count = models.PositiveSmallIntegerField(default=0)
+    published = models.DateTimeField()
+    visibility = models.CharField()
+    unlisted = models.BooleanField()
