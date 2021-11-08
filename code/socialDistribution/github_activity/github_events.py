@@ -45,7 +45,7 @@ class CreateEvent(GithubEvent):
             return f"{self.actor} created a new {ref_type} called {self.repo_name}"
 
         else:
-            return f"{self.actor} created new {ref_type} in {self.repo_name}"
+            return f"{self.actor} created a new {ref_type} in {self.repo_name}"
 
 
 class DeleteEvent(GithubEvent):
