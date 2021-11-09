@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 import json
 import logging
 from datetime import datetime, timezone
+import pprint
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
@@ -298,6 +299,7 @@ class InboxView(View):
             - if the type is “like” then add that like to the author’s inbox    
         """
         data = json.loads(request.body)
+        # pprint.pprint(data)
         try:
             if data["type"] == "post":
                 # Post saved to inbox of author_id

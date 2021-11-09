@@ -317,7 +317,7 @@ def posts(request, author_id):
                 if form.cleaned_data.get('visibility') == LocalPost.Visibility.PRIVATE:
                     recipients = form.cleaned_data.get('post_recipients')
                     for recipient in recipients:
-                        recipient.add_post_to_inbox(post)
+                        recipient.add_post_to_inbox(new_post)
 
                 categories = form.cleaned_data.get('categories')
                 if categories is not None:
@@ -325,6 +325,14 @@ def posts(request, author_id):
 
                     for category in categories:
                         Category.objects.create(category=category, post=new_post)
+
+                # Send to followers
+                post = LocalPost.objects.get(id=new_post.id)
+                if post.visibility == LocalPost.Visibility.PUBLIC:
+                    for follower in post.author.followers.all():
+                        endpoint = follower.url + "/inbox"
+                        data = post.as_json()
+                        make_request(method="POST", url=endpoint, body=json.dumps(data))
 
             except ValidationError:
                 messages.info(request, 'Unable to create new post.')
