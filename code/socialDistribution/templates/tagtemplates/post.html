@@ -45,7 +45,7 @@
 
                 </div>
 
-                {% if isAuthor %}
+                {% if isAuthor and isPublic%}
                 <span>
                     <!-- Launch Edit Modal -->
                     <a href="{% url 'socialDistribution:commentPost' post.id %}?action=edit"> <button

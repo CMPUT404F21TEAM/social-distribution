@@ -15,6 +15,7 @@ def card_post(post, author):
 
     # Delete/Edit
     isAuthor = post.author == author
+    isPublic = post.is_public()
 
     # Likes
     isLiked = post.likes.filter(author=author).exists()
@@ -44,7 +45,8 @@ def card_post(post, author):
         'content_media': content_media, 
         'isAuthor': isAuthor, 
         'isLiked': isLiked, 
-        'likeText': likeText
+        'likeText': likeText,
+        'isPublic': isPublic,
         }
 
 
