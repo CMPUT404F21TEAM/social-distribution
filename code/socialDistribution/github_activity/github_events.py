@@ -115,6 +115,15 @@ class IssuesEvent(GithubEvent):
         return descr
 
 
+class IssueCommentEvent(GithubEvent):
+
+    def get_description(self):
+        issue_num = self.payload["issue"]["number"]
+        issue_title = self.payload["issue"]["title"]
+        descr = f"{self.actor} {self.action} a comment on issue #{issue_num}, \'{issue_title}\',"
+        return descr + f" in {self.repo_name}"
+
+
 class MemberEvent(GithubEvent):
 
     def get_description(self):
@@ -238,8 +247,11 @@ class EventFactory:
         elif event_name == "PullRequestReviewCommentEvent":
             return PullRequestReviewCommentEvent()
 
-        elif event_name in ["IssuesEvent", "IssueCommentEvent"]:
+        elif event_name == "IssuesEvent":
             return IssuesEvent()
+
+        elif event_name == "IssueCommentEvent":
+            return IssueCommentEvent()
 
         elif event_name == "WatchEvent":
             return WatchEvent()
