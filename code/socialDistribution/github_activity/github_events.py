@@ -109,7 +109,7 @@ class IssuesEvent(GithubEvent):
 
         elif self.action == "unlabelled":
             label_name = self.payload["label"]["name"]
-            descr = f"{self.actor} removed the label, '\{label_name}\' from"
+            descr = f"{self.actor} removed the label, \'{label_name}\' from"
 
         else:
             descr = f"{self.actor} {self.action}"
@@ -122,7 +122,7 @@ class MemberEvent(GithubEvent):
 
     def get_description(self):
         if self.action == "edited":
-            return f"{self.actor} {self.action} collaborator permissions {self.repo_name}"
+            return f"{self.actor} {self.action} collaborator permissions for {self.repo_name}"
 
         else:
             member = self.payload["member"]["login"]

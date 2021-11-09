@@ -1,6 +1,6 @@
 import requests, timeago
 from datetime import timezone, datetime
-from .github_events import *
+from .github_events import EventFactory
 
 REQUEST_URL = "https://api.github.com/users/{github_user}/events"
 

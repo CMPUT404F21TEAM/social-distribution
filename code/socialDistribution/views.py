@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 
 from .forms import CreateUserForm, PostForm
 from .decorators import allowedUsers, unauthenticated_user
-from .github_activity.github_activity import *
+from .github_activity.github_activity import pull_github_events
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.db.models import Count, Q
