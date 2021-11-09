@@ -33,7 +33,7 @@ class PostForm(forms.Form):
     categories = forms.CharField(required=False)
     description = forms.CharField(max_length=LocalPost.DESCRIPTION_MAXLEN, required=True)
     content_text = forms.CharField(
-        max_length=LocalPost.CONTEXT_TEXT_MAXLEN, 
+        max_length=LocalPost.CONTENT_MAXLEN, 
         required=False,
         widget=forms.Textarea
     )
@@ -69,9 +69,9 @@ class PostForm(forms.Form):
             previousCategoriesNames = " ".join([cat.category for cat in previousCategories])
             self.fields['categories'].initial = previousCategoriesNames
             
-            self.fields['content_text'].initial = post.content_text
+            self.fields['content_text'].initial = post.content
             
-            self.fields['content_media'].initial = post.content_media
+            # self.fields['content_media'].initial = post.content_media
             self.fields['unlisted'].initial = post.unlisted
             self.fields['visibility'].initial = post.visibility
         

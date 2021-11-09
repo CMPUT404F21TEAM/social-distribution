@@ -324,22 +324,20 @@ def posts(request, author_id):
             else:
                 content_media = None
 
-            pub_date = datetime.now()
+            # pub_date = datetime.now()
 
             try:
-                post = LocalPost.objects.create(
+                new_post = LocalPost(
                     author_id=author_id,  # temporary
                     title=form.cleaned_data.get('title'),
-                    source=request.build_absolute_uri(request.path),  # will need to fix when moved to api
-                    origin=request.build_absolute_uri(request.path),  # will need to fix when moved to api
                     description=form.cleaned_data.get('description'),
-                    content_text=form.cleaned_data.get('content_text'),
+                    content=form.cleaned_data.get('content_text'),
                     visibility=form.cleaned_data.get('visibility'),
                     unlisted=form.cleaned_data.get('unlisted'),
-                    content_media=content_media,
-                    pub_date=pub_date,
+                    # content_media=content_media,
                     count=0
                 )
+                new_post.save()
 
                 if form.cleaned_data.get('visibility') == LocalPost.PRIVATE:
                     recipients = form.cleaned_data.get('post_recipients')
@@ -375,17 +373,18 @@ def editPost(request, id):
             if bin_content is not None:
                 content_media = base64.b64encode(bin_content.read())
             else:
-                content_media = post.content_media
+                pass
+                # content_media = post.content_media
 
             try:
                 post.title = form.cleaned_data.get('title')
-                post.source = request.build_absolute_uri(request.path)    # will need to fix when moved to api
-                post.origin = request.build_absolute_uri(request.path)    # will need to fix when moved to api
+                # post.source = request.build_absolute_uri(request.path)    # will need to fix when moved to api
+                # post.origin = request.build_absolute_uri(request.path)    # will need to fix when moved to api
                 post.description = form.cleaned_data.get('description')
-                post.content_text = form.cleaned_data.get('content_text')
+                post.content = form.cleaned_data.get('content_text')
                 post.visibility = form.cleaned_data.get('visibility')
                 post.unlisted = form.cleaned_data.get('unlisted')
-                post.content_media = content_media
+                # post.content_media = content_media
 
                 categories = form.cleaned_data.get('categories').split()
                 previousCategories = Category.objects.filter(post=post)

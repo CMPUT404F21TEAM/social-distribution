@@ -35,8 +35,8 @@ def card_post(post, author):
             likeText = f'Liked by 1 other'
 
     content_media = None
-    if post.content_media is not None:
-        content_media = post.content_media.decode('utf-8')
+    # if post.content_media is not None:
+    #     content_media = post.content_media.decode('utf-8')
 
     return {
         'post': post, 

@@ -17,7 +17,7 @@ class PostBuilder:
             source="",
             origin="",
             description="testDesc",
-            content_type=LocalPost.PostContentType.PLAIN,
+            content_type=LocalPost.ContentType.PLAIN,
             content_text="testContexxt",
             visibility=LocalPost.PUBLIC,
             unlisted=False,

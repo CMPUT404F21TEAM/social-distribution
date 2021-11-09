@@ -1,7 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.contrib.auth.models import User
 from django.db.models import Q, manager
+from django.contrib.auth.models import User
+# from django.utils import timezone
 from datetime import *
 import timeago
 
@@ -20,7 +21,7 @@ class PostQuerySet(models.QuerySet):
     def get_public(self):
         """ Get all public posts.
         """
-        return self.filter(visibility=LocalPost.PUBLIC)
+        return self.filter(visibility=Post.PUBLIC)
 
     def get_friend(self):
         """ Get all friend posts.
@@ -28,20 +29,89 @@ class PostQuerySet(models.QuerySet):
         # Django Software Foundation, "Complex lookups with Q objects", 2021-10-30
         # https://docs.djangoproject.com/en/3.2/topics/db/queries/#complex-lookups-with-q-objects
         return self.filter(
-            Q(visibility=LocalPost.PUBLIC) | Q(visibility=LocalPost.FRIENDS)
+            Q(visibility=Post.PUBLIC) | Q(visibility=Post.FRIENDS)
         )
 
     def chronological(self):
         """ Order results in chronological order in terms of published date.
         """
-        return self.order_by('-pub_date')[:]
+        return self.order_by('-published')[:]
 
 
-class LocalPost(models.Model):
+class Post(models.Model):
+
+    class Meta:
+        # Django Software Foundation, "Abstract base classes", 2021-11-04,
+        # https://docs.djangoproject.com/en/3.2/topics/db/models/#abstract-base-classes
+        abstract = True
+
+    class ContentType(models.TextChoices):
+        MARKDOWN = 'MD', 'text/markdown'
+        PLAIN = 'PL', 'text/plain'
+        BASE64 = 'B64', 'application/base64'
+        PNG = 'PNG', 'image/png;base64'
+        JPEG = 'JPEG', 'image/jpeg;base64'
+
+    TITLE_MAXLEN = 50
+    DESCRIPTION_MAXLEN = 50
+    CONTENT_MAXLEN = 4096
+    URL_MAXLEN = 2048
+
+    PUBLIC = "PB"
+    FRIENDS = "FRD"
+    PRIVATE = "PR"
+    VISIBILITY_CHOICES = (
+        (PUBLIC, 'PUBLIC'),
+        (FRIENDS, 'FRIENDS'),
+        (PRIVATE, 'PRIVATE')
+    )
+
+    objects = PostQuerySet.as_manager()
+
+    title = models.CharField(max_length=TITLE_MAXLEN)
+
+    public_id = models.URLField()
+
+    description = models.CharField(max_length=DESCRIPTION_MAXLEN)
+
+    content_type = models.CharField(
+        choices=ContentType.choices,
+        max_length=4,
+        default=ContentType.PLAIN
+    )
+
+    # content = models.BinaryField(
+    #     max_length=CONTENT_MAXLEN,
+    #     null=True,
+    #     blank=True,
+    # )
+
+    content = models.CharField(
+        max_length=CONTENT_MAXLEN,
+        null=True,
+        blank=True,
+    )
+
+    # categories = models.CharField(max_length=2000)
+
+    count = models.PositiveSmallIntegerField(default=0)
+
+    published = models.DateTimeField(default=datetime.now)
+
+    visibility = models.CharField(
+        max_length=10,
+        choices=VISIBILITY_CHOICES,
+        default=PUBLIC
+    )
+
+    unlisted = models.BooleanField()
+
+
+class LocalPost(Post):
     '''
     Post model:
-        title               Post title (a Text)
         id (default)        Auto-generated id
+        title               Title for the post
 
         source              Where the post was obtained (a URL)
         origin              original source (a URL)
@@ -66,56 +136,7 @@ class LocalPost(models.Model):
 
     '''
 
-    objects = PostQuerySet.as_manager()
-
-    class PostContentType(models.TextChoices):
-        MARKDOWN = 'MD', 'text/markdown'
-        PLAIN = 'PL', 'text/plain'
-        BASE64 = 'B64', 'application/base64'
-        PNG = 'PNG', 'image/png;base64'
-        JPEG = 'JPEG', 'image/jpeg;base64'
-
-    TITLE_MAXLEN = 50
-    DESCRIPTION_MAXLEN = 50
-    CONTEXT_TEXT_MAXLEN = 200
-    CONTENT_MEDIA_MAXLEN = 1000
-    URL_MAXLEN = 2048
-
-    PUBLIC = "PB"
-    FRIENDS = "FRD"
-    PRIVATE = "PR"
-    VISIBILITY_CHOICES = (
-        (PUBLIC, 'PUBLIC'),
-        (FRIENDS, 'FRIENDS'),
-        (PRIVATE, 'PRIVATE')
-    )
-
-    title = models.CharField(max_length=TITLE_MAXLEN)
-    source = models.URLField(max_length=URL_MAXLEN)
-    origin = models.URLField(max_length=URL_MAXLEN)
-    description = models.CharField(max_length=DESCRIPTION_MAXLEN)
-
-    content_type = models.CharField(
-        choices=PostContentType.choices,
-        max_length=4,
-        default=PostContentType.PLAIN
-    )
-
-    content_text = models.TextField(max_length=CONTEXT_TEXT_MAXLEN)
-
-    # Base64 encoded binary field (image/png, image/jpg, application/base64)
-    content_media = models.BinaryField(max_length=CONTENT_MEDIA_MAXLEN, null=True, blank=True)
     author = models.ForeignKey('LocalAuthor', on_delete=models.CASCADE, related_name="posts")
-
-    count = models.PositiveSmallIntegerField(default=0)
-    pub_date = models.DateTimeField()
-
-    visibility = models.CharField(
-        max_length=10,
-        choices=VISIBILITY_CHOICES,
-        default=PUBLIC
-    )
-    unlisted = models.BooleanField()
 
     def get_comments_as_json(self):
         author_id = self.author.id
@@ -136,9 +157,9 @@ class LocalPost(models.Model):
         Check if post has an attached image
         '''
         return self.content_type in [
-            self.PostContentType.PNG,
-            self.PostContentType.JPEG,
-            self.PostContentType.BASE64
+            self.ContentType.PNG,
+            self.ContentType.JPEG,
+            self.ContentType.BASE64
         ]
 
     def is_public(self):
@@ -159,7 +180,7 @@ class LocalPost(models.Model):
             ...
         '''
         now = datetime.now(timezone.utc)
-        return timeago.format(self.pub_date, now)
+        return timeago.format(self.published, now)
 
     def total_likes(self):
         """
@@ -177,9 +198,9 @@ class LocalPost(models.Model):
             # id of the post
             "id": f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}",
             # where did you get this post from?
-            "source": self.source,
+            "source": "blah",
             # where is it actually from
-            "origin": self.origin,
+            "origin": "blah",
             # a brief description of the post
             "description": self.description,
             # The content type of the post
@@ -191,7 +212,7 @@ class LocalPost(models.Model):
             # image/jpeg;base64 # this is an embedded jpeg
             # for HTML you will want to strip tags before displaying
             "contentType": self.content_type,
-            "content": self.content_text,
+            "content": self.content,
             # the author has an ID where by authors can be disambiguated
             "author": self.author.as_json(),
             # categories this post fits into (a list of strings
@@ -208,7 +229,7 @@ class LocalPost(models.Model):
             # this is to reduce API call counts
             "commentsSrc": self.get_comments_as_json(),
             # ISO 8601 TIMESTAMP
-            "published": str(self.pub_date),
+            "published": str(self.published),
             # visibility ["PUBLIC","FRIENDS"]
             "visibility": self.visibility,
             # for visibility PUBLIC means it is open to the wild web
@@ -219,7 +240,7 @@ class LocalPost(models.Model):
         }
 
 
-class InboxPost(models.Model):
+class InboxPost(Post):
     '''
     InboxPost model:
         title               Title of the post
@@ -244,16 +265,8 @@ class InboxPost(models.Model):
 
     '''
 
-    title = models.CharField(max_length=200)
-    public_id = models.URLField()
-    source = models.URLField(max_length=200)
-    origin = models.URLField(max_length=200)
-    description = models.CharField(max_length=200)
-    content_type = models.CharField(max_length=128)
-    content = models.CharField(max_length=2000)
-    categories = models.CharField(max_length=2000)
-    author = models.URLField(max_length=200)
-    count = models.PositiveSmallIntegerField(default=0)
-    published = models.DateTimeField()
-    visibility = models.CharField(max_length=200)
-    unlisted = models.BooleanField()
+    source = models.URLField(max_length=Post.URL_MAXLEN)
+
+    origin = models.URLField(max_length=Post.URL_MAXLEN)
+
+    author = models.URLField(max_length=Post.URL_MAXLEN)
