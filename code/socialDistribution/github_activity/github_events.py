@@ -32,10 +32,7 @@ class GithubEvent:
     def get_description(self):
         ''' Must be implemented by sub-class
         '''
-        raise Exception(
-            'Failed to implement get_description method for class of type '
-            + GithubEvent.__name__
-        )
+        raise NotImplementedError("Failed to implement get_description")
 
 class CreateEvent(GithubEvent):
 
