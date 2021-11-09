@@ -316,6 +316,7 @@ def posts(request, author_id):
         form = PostForm(request.POST, request.FILES, user=user_id)
         if form.is_valid():
             bin_content = form.cleaned_data.get('content_media')
+            print(request.FILES)
             if bin_content is not None:
                 content_media = base64.b64encode(bin_content.read())
             else:
@@ -362,11 +363,11 @@ def editPost(request, id):
     """
         Edits an existing post
     """
-    author = LocalAuthor.objects.get(user=request.user)
+    author = LocalAuthor.objects.get(user=request.user).id
     post = Post.objects.get(id=id)
 
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES, user=author.id)
+        form = PostForm(request.POST, request.FILES, user=author)
         if form.is_valid():
             bin_content = form.cleaned_data.get('content_media')
             if bin_content is not None:

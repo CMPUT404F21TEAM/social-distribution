@@ -36,7 +36,7 @@
 </div>
 
 {% load modal %}
-<form method="POST" action="{% url 'socialDistribution:editPost' post.id %}">
+<form method="POST" enctype="multipart/form-data" action="{% url 'socialDistribution:editPost' post.id %}">
     {% csrf_token %}
     {% modal id="edit_post_modal" type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
 </form>
