@@ -242,40 +242,16 @@ def authors(request):
     """
     args = {}
 
-    # demonstration purposes: Authors on remote server
-    remote_authors = [
-        {
-            "data": {
-                "id": 16000,
-                "username": "johnd",
-                "displayName": "John Doe",
-                "profileImageUrl": "https://media-exp1.licdn.com/dms/image/C4E03AQEgrX3MR7UULQ/profile-displayphoto-shrink_200_200/0/1614384030904?e=1640822400&v=beta&t=vVdjlx5NgDHfpo-QHx7TMlFHpmwCaQi4vAW6viWjiYA",
-                "post__count": 0,
-            },
-            "type": "Remote"
-        },
-        {
-            "data": {
-                "id": 15000,
-                "username": "janed",
-                "displayName": "Hane Doe",
-                "profileImageUrl": "https://media-exp1.licdn.com/dms/image/C4D03AQFD4cImNWN_1A/profile-displayphoto-shrink_200_200/0/1620746712768?e=1640822400&v=beta&t=ItUGhKqEncBHOtBNlP1o3uZWRECUSAjQ0s3PZauSb0o",
-                "post__count": 0
-            },
-            "type": "Remote"
-        }
-    ]
-
     # Django Software Foundation, "Generating aggregates for each item in a QuerySet", 2021-10-13
     # https://docs.djangoproject.com/en/3.2/topics/db/aggregation/#generating-aggregates-for-each-item-in-a-queryset
-    authors = LocalAuthor.objects.annotate(
-        posts__count=Count("posts", filter=Q(posts__visibility=LocalPost.Visibility.PUBLIC)))
+    authors = LocalAuthor.objects.annotate(posts__count=Count(
+        "posts", filter=Q(posts__visibility=LocalPost.Visibility.PUBLIC)))
     local_authors = [{
         "data": author,
         "type": "Local"
     } for author in authors]
 
-    args["authors"] = local_authors + remote_authors
+    args["authors"] = local_authors
     return render(request, 'author/index.html', args)
 
 
@@ -309,7 +285,8 @@ def create(request):
 
 
 def posts(request, author_id):
-    """
+    """ Handles POST request to publish a post.
+
         Allows user to create a post. The newly created post will also be rendered. 
     """
     author = get_object_or_404(LocalAuthor, pk=author_id)
@@ -324,8 +301,6 @@ def posts(request, author_id):
             else:
                 content_media = None
 
-            # pub_date = datetime.now()
-
             try:
                 new_post = LocalPost(
                     author_id=author_id,  # temporary
@@ -334,7 +309,7 @@ def posts(request, author_id):
                     content=form.cleaned_data.get('content_text'),
                     visibility=form.cleaned_data.get('visibility'),
                     unlisted=form.cleaned_data.get('unlisted'),
-                    # content_media=content_media,
+                    content_media=content_media,
                     count=0
                 )
                 new_post.save()
@@ -373,8 +348,7 @@ def editPost(request, id):
             if bin_content is not None:
                 content_media = base64.b64encode(bin_content.read())
             else:
-                pass
-                # content_media = post.content_media
+                content_media = post.content_media
 
             try:
                 post.title = form.cleaned_data.get('title')
@@ -384,7 +358,7 @@ def editPost(request, id):
                 post.content = form.cleaned_data.get('content_text')
                 post.visibility = form.cleaned_data.get('visibility')
                 post.unlisted = form.cleaned_data.get('unlisted')
-                # post.content_media = content_media
+                post.content_media = content_media
 
                 categories = form.cleaned_data.get('categories').split()
                 previousCategories = Category.objects.filter(post=post)
@@ -465,26 +439,27 @@ def commentPost(request, id):
 
     return render(request, 'posts/comments.html', context)
 
+
 def likeComment(request, id):
     '''
         Likes a comment
     '''
 
-    comment = get_object_or_404(Comment, id = id)
+    comment = get_object_or_404(Comment, id=id)
     author = get_object_or_404(LocalAuthor, user=request.user)
 
     host = request.get_host()
     prev_page = request.META['HTTP_REFERER']
 
     if request.method == 'POST':
-    # create like object
-        like =  {
-        "@context": "https://www.w3.org/ns/activitystreams",
-        "summary": f"{author.username} Likes your comment",         
-        "type": "like",
-        "author":author.as_json(),
-        "object":f"http://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
-        }  
+        # create like object
+        like = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "summary": f"{author.username} Likes your comment",
+            "type": "like",
+            "author": author.as_json(),
+            "object": f"http://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
+        }
 
     # redirect request to remote/local api
     make_request('POST', f'http://{host}/api/author/{comment.author.id}/inbox/', json.dumps(like))

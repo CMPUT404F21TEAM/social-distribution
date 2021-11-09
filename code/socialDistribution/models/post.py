@@ -134,6 +134,12 @@ class LocalPost(Post):
 
     author = models.ForeignKey('LocalAuthor', on_delete=models.CASCADE, related_name="posts")
 
+    content_media = models.BinaryField(
+        max_length=Post.CONTENT_MAXLEN,
+        null=True,
+        blank=True,
+    )
+
     def get_comments_as_json(self):
         author_id = self.author.id
         comments_set = Comment.objects.filter(
