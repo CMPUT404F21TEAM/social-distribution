@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.db.utils import IntegrityError
 from mixer.backend.django import mixer
 
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from .models import *
 from .builders import *
 
@@ -45,7 +45,7 @@ class LocalAuthorTests(TestCase):
 
 class PostTest(TestCase):
     def test_post_is_public(self):
-        visibility = LocalPost.FRIENDS
+        visibility = LocalPost.Visibility.FRIENDS
         post = PostBuilder().visibility(visibility).build()
         self.assertFalse(post.is_public())
 

@@ -41,7 +41,7 @@ class PostForm(forms.Form):
     content_media = forms.FileField(required=False)
     unlisted = forms.BooleanField(required=False)
     visibility = forms.ChoiceField(
-        choices=LocalPost.VISIBILITY_CHOICES, 
+        choices=LocalPost.Visibility.choices, 
         required=True,
     )
     post_recipients = forms.ModelMultipleChoiceField(
@@ -80,7 +80,7 @@ class PostForm(forms.Form):
             Ensure post's visilibity is valid
         """
         data = self.cleaned_data['visibility']
-        if data in [LocalPost.FRIENDS, LocalPost.PUBLIC, LocalPost.PRIVATE]:
+        if data in [visibility[0] for visibility in LocalPost.Visibility.choices]:
             return data
         else:
             raise ValidationError('Invalid visibility')

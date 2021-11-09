@@ -2,8 +2,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q, manager
 from django.contrib.auth.models import User
-# from django.utils import timezone
-from datetime import *
+from django.utils import timezone
+import datetime as dt
 import timeago
 
 from cmput404.constants import HOST, API_PREFIX
@@ -21,7 +21,7 @@ class PostQuerySet(models.QuerySet):
     def get_public(self):
         """ Get all public posts.
         """
-        return self.filter(visibility=Post.PUBLIC)
+        return self.filter(visibility=Post.Visibility.PUBLIC)
 
     def get_friend(self):
         """ Get all friend posts.
@@ -29,7 +29,7 @@ class PostQuerySet(models.QuerySet):
         # Django Software Foundation, "Complex lookups with Q objects", 2021-10-30
         # https://docs.djangoproject.com/en/3.2/topics/db/queries/#complex-lookups-with-q-objects
         return self.filter(
-            Q(visibility=Post.PUBLIC) | Q(visibility=Post.FRIENDS)
+            Q(visibility=Post.Visibility.PUBLIC) | Q(visibility=Post.Visibility.FRIENDS)
         )
 
     def chronological(self):
@@ -52,19 +52,15 @@ class Post(models.Model):
         PNG = 'PNG', 'image/png;base64'
         JPEG = 'JPEG', 'image/jpeg;base64'
 
+    class Visibility(models.TextChoices):
+        PUBLIC = "PB", "PUBLIC"
+        FRIENDS = "FR", "FRIEND"
+        PRIVATE = "PR", "PRIVATE"
+
     TITLE_MAXLEN = 50
     DESCRIPTION_MAXLEN = 50
     CONTENT_MAXLEN = 4096
     URL_MAXLEN = 2048
-
-    PUBLIC = "PB"
-    FRIENDS = "FRD"
-    PRIVATE = "PR"
-    VISIBILITY_CHOICES = (
-        (PUBLIC, 'PUBLIC'),
-        (FRIENDS, 'FRIENDS'),
-        (PRIVATE, 'PRIVATE')
-    )
 
     objects = PostQuerySet.as_manager()
 
@@ -96,12 +92,12 @@ class Post(models.Model):
 
     count = models.PositiveSmallIntegerField(default=0)
 
-    published = models.DateTimeField(default=datetime.now)
+    published = models.DateTimeField(default=timezone.now)
 
     visibility = models.CharField(
         max_length=10,
-        choices=VISIBILITY_CHOICES,
-        default=PUBLIC
+        choices=Visibility.choices,
+        default=Visibility.PUBLIC
     )
 
     unlisted = models.BooleanField()
@@ -166,7 +162,7 @@ class LocalPost(Post):
         '''
         Check if post is public
         '''
-        return self.visibility == self.PUBLIC
+        return self.visibility == self.Visibility.PUBLIC
 
     def when(self):
         '''
@@ -179,7 +175,7 @@ class LocalPost(Post):
             etc
             ...
         '''
-        now = datetime.now(timezone.utc)
+        now = dt.datetime.now(dt.timezone.utc)
         return timeago.format(self.published, now)
 
     def total_likes(self):
@@ -211,7 +207,7 @@ class LocalPost(Post):
             # image/png;base64 # this is an embedded png -- images are POSTS. So you might have a user make 2 posts if a post includes an image!
             # image/jpeg;base64 # this is an embedded jpeg
             # for HTML you will want to strip tags before displaying
-            "contentType": self.content_type,
+            "contentType": self.get_content_type_display(),
             "content": self.content,
             # the author has an ID where by authors can be disambiguated
             "author": self.author.as_json(),
@@ -229,9 +225,9 @@ class LocalPost(Post):
             # this is to reduce API call counts
             "commentsSrc": self.get_comments_as_json(),
             # ISO 8601 TIMESTAMP
-            "published": str(self.published),
+            "published": self.published.isoformat(),
             # visibility ["PUBLIC","FRIENDS"]
-            "visibility": self.visibility,
+            "visibility": self.get_visibility_display(),
             # for visibility PUBLIC means it is open to the wild web
             # FRIENDS means if we're direct friends I can see the post
             # FRIENDS should've already been sent the post so they don't need this

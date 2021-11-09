@@ -269,7 +269,7 @@ def authors(request):
     # Django Software Foundation, "Generating aggregates for each item in a QuerySet", 2021-10-13
     # https://docs.djangoproject.com/en/3.2/topics/db/aggregation/#generating-aggregates-for-each-item-in-a-queryset
     authors = LocalAuthor.objects.annotate(
-        posts__count=Count("posts", filter=Q(posts__visibility=LocalPost.PUBLIC)))
+        posts__count=Count("posts", filter=Q(posts__visibility=LocalPost.Visibility.PUBLIC)))
     local_authors = [{
         "data": author,
         "type": "Local"
@@ -339,7 +339,7 @@ def posts(request, author_id):
                 )
                 new_post.save()
 
-                if form.cleaned_data.get('visibility') == LocalPost.PRIVATE:
+                if form.cleaned_data.get('visibility') == LocalPost.Visibility.PRIVATE:
                     recipients = form.cleaned_data.get('post_recipients')
                     for recipient in recipients:
                         recipient.add_post_to_inbox(post)
@@ -349,7 +349,7 @@ def posts(request, author_id):
                     categories = categories.split()
 
                     for category in categories:
-                        Category.objects.create(category=category, post=post)
+                        Category.objects.create(category=category, post=new_post)
 
             except ValidationError:
                 messages.info(request, 'Unable to create new post.')

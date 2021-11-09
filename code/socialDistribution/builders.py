@@ -1,5 +1,5 @@
 from mixer.backend.django import mixer
-from datetime import datetime, timezone
+# from datetime import datetime, timezone
 
 from .models import *
 
@@ -14,15 +14,15 @@ class PostBuilder:
         self.__post = LocalPost.objects.create(
             author_id=author.id,
             title="testPost",
-            source="",
-            origin="",
+            # source="",
+            # origin="",
             description="testDesc",
             content_type=LocalPost.ContentType.PLAIN,
-            content_text="testContexxt",
-            visibility=LocalPost.PUBLIC,
+            content="testContexxt",
+            visibility=LocalPost.Visibility.PUBLIC,
             unlisted=False,
-            content_media=None,
-            pub_date=datetime.now(timezone.utc),
+            # content_media=None,
+            # published=datetime.now(timezone.utc),
             count=0
         )
 
