@@ -410,8 +410,6 @@ def editPost(request, id):
     return redirect('socialDistribution:home')
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-
-
 def likePost(request, id):
     """
         Like a specific post

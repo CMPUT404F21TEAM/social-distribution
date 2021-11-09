@@ -343,8 +343,6 @@ class InboxView(View):
                 return HttpResponse(status=200)
 
             elif data["type"] == "like":
-                # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-
                 # extract data from request body
                 object_url = urlparse(data['object']).path.strip('/')
                 split_url = object_url.split('/')
