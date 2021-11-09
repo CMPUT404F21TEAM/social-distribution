@@ -316,7 +316,6 @@ def posts(request, author_id):
         form = PostForm(request.POST, request.FILES, user=user_id)
         if form.is_valid():
             bin_content = form.cleaned_data.get('content_media')
-            print(request.FILES)
             if bin_content is not None:
                 content_media = base64.b64encode(bin_content.read())
             else:
