@@ -164,7 +164,7 @@ class PostsView(View):
             page = request.GET.get("page")
             size = request.GET.get("size")
             author = get_object_or_404(LocalAuthor, id=author_id)
-            posts = Post.objects.listed().get_public().filter(author=author, )
+            posts = Post.objects.listed().get_public().filter(author=author)
         
             jsonPosts = []
             for post in posts:
