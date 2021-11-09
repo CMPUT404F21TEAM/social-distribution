@@ -1,1 +1,1 @@
-web: gunicorn code.cmput404.wsgi
+web: gunicorn cmput404.wsgi
