@@ -357,8 +357,6 @@ def editPost(request, id):
 
             try:
                 post.title = form.cleaned_data.get('title')
-                # post.source = request.build_absolute_uri(request.path)    # will need to fix when moved to api
-                # post.origin = request.build_absolute_uri(request.path)    # will need to fix when moved to api
                 post.description = form.cleaned_data.get('description')
                 post.content = form.cleaned_data.get('content_text')
                 post.visibility = form.cleaned_data.get('visibility')

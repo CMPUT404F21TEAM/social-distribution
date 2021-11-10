@@ -14,15 +14,12 @@ class PostBuilder:
         self.__post = LocalPost.objects.create(
             author_id=author.id,
             title="testPost",
-            # source="",
-            # origin="",
             description="testDesc",
             content_type=LocalPost.ContentType.PLAIN,
             content="testContexxt",
             visibility=LocalPost.Visibility.PUBLIC,
             unlisted=False,
             # content_media=None,
-            # published=datetime.now(timezone.utc),
             count=0
         )
 
