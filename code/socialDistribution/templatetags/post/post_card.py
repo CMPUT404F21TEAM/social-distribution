@@ -1,20 +1,18 @@
 from django import template
-import base64
-from socialDistribution.forms import PostForm
-from socialDistribution.models import Post
 
 register = template.Library()
 
 # Django Software Foundation, "Custom Template tags and Filters", 2021-10-10
 # https://docs.djangoproject.com/en/3.2/howto/custom-template-tags/#inclusion-tags
 @register.inclusion_tag('tagtemplates/post.html')
-def card_post(post, author):
+def post_card(post, author):
     """
         Handles "liking" and "deleting" a post
     """
 
     # Delete/Edit
     isAuthor = post.author == author
+    isPublic = post.is_public()
 
     # Likes
     isLiked = post.likes.filter(author=author).exists()
@@ -44,11 +42,6 @@ def card_post(post, author):
         'content_media': content_media, 
         'isAuthor': isAuthor, 
         'isLiked': isLiked, 
-        'likeText': likeText
+        'likeText': likeText,        
+        'isPublic': isPublic,
         }
-
-
-@register.inclusion_tag('tagtemplates/post_form.html')
-def post_form(user_id, post_id):
-    form = PostForm(user=user_id, postId=post_id)
-    return {'form': form}

@@ -8,13 +8,13 @@
 <link rel="stylesheet" type="text/css" href="{% static 'css/posts/comments.css' %}">
 {% endblock %}
 
-{% load post %}
+{% load post_card %}
 {% load comment %}
 
 {% block body %}
 <!-- post -->
 <div class="conatiner">
-    {% card_post post author %}
+    {% post_card post author %}
 </div>
 
 <!-- comments -->
@@ -35,6 +35,7 @@
     <div class="mb-1">&nbsp;</div>
 </div>
 
+<<<<<<< HEAD
 {% load modal %}
 <form method="POST" enctype="multipart/form-data" action="{% url 'socialDistribution:editPost' post.id %}">
     {% csrf_token %}
@@ -75,5 +76,9 @@
         }
     })
 </script>
+=======
+{% load static %}
+    <script src="{% static 'js/comment/comments.js' %}"></script>
+>>>>>>> master
 
 {% endblock %}

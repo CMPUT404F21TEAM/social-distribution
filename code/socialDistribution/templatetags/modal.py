@@ -1,5 +1,4 @@
 from django import template
-from .post import post_form
 
 register = template.Library()
 
