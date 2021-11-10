@@ -193,14 +193,16 @@ class PostsView(View):
 class PostView(View):
 
     def get(self, request, author_id, post_id):
-        # return HttpResponse("This is the authors/aid/posts/pid/ endpoint")
         author = get_object_or_404(LocalAuthor, pk=int(author_id))
         post = get_object_or_404(Post, pk=int(post_id))
-        accepted_types = request.headers['Accept'].split(',')
+        accepted_types = request.headers['Accept']
 
-        if post.content_media is not None and len(post.content_text) == 0 and post.unlisted:
+        if 'image' in accepted_types and post.content_media is not None and post.unlisted:
+            accepted_types = accepted_types.split(',')
             for mime_type in accepted_types:
-                if 'image' in mime_type:
+                format = mime_type.split('/')[-1]
+                format = format.split(';')[0]
+                if format.lower() == 'webp':
                     content_media = base64.b64decode(post.content_media)
                     img = Image.open(BytesIO(content_media))
                     webp_bytes_arr = BytesIO()

@@ -14,6 +14,7 @@ urlpatterns = [
   path('author/<int:author_id>/', views.author, name='author'),
   path('home/', views.home, name='home'),
   path('author/<int:author_id>/posts/', views.posts, name='posts'),
+  path('author/<int:author_id>/posts/<int:post_id>', views.post, name='post'),
   path('author/<int:author_id>/befriend/', views.befriend, name='befriend'),
   path('author/<int:author_id>/un-befriend/', views.un_befriend, name='un-befriend'),
   path('author/<int:author_id>/friend-request/<str:action>', views.friend_request, name='friend-request'),

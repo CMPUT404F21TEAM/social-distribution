@@ -304,6 +304,15 @@ def author(request, author_id):
 def create(request):
     return render(request, 'create/index.html')
 
+def post(request, author_id, post_id):
+    """
+        Allows user to view a specific post.
+        Mostly useful to share public (unlisted) posts through url
+    """
+    author = get_object_or_404('Author', pk=author_id)
+    post = get_object_or_404('Post', pk=post_id)
+    pass
+
 
 def posts(request, author_id):
     """
