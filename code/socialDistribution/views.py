@@ -4,18 +4,19 @@ from django.contrib import messages
 from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout, get_user_model
-
-from .forms import CreateUserForm, PostForm
-from .decorators import allowedUsers, unauthenticated_user
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 from django.urls import reverse
-from .models import *
-from datetime import datetime
-from .utility import make_request
 import base64
 import json
+
+from .forms import CreateUserForm, PostForm
+from .decorators import allowedUsers, unauthenticated_user
+from .models import *
+from .utility import make_request
+
+from .dispatchers import dispatch_post
 
 REQUIRE_SIGNUP_APPROVAL = False
 ''' 
@@ -328,11 +329,7 @@ def posts(request, author_id):
 
                 # Send to followers
                 post = LocalPost.objects.get(id=new_post.id)
-                if post.visibility == LocalPost.Visibility.PUBLIC:
-                    for follower in post.author.followers.all():
-                        endpoint = follower.url + "/inbox"
-                        data = post.as_json()
-                        make_request(method="POST", url=endpoint, body=json.dumps(data))
+                dispatch_post(post)
 
             except ValidationError:
                 messages.info(request, 'Unable to create new post.')
