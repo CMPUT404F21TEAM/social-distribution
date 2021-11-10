@@ -258,6 +258,9 @@ class EventFactory:
 
         elif event_name == "ReleaseEvent":
             return ReleaseEvent()
+
+        elif event_name == "GollumEvent":
+            return GollumEvent()
         
         else:
             raise Exception("Unsupported event type")

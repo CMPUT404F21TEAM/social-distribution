@@ -11,7 +11,7 @@
 {% load modal %}
 {% load github_event %}
 {% block body %}
-    {% if latest_posts %}
+    {% if latest_posts or github_events %}
         <div class="container align-self-center" id="post_container">
             <div class="d-flex justify-content-center">
                 <label class="btn btn-primary rounded-pill mx-3 mt-md-3 w-25 active" id="posts-radio">
