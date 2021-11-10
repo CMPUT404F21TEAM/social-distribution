@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% load notification %}
-{% load post %}
+{% load post_card %}
 {% block body %}
     {% if not follow_requests and not posts %}
         <div class="text-center pt-5">
@@ -24,7 +24,7 @@
     </div>
     <div class="container align-self-center" id="post_container">
         {% for post in posts %}
-            {% card_post post author %}
+            {% post_card post author %}
         {% endfor %}
     </div>
 {% endblock %}

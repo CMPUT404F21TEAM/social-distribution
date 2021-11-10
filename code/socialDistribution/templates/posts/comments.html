@@ -8,13 +8,13 @@
 <link rel="stylesheet" type="text/css" href="{% static 'css/posts/comments.css' %}">
 {% endblock %}
 
-{% load post %}
+{% load post_card %}
 {% load comment %}
 
 {% block body %}
 <!-- post -->
 <div class="conatiner">
-    {% card_post post author %}
+    {% post_card post author %}
 </div>
 
 <!-- comments -->
