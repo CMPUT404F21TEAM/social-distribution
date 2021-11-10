@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 
 from .forms import CreateUserForm, PostForm
 from .decorators import allowedUsers, unauthenticated_user
+from .github_activity.github_activity import pull_github_events
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.db.models import Count, Q
@@ -163,8 +164,17 @@ def home(request):
             friend_posts = other.posts.listed().get_friend()
             posts = posts.union(friend_posts)
 
+    github_events = None
+    if author.githubUrl:
+        github_user = author.githubUrl.strip('/').split('/')[-1]
+        github_events = pull_github_events(github_user)
+        
+        if github_events is None:
+            messages.info("An error occurred while fetching github events")
+
     context = {
         'author': author,
+        'github_events': github_events,
         'modal_type': 'post',
         'latest_posts': posts.chronological(),
         'error': False,
