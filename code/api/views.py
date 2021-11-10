@@ -7,10 +7,10 @@ from django.core import serializers
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from datetime import datetime, timezone
 from urllib.parse import urlparse
 import json
 import logging
+from datetime import datetime, timezone
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
