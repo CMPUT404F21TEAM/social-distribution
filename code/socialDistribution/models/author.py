@@ -58,7 +58,7 @@ class LocalAuthor(Author):
     followers = models.ManyToManyField('LocalAuthor', blank=True)
 
     follow_requests = models.ManyToManyField('LocalAuthor', related_name="follow_requests_reverse")
-    inbox_posts = models.ManyToManyField('LocalPost')
+    inbox_posts = models.ManyToManyField('InboxPost')
 
     def has_follower(self, author):
         """
@@ -115,13 +115,3 @@ class LocalAuthor(Author):
         Returns True if the user has a request from a specific author, False otherwise 
         """
         return self.follow_requests.filter(pk=author.id).exists()
-
-    def add_post_to_inbox(self, post):
-        """
-        Adds a pushed post
-        """
-
-        try:
-            self.inbox_posts.add(post)
-        except ValidationError:
-            raise

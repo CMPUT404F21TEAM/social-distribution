@@ -4,7 +4,7 @@
 # https://docs.djangoproject.com/en/3.2/topics/db/models/#organizing-models-in-a-package
 
 from .author import Author, LocalAuthor
-from .post import LocalPost
+from .post import LocalPost, InboxPost
 from .category import Category
 from .comment import Comment
 from .like import PostLike, CommentLike

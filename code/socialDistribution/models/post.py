@@ -100,7 +100,7 @@ class Post(models.Model):
         default=Visibility.PUBLIC
     )
 
-    unlisted = models.BooleanField()
+    unlisted = models.BooleanField(default=False)
 
 
 class LocalPost(Post):

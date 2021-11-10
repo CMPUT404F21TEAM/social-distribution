@@ -86,9 +86,9 @@ class AuthorView(View):
         if (not display_name or not email):
             return HttpResponseBadRequest()
 
-        djangoUser = get_object_or_404(get_user_model(), username = request.user)
+        djangoUser = get_object_or_404(get_user_model(), username=request.user)
         author = get_object_or_404(LocalAuthor, user=request.user)
-        
+
         try:
             # update author
             author.displayName = display_name
@@ -105,7 +105,6 @@ class AuthorView(View):
             return HttpResponseServerError()
 
         return redirect('socialDistribution:profile')
-
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -155,18 +154,19 @@ class LikedView(View):
 
         return JsonResponse(response)
 
+
 @method_decorator(csrf_exempt, name='dispatch')
 class PostsView(View):
 
     def get(self, request, author_id):
         # Send all posts
         try:
-            #TODO handle pagination
+            # TODO handle pagination
             page = request.GET.get("page")
             size = request.GET.get("size")
             author = get_object_or_404(LocalAuthor, id=author_id)
             posts = LocalPost.objects.filter(author=author)
-        
+
             jsonPosts = []
             for post in posts:
                 jsonPosts.append(post.as_json())
@@ -183,9 +183,10 @@ class PostsView(View):
             return HttpResponseServerError()
 
         return JsonResponse(response)
-    
+
     def post(self, request, author_id):
         return HttpResponse("This is the authors/aid/posts/ endpoint")
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostView(View):
@@ -302,20 +303,30 @@ class InboxView(View):
         # pprint.pprint(data)
         try:
             if data["type"] == "post":
-                # Post saved to inbox of author_id
-
-                if not url_parser.is_local_url(data["id"]):
-                    raise ValueError() # only works for local posts right now
-
-                post_author_id, post_id = url_parser.parse_post(data["id"])
+                # get owner of inbox
                 receiving_author = get_object_or_404(LocalAuthor, id=author_id)
 
-                # push post to inbox of author
-                try:
-                    post = LocalPost.objects.get(id=post_id, author_id=post_author_id)
-                    receiving_author.inbox_posts.add(post)
-                except LocalPost.DoesNotExist:
-                    raise ValueError()
+                # save the received post as an InboxPost
+                received_post, created = InboxPost.objects.get_or_create(
+                    public_id=data["id"],
+                    defaults={
+                        "title": data["title"],
+                        "source": data["source"],
+                        "origin": data["origin"],
+                        "description": data["description"],
+                        "content_type": data["contentType"],
+                        "content": data["content"],
+                        # "categories": data["categories"],
+                        # "author": data["author"]["id"],
+                        # "count": data["count"],
+                        # "published": data["published"],
+                        # "visibility": data["visibility"],
+                        # "unlisted": data["unlisted"],
+                    }
+                )
+
+                # add post to inbox of author
+                receiving_author.inbox_posts.add(received_post)
 
                 return HttpResponse(status=200)
 
@@ -326,13 +337,13 @@ class InboxView(View):
                 if not url_parser.is_local_url(actor["id"]) or not url_parser.is_local_url(obj["id"]):
                     raise ValueError()
 
-                follower_id = url_parser.parse_author(actor["id"]) # only works for local followers right now
+                follower_id = url_parser.parse_author(actor["id"])  # only works for local followers right now
                 followee_id = url_parser.parse_author(obj["id"])
 
                 # check if this is the correct endpoint
                 if followee_id != author_id:
                     raise ValueError("Object ID does not match inbox ID")
-                
+
                 followee_author = get_object_or_404(LocalAuthor, id=followee_id)
 
                 # add follow request to inbox
@@ -340,7 +351,7 @@ class InboxView(View):
                     follower_author = LocalAuthor.objects.get(id=follower_id)
                     followee_author.follow_requests.add(follower_author)
                 except LocalAuthor.DoesNotExist:
-                    raise ValueError()                      
+                    raise ValueError()
 
                 return HttpResponse(status=200)
 
@@ -353,7 +364,7 @@ class InboxView(View):
                 object = split_url[-2]
                 id = split_url[-1]
                 liking_author_url = data["author"]["id"]
-                
+
                 # retrieve author
                 liking_author, created = Author.objects.get_or_create(
                     url=liking_author_url
@@ -366,13 +377,13 @@ class InboxView(View):
                     context_object = get_object_or_404(LocalPost, id=id)
                 else:
                     raise ValueError("Unknown object for like")
-                
+
                 if context_object.likes.filter(author=liking_author).exists():
                     # if like already exists, remove it
                     like = context_object.likes.get(author=liking_author)
                     like.delete()
                 else:
-                    # create a new like from liking_author on object 
+                    # create a new like from liking_author on object
                     context_object.likes.create(author=liking_author, object=context_object)
 
                 return HttpResponse(status=200)
@@ -385,14 +396,14 @@ class InboxView(View):
 
         except ValueError as e:
             return JsonResponse({
-                    "error": e.args[0]
-                }, status=400)
-        
+                "error": e.args[0]
+            }, status=400)
+
         except Exception as e:
             logger.error(e, exc_info=True)
             return JsonResponse({
-                    "error": "Internal Server Error"
-                }, status=500)
+                "error": "Internal Server Error"
+            }, status=500)
 
     def delete(self, request, author_id):
         """ DELETE - Clear the inbox """

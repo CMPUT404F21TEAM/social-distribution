@@ -315,10 +315,10 @@ def posts(request, author_id):
                 )
                 new_post.save()
 
-                if form.cleaned_data.get('visibility') == LocalPost.Visibility.PRIVATE:
-                    recipients = form.cleaned_data.get('post_recipients')
-                    for recipient in recipients:
-                        recipient.add_post_to_inbox(new_post)
+                # if form.cleaned_data.get('visibility') == LocalPost.Visibility.PRIVATE:
+                #     recipients = form.cleaned_data.get('post_recipients')
+                #     for recipient in recipients:
+                #         recipient.add_post_to_inbox(new_post)
 
                 categories = form.cleaned_data.get('categories')
                 if categories is not None:
