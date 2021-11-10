@@ -4,6 +4,10 @@ from django.contrib import messages
 from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout, get_user_model
+
+from .forms import CreateUserForm, PostForm
+from .decorators import allowedUsers, unauthenticated_user
+from .github_activity.github_activity import pull_github_events
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.db.models import Count, Q
@@ -163,8 +167,17 @@ def home(request):
             friend_posts = other.posts.listed().get_friend()
             posts = posts.union(friend_posts)
 
+    github_events = None
+    if author.githubUrl:
+        github_user = author.githubUrl.strip('/').split('/')[-1]
+        github_events = pull_github_events(github_user)
+        
+        if github_events is None:
+            messages.info("An error occurred while fetching github events")
+
     context = {
         'author': author,
+        'github_events': github_events,
         'modal_type': 'post',
         'latest_posts': posts.chronological(),
         'error': False,
@@ -344,7 +357,13 @@ def editPost(request, id):
         Edits an existing post
     """
     author = LocalAuthor.objects.get(user=request.user)
+<<<<<<< HEAD
     post = LocalPost.objects.get(id=id)
+=======
+    post = Post.objects.get(id=id)
+    if not post.is_public():
+        return HttpResponseBadRequest("Only public posts are editable")
+>>>>>>> master
 
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES, user=author.id)
@@ -389,8 +408,6 @@ def editPost(request, id):
     return redirect('socialDistribution:home')
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-
-
 def likePost(request, id):
     """
         Like a specific post
