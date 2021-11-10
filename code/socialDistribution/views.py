@@ -372,13 +372,13 @@ def editPost(request, id):
     """
         Edits an existing post
     """
-    author = LocalAuthor.objects.get(user=request.user)
+    author = LocalAuthor.objects.get(user=request.user).id
     post = Post.objects.get(id=id)
     if not post.is_public():
         return HttpResponseBadRequest("Only public posts are editable")
 
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES, user=author.id)
+        form = PostForm(request.POST, request.FILES, user=author)
         if form.is_valid():
             bin_content = form.cleaned_data.get('content_media')
             if bin_content is not None:
