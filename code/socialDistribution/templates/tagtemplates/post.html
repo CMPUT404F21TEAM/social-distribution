@@ -52,15 +52,16 @@
                         type="button" 
                         class="btn btn btn-secondary" 
                         data-bs-toggle="modal"
-                        data-bs-target="#{{ editPostModalId }}">
+                        data-bs-target="#edit_post_modal{{ post.id }}">
                             <i class="fas fa-edit"></i>
                     </button>
+           
                     <!-- Launch Delete Modal -->
                     <button 
                         type="button" 
                         class="btn btn btn-danger" 
                         data-bs-toggle="modal" 
-                        data-bs-target="#{{ deletePostModalId }}">
+                        data-bs-target="#delete_post_modal{{ post.id }}">
                             <i class="fas fa-trash-alt"></i>
                     </button>
                 </span>
@@ -70,12 +71,13 @@
     </div>
 
     {% load modal %}
+    {% load utility %}
     <form method="POST" action="{% url 'socialDistribution:editPost' post.id %}">
         {% csrf_token %}
-        {% modal id=editPostModalId type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
+        {% modal id="edit_post_modal"|addstr:post.id type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
     </form>
     <form method="POST" action="{% url 'socialDistribution:deletePost' post.id %}">
         {% csrf_token %}
-        {% modal id=deletePostModalId type="delete" label="Delete Post" title="Delete Post" btn="Delete" postid=post.id%}
+        {% modal id="delete_post_modal"|addstr:post.id type="delete" label="Delete Post" title="Delete Post" btn="Delete" postid=post.id%}
     </form>
 </div>

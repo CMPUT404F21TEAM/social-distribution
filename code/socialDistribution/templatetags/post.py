@@ -45,8 +45,6 @@ def card_post(post, author):
         'isAuthor': isAuthor, 
         'isLiked': isLiked, 
         'likeText': likeText,
-        'editPostModalId': 'edit_post_modal' + str(post.id),
-        'deletePostModalId': 'delete_post_modal'+ str(post.id)
         }
 
 
