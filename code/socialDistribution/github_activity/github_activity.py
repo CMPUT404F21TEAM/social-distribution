@@ -7,6 +7,10 @@ REQUEST_URL = "https://api.github.com/users/{github_user}/events"
 event_factory = EventFactory()
 
 def get_event_description(event_name, event_data):
+    '''
+        Returns the description of the github event based
+        on the event name and event data
+    '''
     github_event = event_factory.get_event(event_name)
     github_event.set_event_data(event_data)
     
@@ -14,6 +18,10 @@ def get_event_description(event_name, event_data):
 
 
 def pull_github_events(github_user):
+    '''
+        Pulls github events through a get request using the github
+        username parameter
+    '''
     response = requests.get(
             REQUEST_URL.format(github_user = github_user),
             headers={
