@@ -6,7 +6,7 @@ from django.urls import reverse
 from mixer.backend.django import mixer
 import json
 
-from socialDistribution.models import Author
+from socialDistribution.models import LocalAuthor
 
 # Documentation and code samples taken from the following references:
 # Django Software Foundation, https://docs.djangoproject.com/en/3.2/intro/tutorial05/
@@ -15,7 +15,7 @@ from socialDistribution.models import Author
 
 def create_author(id, username, displayName, githubUrl, profileImageUrl):
     user = mixer.blend(User, username=username)
-    return Author.objects.create(id=id, username=username, displayName=displayName, githubUrl=githubUrl, user=user, profileImageUrl=profileImageUrl)
+    return LocalAuthor.objects.create(id=id, username=username, displayName=displayName, githubUrl=githubUrl, user=user, profileImageUrl=profileImageUrl)
 
 
 class AuthorsViewTests(TestCase):

@@ -6,7 +6,7 @@ from django.urls import reverse
 from mixer.backend.django import mixer
 from datetime import datetime, timezone
 
-from socialDistribution.models import Author, Inbox, Post, Comment
+from socialDistribution.models import LocalAuthor, Inbox, Post, Comment
 from cmput404.constants import *
 
 # Documentation and code samples taken from the following references:
@@ -17,7 +17,7 @@ from cmput404.constants import *
 
 def create_author(id, username, displayName, githubUrl):
     user = mixer.blend(User, username=username)
-    author = Author.objects.create(
+    author = LocalAuthor.objects.create(
         id=id, username=username, displayName=displayName, githubUrl=githubUrl, user=user)
     inbox = Inbox.objects.create(author=author)
     return author, inbox
@@ -76,7 +76,7 @@ class InboxViewTests(TestCase):
 
     def test_post_local_post(self):
         # NOTE: This test is very basic. More work needed on this endpoint.
-        
+
         author1, inbox1 = create_author(
             1,
             "user1",
@@ -162,6 +162,47 @@ class InboxViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(comment.total_likes(), 1)
-
         liker = comment.likes.all()[0]
         self.assertEqual(liker.id, author1.id)
+
+    def test_post_like(self):
+        author, inbox = create_author(
+            1,
+            "user1",
+            "Greg Johnson",
+            "http://github.com/gjohnson"
+        )
+        post = mixer.blend(Post, id=1, author=author)
+
+        body = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "summary": "Diego Becerra Likes your post",
+            "type": "like",
+            "author": {
+                "type": "author",
+                "id": "http://remote.com/author/432423432",
+                "host": "http://remote.com/author/432423432",
+                "displayName": "Diego Becerra",
+                "url": "http://remote.com/author/432423432",
+                "github": "http://github.com/diego",
+                "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
+            },
+            "object": "http://127.0.0.1:5454/author/1/posts/1"
+        }
+
+        # Send the like to author
+        response = self.client.post(
+            reverse("api:inbox", kwargs={"author_id": 1}),
+            content_type="application/json",
+            data=body
+        )
+
+        self.assertEqual(response.status_code, 200)
+        
+        # Check that the post received a like
+        post = Post.objects.get(id=1)
+        self.assertEqual(1, post.likes.count())
+
+        # Check that the like was from the right author
+        like = post.likes.first()
+        self.assertEqual("http://remote.com/author/432423432", like.author.url)

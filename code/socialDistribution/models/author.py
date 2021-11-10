@@ -6,8 +6,34 @@ from cmput404.constants import HOST, API_PREFIX
 
 
 class Author(models.Model):
-    '''
-    Author model:
+    """ Author model which represents all authors. 
+
+        All authors that interact with the application will be stored as an author. That is, 
+        the Author model can store both remote and local authors. Methods on an Author instance primarily 
+        rely on API calls to get the data corresponding to the author from a remote server.
+
+        In the future, caching can be used with this model to reduce the number of API calls being sent out.
+        
+        When a local author is created, it must be re-fetched from the database in order to access the auto-generated author.url attribute.
+    """
+
+    url = models.URLField()
+
+    def as_json(self):
+        # This method is an example, not yet implemented
+        # Makes a GET request to URL to get the Author data
+        # The LocalAuthor method will override this, making it more efficient by fetching data
+        # straight from the database instead of an HTTP request
+        pass
+
+
+class LocalAuthor(Author):
+    ''' LocalAuthor model which represents an author hosted on the local server.
+
+    Any authors hosted on the local server will be stored as a LocalAuthor instance. This class overrides
+    methods defined in Author to provide more efficient, local access (no API) to author data.
+
+    LocalAuthor model:
         user                Author's corresponding Django User (text)
         username            Author's username (text)
         displayName         Author's displayName (text)
@@ -18,13 +44,14 @@ class Author(models.Model):
         friend_requests     fksdjfskl;jfaskdf
         followers           Author's followers (array)
     '''
+
     user = models.OneToOneField(User, null=True, on_delete=models.CASCADE)
-    username = models.CharField(max_length=50, default='', unique=True)
+    username = models.CharField(max_length=50, unique=True, blank=False)
     displayName = models.CharField(max_length=50)
     githubUrl = models.CharField(max_length=50, null=True)
     profileImageUrl = models.CharField(max_length=50, null=True)
 
-    followers = models.ManyToManyField('Author', blank=True)
+    followers = models.ManyToManyField('LocalAuthor', blank=True)
 
     def has_follower(self, author):
         """
@@ -59,3 +86,18 @@ class Author(models.Model):
             # #TODO
             "profileImage": self.profileImageUrl
         }
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)  # Call the "real" save() method.
+        self._set_url()
+
+    
+    def _set_url(self):
+        """ Sets the URL of the author to be "http://{HOST}/{API_PREFIX}/author/{self.id}" if one was not set when created. This 
+            sets the URL attribute of all local authors.
+        """
+        # Clark, https://stackoverflow.com/users/10424244/clark, "Django - How to get self.id when saving a new object?", 
+        # 2021-02-19, https://stackoverflow.com/a/66271445, CC BY-SA 4.0
+        url = f"http://{HOST}/{API_PREFIX}/author/{self.id}"
+        if self.url != url:
+            Author.objects.filter(id=self.id).update(url=url)

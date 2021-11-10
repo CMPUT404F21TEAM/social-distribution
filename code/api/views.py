@@ -7,9 +7,10 @@ from django.core import serializers
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from datetime import datetime, timezone
+from urllib.parse import urlparse
 import json
 import logging
+from datetime import datetime, timezone
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
@@ -50,7 +51,7 @@ class AuthorsView(View):
         page = request.GET.get("page")
         size = request.GET.get("size")
 
-        authors = [author.as_json() for author in Author.objects.all()]
+        authors = [author.as_json() for author in LocalAuthor.objects.all()]
 
         response = {
             "type": "authors",
@@ -66,7 +67,7 @@ class AuthorView(View):
     def get(self, request, author_id):
         """ GET - Retrieve profile of {author_id} """
 
-        author = get_object_or_404(Author, pk=author_id)
+        author = get_object_or_404(LocalAuthor, pk=author_id)
         response = author.as_json()
         return JsonResponse(response)
 
@@ -75,30 +76,27 @@ class AuthorView(View):
         """ POST - Update profile of {author_id} """
 
         # extract post data
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
+        display_name = request.POST.get('display_name')
         github_url = request.POST.get('github_url')
         email = request.POST.get('email')
         profile_image_url = request.POST.get('profile_image_url')
 
         # check data for empty string
-        if (not first_name or not last_name or not email):
+        if (not display_name or not email):
             return HttpResponseBadRequest()
 
         djangoUser = get_object_or_404(get_user_model(), username = request.user)
-        author = get_object_or_404(Author, user=request.user)
+        author = get_object_or_404(LocalAuthor, user=request.user)
         
         try:
             # update author
-            author.displayName = f"{first_name} {last_name}"
+            author.displayName = display_name
             author.githubUrl = github_url
             author.profileImageUrl = profile_image_url
             author.save()
 
             # update django user
             djangoUser.email = email
-            djangoUser.first_name = first_name
-            djangoUser.last_name = last_name
             djangoUser.save()
 
         except Exception as e:
@@ -115,7 +113,7 @@ class FollowersView(View):
     def get(self, request, author_id):
         """ GET - Get a list of authors who are the followers of {author_id} """
 
-        author = get_object_or_404(Author, pk=author_id)
+        author = get_object_or_404(LocalAuthor, pk=author_id)
         followers = [follower.as_json() for follower in author.followers.all()]
 
         response = {
@@ -132,7 +130,7 @@ class LikedView(View):
     def get(self, request, author_id):
         """ GET - Get a list of like objects from {author_id} """
         try:
-            author = Author.objects.get(id=author_id)
+            author = LocalAuthor.objects.get(id=author_id)
             authorLikedPosts = Post.objects.filter(likes__exact=author)
             host = request.get_host()
             likes = []
@@ -160,13 +158,13 @@ class LikedView(View):
 class PostsView(View):
 
     def get(self, request, author_id):
-        # Send all posts
+        # Send all PUBLIC posts
         try:
             #TODO handle pagination
             page = request.GET.get("page")
             size = request.GET.get("size")
-            author = get_object_or_404(Author, id=author_id)
-            posts = Post.objects.filter(author=author)
+            author = get_object_or_404(LocalAuthor, id=author_id)
+            posts = Post.objects.listed().get_public().filter(author=author)
         
             jsonPosts = []
             for post in posts:
@@ -228,7 +226,7 @@ class PostCommentsView(View):
             page = request.GET.get("page")
             size = request.GET.get("size")
             post = get_object_or_404(Post, id=post_id)
-            author = get_object_or_404(Author, id=author_id)
+            author = get_object_or_404(LocalAuthor, id=author_id)
             # Check if the post author match with author in url
             if post.author.id != author.id:
                 return HttpResponseNotFound()
@@ -255,7 +253,7 @@ class PostCommentsView(View):
         pub_date = datetime.now(timezone.utc)
 
         try:
-            author = get_object_or_404(Author, pk=author_id)
+            author = get_object_or_404(LocalAuthor, pk=author_id)
             post = get_object_or_404(Post, id=post_id)
 
             comment = Comment.objects.create(
@@ -320,7 +318,7 @@ class InboxView(View):
                 return HttpResponse(status=200)
 
             elif data["type"] == "follow":
-                # Actor requests to follow Object
+                # actor requests to follow Object
 
                 actor, obj = data["actor"], data["object"]
                 if not url_parser.is_local_url(actor["id"]) or not url_parser.is_local_url(obj["id"]):
@@ -331,57 +329,66 @@ class InboxView(View):
 
                 # check if this is the correct endpoint
                 if followee_id != author_id:
-                    raise ValueError()
+                    raise ValueError("Object ID does not match inbox ID")
                 
                 inbox = get_object_or_404(Inbox, author_id=followee_id)
 
                 # add follow request to inbox
                 try:
-                    followerAuthor = Author.objects.get(id=follower_id)
+                    followerAuthor = LocalAuthor.objects.get(id=follower_id)
                     inbox.follow_requests.add(followerAuthor)
-                except Author.DoesNotExist:
+                except LocalAuthor.DoesNotExist:
                     raise ValueError()                      
 
                 return HttpResponse(status=200)
 
             elif data["type"] == "like":
-                # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-                # extract data from reqest body
-                splitObject = data["object"].split("/")
-                object = data["object"].split("/")[-2]
-                id = splitObject[-1]
+                # extract data from request body
+                object_url = urlparse(data['object']).path.strip('/')
+                split_url = object_url.split('/')
+                object = split_url[-2]
+                id = split_url[-1]
+                liking_author_url = data["author"]["id"]
                 
                 # retrieve author
-                likingAuthorId = data["author"]["id"].split("/")[-1]
-                author = Author.objects.get(id=likingAuthorId)
+                liking_author, created = Author.objects.get_or_create(
+                    url=liking_author_url
+                )
 
                 # check if liking post or comment
                 if object == 'comments':
-                    contextObject = get_object_or_404(Comment, id=id)
+                    context_object = get_object_or_404(Comment, id=id)
                 elif (object == 'posts'):
-                    contextObject = get_object_or_404(Post, id=id)
+                    context_object = get_object_or_404(Post, id=id)
                 else:
-                    return HttpResponseBadRequest()
+                    raise ValueError("Unknown object for like")
                 
-                if contextObject.likes.filter(id=author.id).exists():
-                    contextObject.likes.remove(author) # if already liked unlike 
+                if context_object.likes.filter(author=liking_author).exists():
+                    # if like already exists, remove it
+                    like = context_object.likes.get(author=liking_author)
+                    like.delete()
                 else:
-                    contextObject.likes.add(author)
+                    # create a new like from liking_author on object 
+                    context_object.likes.create(author=liking_author, object=context_object)
 
                 return HttpResponse(status=200)
 
             else:
-                return HttpResponseBadRequest()
+                raise ValueError("Unknown object received by inbox")
 
         except KeyError as e:
-            return HttpResponseBadRequest("Unknown data format")
+            return HttpResponseBadRequest("JSON body could not be parsed")
 
         except ValueError as e:
-            return HttpResponseBadRequest()
+            return JsonResponse({
+                    "error": e.args[0]
+                }, status=400)
         
         except Exception as e:
             logger.error(e, exc_info=True)
-            return HttpResponse("Internal Server Error", status=500)
+            return JsonResponse({
+                    "error": "Internal Server Error"
+                }, status=500)
 
     def delete(self, request, author_id):
         """ DELETE - Clear the inbox """

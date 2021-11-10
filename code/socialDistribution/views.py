@@ -7,9 +7,10 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 
 from .forms import CreateUserForm, PostForm
 from .decorators import allowedUsers, unauthenticated_user
+from .github_activity.github_activity import pull_github_events
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.urls import reverse
 from .models import *
 from datetime import datetime
@@ -29,7 +30,7 @@ def index(request):
         Redirect User on visiting /
     """
     if request.user.is_authenticated:
-        author_id = get_object_or_404(Author, user=request.user).id
+        author_id = get_object_or_404(LocalAuthor, user=request.user).id
         return redirect('socialDistribution:home')
     else:
         return redirect('socialDistribution:login')
@@ -61,7 +62,7 @@ def loginPage(request):
             user = authenticate(request, username=username, password=password)
 
             try:
-                author_id = Author.objects.get(user=user).id
+                author_id = LocalAuthor.objects.get(user=user).id
 
                 if user is not None:
                     login(request, user)
@@ -69,7 +70,7 @@ def loginPage(request):
                 else:
                     raise KeyError
 
-            except (KeyError, Author.DoesNotExist):
+            except (KeyError, LocalAuthor.DoesNotExist):
                 messages.info(request, "Username or Password is incorrect.")
 
     return render(request, 'user/login.html')
@@ -88,11 +89,9 @@ def register(request):
             try:
                 # extract form data
                 username = form.cleaned_data.get('username')
-                first_name = form.cleaned_data.get('first_name')
-                last_name = form.cleaned_data.get('last_name')
-                github_url = request.POST.get('github_url', '')
-                profile_image_url = request.POST.get('profile_image_url', '')
-                full_name = f"{first_name} {last_name}"
+                display_name = form.cleaned_data.get('display_name')
+                github_url = form.cleaned_data.get('github_url', '')
+                profile_image_url = form.cleaned_data.get('profile_image_url', '')
 
                 # check github url
                 if (github_url and not github_url.startswith('https://github.com/')):
@@ -111,10 +110,10 @@ def register(request):
                 # add user to author group by default
                 group, created = Group.objects.get_or_create(name="author")
                 user.groups.add(group)
-                author = Author.objects.create(
+                author = LocalAuthor.objects.create(
                     user=user,
                     username=username,
-                    displayName=full_name,
+                    displayName=display_name,
                     githubUrl=github_url,
                     profileImageUrl=profile_image_url
                 )
@@ -149,7 +148,7 @@ def home(request):
     posts of local authors, public posts of followed authors, and friends posts of friends.
     """
 
-    author = get_object_or_404(Author, user=request.user)
+    author = get_object_or_404(LocalAuthor, user=request.user)
 
     # get all local public posts
     posts = Post.objects.listed().get_public()
@@ -165,8 +164,17 @@ def home(request):
             friend_posts = other.posts.listed().get_friend()
             posts = posts.union(friend_posts)
 
+    github_events = None
+    if author.githubUrl:
+        github_user = author.githubUrl.strip('/').split('/')[-1]
+        github_events = pull_github_events(github_user)
+        
+        if github_events is None:
+            messages.info("An error occurred while fetching github events")
+
     context = {
         'author': author,
+        'github_events': github_events,
         'modal_type': 'post',
         'latest_posts': posts.chronological(),
         'error': False,
@@ -180,8 +188,8 @@ def friend_request(request, author_id, action):
     """
         Displays an author's friend requests 
     """
-    author = get_object_or_404(Author, pk=author_id)
-    curr_user = Author.objects.get(user=request.user)
+    author = get_object_or_404(LocalAuthor, pk=author_id)
+    curr_user = LocalAuthor.objects.get(user=request.user)
 
     if request.method == 'POST':
         if action not in ['accept', 'decline']:
@@ -203,8 +211,8 @@ def befriend(request, author_id):
         User can send an author a follow request
     """
     if request.method == 'POST':
-        author = get_object_or_404(Author, pk=author_id)
-        curr_user = Author.objects.get(user=request.user)
+        author = get_object_or_404(LocalAuthor, pk=author_id)
+        curr_user = LocalAuthor.objects.get(user=request.user)
 
         if author.has_follower(curr_user):
             messages.info(request, f'Already following {author.displayName}')
@@ -224,8 +232,8 @@ def un_befriend(request, author_id):
         User can unfriend an author
     """
     if request.method == 'POST':
-        author = get_object_or_404(Author, pk=author_id)
-        curr_user = Author.objects.get(user=request.user)
+        author = get_object_or_404(LocalAuthor, pk=author_id)
+        curr_user = LocalAuthor.objects.get(user=request.user)
 
         if author.has_follower(curr_user):
             author.followers.remove(curr_user)
@@ -267,7 +275,8 @@ def authors(request):
 
     # Django Software Foundation, "Generating aggregates for each item in a QuerySet", 2021-10-13
     # https://docs.djangoproject.com/en/3.2/topics/db/aggregation/#generating-aggregates-for-each-item-in-a-queryset
-    authors = Author.objects.all().annotate(Count("posts"))
+    authors = LocalAuthor.objects.annotate(
+        posts__count=Count("posts", filter=Q(posts__visibility=Post.PUBLIC)))
     local_authors = [{
         "data": author,
         "type": "Local"
@@ -282,8 +291,8 @@ def author(request, author_id):
         user is premitted to view.
     """
 
-    curr_user = Author.objects.get(user=request.user)
-    author = get_object_or_404(Author, pk=author_id)
+    curr_user = LocalAuthor.objects.get(user=request.user)
+    author = get_object_or_404(LocalAuthor, pk=author_id)
 
     # TODO: Should become an API request since won't know if author is local/remote
 
@@ -296,7 +305,7 @@ def author(request, author_id):
         'author': author,
         'author_type': 'Local',
         'curr_user': curr_user,
-        'author_posts': posts
+        'author_posts': posts.chronological()
     }
 
     return render(request, 'author/detail.html', context)
@@ -310,8 +319,8 @@ def posts(request, author_id):
     """
         Allows user to create a post. The newly created post will also be rendered. 
     """
-    author = get_object_or_404(Author, pk=author_id)
-    user_id = Author.objects.get(user=request.user).id
+    author = get_object_or_404(LocalAuthor, pk=author_id)
+    user_id = LocalAuthor.objects.get(user=request.user).id
 
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES, user=user_id)
@@ -363,11 +372,13 @@ def editPost(request, id):
     """
         Edits an existing post
     """
-    author = Author.objects.get(user=request.user)
+    author = LocalAuthor.objects.get(user=request.user).id
     post = Post.objects.get(id=id)
+    if not post.is_public():
+        return HttpResponseBadRequest("Only public posts are editable")
 
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES, user=author.id)
+        form = PostForm(request.POST, request.FILES, user=author)
         if form.is_valid():
             bin_content = form.cleaned_data.get('content_media')
             if bin_content is not None:
@@ -411,14 +422,12 @@ def editPost(request, id):
     return redirect('socialDistribution:home')
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-
-
 def likePost(request, id):
     """
         Like a specific post
     """
     post = get_object_or_404(Post, id=id)
-    author = Author.objects.get(user=request.user)
+    author = LocalAuthor.objects.get(user=request.user)
     post = get_object_or_404(Post, id=id)
     host = request.get_host()
     if request.method == 'POST':
@@ -447,7 +456,7 @@ def commentPost(request, id):
         Render Post and comments
     '''
     post = get_object_or_404(Post, id=id)
-    author = get_object_or_404(Author, user=request.user)
+    author = get_object_or_404(LocalAuthor, user=request.user)
 
     try:
         comments = Comment.objects.filter(post=post).order_by('-pub_date')
@@ -470,7 +479,7 @@ def likeComment(request, id):
     '''
 
     comment = get_object_or_404(Comment, id = id)
-    author = get_object_or_404(Author, user=request.user)
+    author = get_object_or_404(LocalAuthor, user=request.user)
 
     host = request.get_host()
     prev_page = request.META['HTTP_REFERER']
@@ -500,7 +509,7 @@ def deletePost(request, id):
     """
     # move functionality to API
     post = get_object_or_404(Post, id=id)
-    author = Author.objects.get(user=request.user)
+    author = LocalAuthor.objects.get(user=request.user)
     if post.author == author:
         post.delete()
     return redirect('socialDistribution:home')
@@ -510,12 +519,10 @@ def profile(request):
     '''
         Render user profile
     '''
-    author = get_object_or_404(Author, user=request.user)
+    author = get_object_or_404(LocalAuthor, user=request.user)
     djangoUser = get_object_or_404(get_user_model(), username=request.user)
 
     # add missing information to author
-    author.first_name = djangoUser.first_name
-    author.last_name = djangoUser.last_name
     author.email = djangoUser.email
 
     return render(request, 'user/profile.html', {'author': author})
@@ -529,7 +536,7 @@ def inbox(request):
     """
         Renders info in a user's inbox
     """
-    author = Author.objects.get(user=request.user)
+    author = LocalAuthor.objects.get(user=request.user)
     follow_requests = author.inbox.follow_requests.all()
     posts = author.inbox.posts.all()
     context = {

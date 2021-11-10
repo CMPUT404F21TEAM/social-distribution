@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from socialDistribution.models import Author
+from socialDistribution.models import LocalAuthor
 
 
 def authenticate_request(view_func):
@@ -12,7 +12,7 @@ def authenticate_request(view_func):
         if not request.user.is_authenticated:
             return HttpResponse(status=401)
 
-        author = get_object_or_404(Author, user=request.user)
+        author = get_object_or_404(LocalAuthor, user=request.user)
 
         # check if user is allowed to view resource
         requestId = str(author.id)
