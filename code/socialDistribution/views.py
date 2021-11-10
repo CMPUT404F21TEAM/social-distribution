@@ -370,6 +370,7 @@ def sharePost(request, id):
     post = Post.objects.get(id=id)
     post.pk = None # duplicate the post
     post.author = author
+    post.pub_date = datetime.now()
     post.save()
     
     return redirect('socialDistribution:home')
