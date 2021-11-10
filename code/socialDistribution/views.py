@@ -348,7 +348,15 @@ def posts(request, author_id):
                     categories = categories.split()
 
                     for category in categories:
-                        Category.objects.create(category=category, post=post)
+                        try:
+                            existing_category = Category.objects.get(category__iexact=category)
+                        except Category.DoesNotExist:
+                            existing_category = False
+
+                        if not existing_category:
+                            post.category_set.create(category=category)
+                        else:
+                            existing_category.posts.add(post)
 
             except ValidationError:
                 messages.info(request, 'Unable to create new post.')
@@ -384,21 +392,35 @@ def editPost(request, id):
                 post.unlisted = form.cleaned_data.get('unlisted')
                 post.content_media = content_media
 
-                categories = form.cleaned_data.get('categories').split()
-                previousCategories = Category.objects.filter(post=post)
-                previousCategoriesNames = [
-                    cat.category for cat in previousCategories]
+                categories = form.cleaned_data.get('categories')
 
-                # Create new categories
-                for category in categories:
-                    if category in previousCategoriesNames:
-                        previousCategoriesNames.remove(category)
-                    else:
-                        Category.objects.create(category=category, post=post)
+                if categories is not None:
+                    categories = categories.split()
+                    categories_to_remove = [ cat.category for cat in post.category_set.all()]
 
-                # Remove old categories that were deleted
-                for category in previousCategoriesNames:
-                    Category.objects.get(category=category, post=post).delete()
+                    for category in categories:
+                        try:
+                            existing_category = Category.objects.get(category__iexact=category)
+                            cat_has_post = existing_category.posts.all().filter(id=post.id)
+                        except Category.DoesNotExist:
+                            existing_category = False
+                        
+                        if not existing_category:
+                            post.category_set.create(category=category)
+
+                        elif not cat_has_post:
+                            existing_category.posts.add(post)
+                        
+                        else:
+                            categories_to_remove.remove(existing_category.category)
+
+                    for category in categories_to_remove:
+                        cat_to_remove = Category.objects.get(category=category)
+                        if cat_to_remove.posts.count() == 1:
+                            cat_to_remove.delete()
+
+                        else:
+                            cat_to_remove.posts.remove(post)
 
                 post.save()
 
