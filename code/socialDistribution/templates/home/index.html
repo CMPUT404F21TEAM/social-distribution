@@ -7,13 +7,13 @@
 <link rel="stylesheet" type="text/css" href="{% static 'css/posts/style.css' %}">
 {% endblock %}
 
-{% load post %}
+{% load post_card %}
 {% load modal %}
 {% block body %}
     {% if latest_posts %}
         <div class="container align-self-center" id="post_container">
             {% for post in latest_posts %}
-                {% card_post post author %}
+                {% post_card post author %}
             {% endfor %}
         </div>
     {% endif %}

@@ -295,7 +295,7 @@ def author(request, author_id):
         'author': author,
         'author_type': 'Local',
         'curr_user': curr_user,
-        'author_posts': posts
+        'author_posts': posts.chronological()
     }
 
     return render(request, 'author/detail.html', context)

@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% load author %}
-{% load post %}
+{% load post_card %}
 {% block body %}
     <!--Django Software Foundation, "The messages framework", 2021-10-17-->
     <!--https://docs.djangoproject.com/en/3.2/ref/contrib/messages/#displaying-messages-->
@@ -27,7 +27,7 @@
     </div>
     <div class="container align-self-center" id="post_container">
         {% for post in author_posts %}
-            {% card_post post curr_user %}
+            {% post_card post curr_user %}
         {% endfor %}
     </div>
 {% endblock %}

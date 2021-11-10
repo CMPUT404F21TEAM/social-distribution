@@ -74,7 +74,8 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
             ],
             'libraries': {
-                'post': 'socialDistribution.templatetags.post'
+                'post_card': 'socialDistribution.templatetags.post.post_card',
+                'post_form': 'socialDistribution.templatetags.post.post_form'
             },
         },
     },
