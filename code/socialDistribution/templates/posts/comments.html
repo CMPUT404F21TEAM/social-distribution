@@ -8,13 +8,13 @@
 <link rel="stylesheet" type="text/css" href="{% static 'css/posts/comments.css' %}">
 {% endblock %}
 
-{% load post %}
+{% load post_card %}
 {% load comment %}
 
 {% block body %}
 <!-- post -->
 <div class="conatiner">
-    {% card_post post author %}
+    {% post_card post author %}
 </div>
 
 <!-- comments -->
@@ -35,45 +35,7 @@
     <div class="mb-1">&nbsp;</div>
 </div>
 
-{% load modal %}
-<form method="POST" action="{% url 'socialDistribution:editPost' post.id %}">
-    {% csrf_token %}
-    {% modal id="edit_post_modal" type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
-</form>
-<form method="POST" action="{% url 'socialDistribution:deletePost' post.id %}">
-    {% csrf_token %}
-    {% modal id="delete_post_modal" type="delete" label="Delete Post" title="Delete Post" btn="Delete"%}
-</form>
-
-<script>
-    // https://stackoverflow.com/a/40233358 - Shuhad zaman "urlParam"
-    $.urlParam = function (name) {
-        var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
-        
-        if (results && results.length > 1) {
-            return results[1];
-        }
-        return 0;
-    }
-
-    $(function () {
-        var param = $.urlParam('action');
-
-        if (param == 'edit') {
-            $('#edit_post_modal').modal('show');
-        } else if (param == 'delete') {
-            $('#delete_post_modal').modal('show');
-        }
-    });
-
-    $('#newCommentTextArea').on('input propertychange', function () {
-        // enable button if comment not empty
-        if (this.value.length) {
-            $('#newCommentButton').prop('disabled', false);
-        } else {
-            $('#newCommentButton').prop('disabled', true);
-        }
-    })
-</script>
+{% load static %}
+    <script src="{% static 'js/comment/comments.js' %}"></script>
 
 {% endblock %}

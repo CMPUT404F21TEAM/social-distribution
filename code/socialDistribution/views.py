@@ -305,7 +305,7 @@ def author(request, author_id):
         'author': author,
         'author_type': 'Local',
         'curr_user': curr_user,
-        'author_posts': posts
+        'author_posts': posts.chronological()
     }
 
     return render(request, 'author/detail.html', context)
@@ -374,6 +374,8 @@ def editPost(request, id):
     """
     author = LocalAuthor.objects.get(user=request.user)
     post = Post.objects.get(id=id)
+    if not post.is_public():
+        return HttpResponseBadRequest("Only public posts are editable")
 
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES, user=author.id)
@@ -420,8 +422,6 @@ def editPost(request, id):
     return redirect('socialDistribution:home')
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-
-
 def likePost(request, id):
     """
         Like a specific post

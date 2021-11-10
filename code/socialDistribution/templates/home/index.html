@@ -7,7 +7,7 @@
 <link rel="stylesheet" type="text/css" href="{% static 'css/posts/style.css' %}">
 {% endblock %}
 
-{% load post %}
+{% load post_card %}
 {% load modal %}
 {% load github_event %}
 {% block body %}
@@ -52,7 +52,7 @@
             </div>
             <div id="regular-posts">
                 {% for post in latest_posts %}
-                    {% card_post post author %}
+                    {% post_card post author %}
                 {% endfor %}
             </div>
         </div>

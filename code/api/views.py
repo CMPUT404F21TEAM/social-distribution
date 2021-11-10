@@ -7,10 +7,10 @@ from django.core import serializers
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from datetime import datetime, timezone
 from urllib.parse import urlparse
 import json
 import logging
+from datetime import datetime, timezone
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
@@ -158,13 +158,13 @@ class LikedView(View):
 class PostsView(View):
 
     def get(self, request, author_id):
-        # Send all posts
+        # Send all PUBLIC posts
         try:
             #TODO handle pagination
             page = request.GET.get("page")
             size = request.GET.get("size")
             author = get_object_or_404(LocalAuthor, id=author_id)
-            posts = Post.objects.filter(author=author)
+            posts = Post.objects.listed().get_public().filter(author=author)
         
             jsonPosts = []
             for post in posts:
@@ -343,8 +343,6 @@ class InboxView(View):
                 return HttpResponse(status=200)
 
             elif data["type"] == "like":
-                # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
-
                 # extract data from request body
                 object_url = urlparse(data['object']).path.strip('/')
                 split_url = object_url.split('/')
