@@ -19,6 +19,8 @@
                 {% post_form user post_id %}
                 {% elif modal_type == "delete" %}
                  Are you sure you want to delete this item? (Irreversible)
+                 {% elif modal_type == "share" %}
+                 Are you sure you want to share this item?
                 {% endif %}
             </div>
             <div class="modal-footer">

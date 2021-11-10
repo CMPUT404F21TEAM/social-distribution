@@ -1,3 +1,4 @@
+from django.db.models.fields.related import OneToOneField
 from django.http.response import *
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
@@ -355,6 +356,22 @@ def posts(request, author_id):
 
     # if using view name, app_name: must prefix the view name
     # In this case, app_name is socialDistribution
+    return redirect('socialDistribution:home')
+
+# https://books.agiliq.com/projects/django-orm-cookbook/en/latest/copy.html - How to copy or clone an existing model object
+def sharePost(request, id):
+    """
+        Allows user to share a post.
+        The user that is sharing is the owner of the shared post
+        Public posts are shared to everyone
+        Friend posts are shared to friends
+    """
+    author = LocalAuthor.objects.get(user=request.user)
+    post = Post.objects.get(id=id)
+    post.pk = None # duplicate the post
+    post.author = author
+    post.save()
+    
     return redirect('socialDistribution:home')
 
 

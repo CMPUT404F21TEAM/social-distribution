@@ -43,6 +43,17 @@
                     <a href="{% url 'socialDistribution:commentPost' post.id %}"> <button class="btn btn-secondary"><i
                                 class="fas fa-comment"></i></button></a>
 
+                    <!-- Launch Share Modal -->
+                    <button 
+                        type="button" 
+                        class="btn btn btn-secondary mx-2" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#share_post_modal{{ post.id }}">
+                            <i class="fas fa-share-square"></i>
+                    </button>
+
+                    
+
                 </div>
 
                 {% if isAuthor and isPublic%}
@@ -79,5 +90,9 @@
     <form method="POST" action="{% url 'socialDistribution:deletePost' post.id %}">
         {% csrf_token %}
         {% modal id="delete_post_modal"|addstr:post.id type="delete" label="Delete Post" title="Delete Post" btn="Delete" postid=post.id%}
+    </form>
+    <form method="POST" action="{% url 'socialDistribution:sharePost' post.id %}">
+        {% csrf_token %}
+        {% modal id="share_post_modal"|addstr:post.id type="share" label="Share Post" title="Share Post" btn="Share" postid=post.id%}
     </form>
 </div>
