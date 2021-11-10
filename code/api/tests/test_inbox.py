@@ -92,30 +92,7 @@ class InboxViewTests(TestCase):
         # Create a post from author1
         dummy_post = mixer.blend(LocalPost, id=1, author=author1)
 
-        body = {
-            "type": "post",
-            "title": "A Friendly post title about a post about web dev",
-            "id": "http://127.0.0.1:8000/api/author/1/posts/1",  # this is the only line being parsed right now!
-            "source": "http://lastplaceigotthisfrom.com/posts/yyyyy",
-            "origin": "http://whereitcamefrom.com/posts/zzzzz",
-            "description": "This post discusses stuff -- brief",
-            "contentType": "text/plain",
-            "content": "Þā wæs on burgum Bēowulf Scyldinga, lēof lēod-cyning, longe þrāge folcum gefrǣge (fæder ellor hwearf, aldor of earde), oð þæt him eft onwōc hēah Healfdene; hēold þenden lifde, gamol and gūð-rēow, glæde Scyldingas. Þǣm fēower bearn forð-gerīmed in worold wōcun, weoroda rǣswan, Heorogār and Hrōðgār and Hālga til; hȳrde ic, þat Elan cwēn Ongenþēowes wæs Heaðoscilfinges heals-gebedde. Þā wæs Hrōðgāre here-spēd gyfen, wīges weorð-mynd, þæt him his wine-māgas georne hȳrdon, oð þæt sēo geogoð gewēox, mago-driht micel. Him on mōd bearn, þæt heal-reced hātan wolde, medo-ærn micel men gewyrcean, þone yldo bearn ǣfre gefrūnon, and þǣr on innan eall gedǣlan geongum and ealdum, swylc him god sealde, būton folc-scare and feorum gumena. Þā ic wīde gefrægn weorc gebannan manigre mǣgðe geond þisne middan-geard, folc-stede frætwan. Him on fyrste gelomp ǣdre mid yldum, þæt hit wearð eal gearo, heal-ærna mǣst; scōp him Heort naman, sē þe his wordes geweald wīde hæfde. Hē bēot ne ālēh, bēagas dǣlde, sinc æt symle. Sele hlīfade hēah and horn-gēap: heaðo-wylma bād, lāðan līges; ne wæs hit lenge þā gēn þæt se ecg-hete āðum-swerian 85 æfter wæl-nīðe wæcnan scolde. Þā se ellen-gǣst earfoðlīce þrāge geþolode, sē þe in þȳstrum bād, þæt hē dōgora gehwām drēam gehȳrde hlūdne in healle; þǣr wæs hearpan swēg, swutol sang scopes. Sægde sē þe cūðe frum-sceaft fīra feorran reccan",
-            "author": {
-                "type": "author",
-                "id": "http://127.0.0.1:8000/author/4",
-                "host": "http://127.0.0.1:8000/",
-                "displayName": "Lara Croft",
-                "url": "http://127.0.0.1:5454/author/9de17f29c12e8f97bcbbd34cc908f1baba40658e",
-                "github": "http://github.com/laracroft",
-                "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
-            },
-            "categories": ["web", "tutorial"],
-            "comments": "http://127.0.0.1:8000/author/9de17f29c12e8f97bcbbd34cc908f1baba40658e/posts/de305d54-75b4-431b-adb2-eb6b9e546013/comments",
-            "published": "2015-03-09T13:07:04+00:00",
-            "visibility": "FRIENDS",
-            "unlisted": False
-        }
+        body = dummy_post.as_json()
 
         # Send the post to author 2
         response = self.client.post(
@@ -129,7 +106,11 @@ class InboxViewTests(TestCase):
         # Check the received posts of author2
         query_set = author2.inbox_posts.all()
         self.assertEqual(query_set.count(), 1)
-        self.assertEqual(query_set[0], dummy_post)
+
+        inbox_post = author2.inbox_posts.first()
+        self.assertEqual(inbox_post.title, dummy_post.title)
+        self.assertEqual(inbox_post.description, dummy_post.description)
+        self.assertEqual(inbox_post.content, dummy_post.content)
     
     def test_post_comment_local_like(self):
         '''
