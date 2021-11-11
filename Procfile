@@ -1,1 +1,1 @@
-web: gunicorn socialdistribution.wsgi
+web: gunicorn cmput404.wsgi
