@@ -171,7 +171,7 @@ def home(request):
     if author.githubUrl:
         github_user = author.githubUrl.strip('/').split('/')[-1]
         github_events = pull_github_events(github_user)
-        
+
         if github_events is None:
             messages.info("An error occurred while fetching github events")
 
@@ -316,6 +316,7 @@ def posts(request, author_id):
                 content_media = None
 
             try:
+                # create the post
                 new_post = LocalPost(
                     author_id=author_id,  # temporary
                     title=form.cleaned_data.get('title'),
@@ -328,11 +329,6 @@ def posts(request, author_id):
                 )
                 new_post.save()
 
-                # if form.cleaned_data.get('visibility') == LocalPost.Visibility.PRIVATE:
-                #     recipients = form.cleaned_data.get('post_recipients')
-                #     for recipient in recipients:
-                #         recipient.add_post_to_inbox(new_post)
-
                 categories = form.cleaned_data.get('categories')
                 if categories is not None:
                     categories = categories.split()
@@ -340,9 +336,15 @@ def posts(request, author_id):
                     for category in categories:
                         Category.objects.create(category=category, post=new_post)
 
-                # Send to followers
+                # get recipients for a private post
+                if form.cleaned_data.get('visibility') == LocalPost.Visibility.PRIVATE:
+                    recipients = form.cleaned_data.get('post_recipients')
+                else:
+                    recipients = None
+
+                # send to other authors
                 post = LocalPost.objects.get(id=new_post.id)
-                dispatch_post(post)
+                dispatch_post(post, recipients)
 
             except ValidationError:
                 messages.info(request, 'Unable to create new post.')
@@ -404,6 +406,8 @@ def editPost(request, id):
     return redirect('socialDistribution:home')
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
+
+
 def likePost(request, id):
     """
         Like a specific post
