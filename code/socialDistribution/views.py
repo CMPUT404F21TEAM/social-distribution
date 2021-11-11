@@ -372,7 +372,7 @@ def editPost(request, id):
     """
         Edits an existing post
     """
-    author = LocalAuthor.objects.get(user=request.user)
+    author = LocalAuthor.objects.get(user=request.user).id
     post = Post.objects.get(id=id)
     if not post.is_public():
         return HttpResponseBadRequest("Only public posts are editable")
