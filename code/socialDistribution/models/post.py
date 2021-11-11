@@ -82,15 +82,20 @@ class Post(models.Model):
     #     blank=True,
     # )
 
+    # temporarily a charfield
     content = models.CharField(
         max_length=CONTENT_MAXLEN,
         null=True,
         blank=True,
     )
 
-    categories = models.CharField(max_length=2000)
+    # temporariy a charfield
+    categories = models.CharField(
+        max_length=2000)
 
-    published = models.DateTimeField(default=timezone.now)
+    published = models.DateTimeField(
+        default=timezone.now
+    )
 
     visibility = models.CharField(
         max_length=10,
@@ -105,14 +110,23 @@ class Post(models.Model):
     @property
     def author_as_json(self):
         """ Gets the author of the post in JSON format. """
+
         raise NotImplementedError("Submodel does not implement this getter")
 
+    @property
     def comments_as_json(self):
         """ Gets the comments of the post in JSON format. """
+
         raise NotImplementedError("Submodel does not implement this getter")
+
+    def total_likes():
+        """ Gets the total number of likes on the post. """
+
+        raise NotImplementedError("Submodel does not implement this method")
 
     def is_public(self):
         """ Check if post is public. """
+
         return self.visibility == self.Visibility.PUBLIC
 
     def when(self):
@@ -172,9 +186,13 @@ class LocalPost(Post):
     @property
     def author_as_json(self):
         """ Gets the author of the post in JSON format. """
+
         return self.author.as_json()
 
+    @property
     def comments_as_json(self):
+        """ Gets the comments of the post in JSON format. """
+
         author_id = self.author.id
         comments_set = Comment.objects.filter(post=self.id).order_by('-pub_date')[:5]
         comment_list = [comment.as_json() for comment in comments_set]
@@ -187,6 +205,11 @@ class LocalPost(Post):
             "comments": comment_list
         }
 
+    def total_likes(self):
+        """ Gets the total number of likes on the post. """
+
+        return self.likes.count()
+
     def has_media(self):
         '''
         Check if post has an attached image
@@ -196,12 +219,6 @@ class LocalPost(Post):
             self.ContentType.JPEG,
             self.ContentType.BASE64
         ]
-
-    def total_likes(self):
-        """
-        Returns total likes
-        """
-        return self.likes.count()
 
     def as_json(self):
         previousCategories = Category.objects.filter(post=self)
@@ -242,7 +259,7 @@ class LocalPost(Post):
             # You should return ~ 5 comments per post.
             # should be sorted newest(first) to oldest(last)
             # this is to reduce API call counts
-            "commentsSrc": self.comments_as_json(),
+            "commentsSrc": self.comments_as_json,
             # ISO 8601 TIMESTAMP
             "published": self.published.isoformat(),
             # visibility ["PUBLIC","FRIENDS"]

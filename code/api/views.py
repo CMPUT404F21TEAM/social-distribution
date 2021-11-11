@@ -233,7 +233,7 @@ class PostCommentsView(View):
             if post.author.id != author.id:
                 return HttpResponseNotFound()
 
-            response = post.comments_as_json()
+            response = post.comments_as_json
 
         except Exception as e:
             logger.error(e, exc_info=True)
