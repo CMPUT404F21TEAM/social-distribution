@@ -100,7 +100,15 @@ class Post(models.Model):
         default=Visibility.PUBLIC
     )
 
-    unlisted = models.BooleanField(default=False)
+    unlisted = models.BooleanField(
+        default=False
+    )
+
+    def is_public(self):
+        '''
+        Check if post is public
+        '''
+        return self.visibility == self.Visibility.PUBLIC
 
 
 class LocalPost(Post):
@@ -163,12 +171,6 @@ class LocalPost(Post):
             self.ContentType.JPEG,
             self.ContentType.BASE64
         ]
-
-    def is_public(self):
-        '''
-        Check if post is public
-        '''
-        return self.visibility == self.Visibility.PUBLIC
 
     def when(self):
         '''
