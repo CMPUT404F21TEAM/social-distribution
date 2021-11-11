@@ -20,7 +20,7 @@ class PostBuilder:
             visibility=LocalPost.Visibility.PUBLIC,
             unlisted=False,
             # content_media=None,
-            count=0
+            # count=0
         )
 
     def build(self):

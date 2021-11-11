@@ -233,7 +233,7 @@ class PostCommentsView(View):
             if post.author.id != author.id:
                 return HttpResponseNotFound()
 
-            response = post.get_comments_as_json()
+            response = post.comments_as_json()
 
         except Exception as e:
             logger.error(e, exc_info=True)
@@ -317,11 +317,11 @@ class InboxView(View):
                         "content_type": data["contentType"],
                         "content": data["content"],
                         # "categories": data["categories"],
-                        # "author": data["author"]["id"],
-                        # "count": data["count"],
-                        # "published": data["published"],
-                        # "visibility": data["visibility"],
-                        # "unlisted": data["unlisted"],
+                        "author": data["author"]["id"],
+                        "_author_json": data["author"],
+                        "published": data["published"],
+                        "visibility": data["visibility"],
+                        "unlisted": data["unlisted"],
                     }
                 )
 

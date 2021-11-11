@@ -325,7 +325,6 @@ def posts(request, author_id):
                     visibility=form.cleaned_data.get('visibility'),
                     unlisted=form.cleaned_data.get('unlisted'),
                     content_media=content_media,
-                    count=0
                 )
                 new_post.save()
 

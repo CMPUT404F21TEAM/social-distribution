@@ -88,9 +88,7 @@ class Post(models.Model):
         blank=True,
     )
 
-    # categories = models.CharField(max_length=2000)
-
-    count = models.PositiveSmallIntegerField(default=0)
+    categories = models.CharField(max_length=2000)
 
     published = models.DateTimeField(default=timezone.now)
 
@@ -104,11 +102,32 @@ class Post(models.Model):
         default=False
     )
 
+    @property
+    def author_as_json(self):
+        """ Gets the author of the post in JSON format. """
+        raise NotImplementedError("Submodel does not implement this getter")
+
+    def comments_as_json(self):
+        """ Gets the comments of the post in JSON format. """
+        raise NotImplementedError("Submodel does not implement this getter")
+
     def is_public(self):
-        '''
-        Check if post is public
-        '''
+        """ Check if post is public. """
         return self.visibility == self.Visibility.PUBLIC
+
+    def when(self):
+        """ Returns string describing when post the was created.
+
+        For example,
+            3 days ago
+            1 min ago
+            5 secs ago
+            etc
+            ...
+        """
+
+        now = dt.datetime.now(dt.timezone.utc)
+        return timeago.format(self.published, now)
 
 
 class LocalPost(Post):
@@ -140,18 +159,24 @@ class LocalPost(Post):
 
     '''
 
+    # reference to LocalAuthor that created this post
     author = models.ForeignKey('LocalAuthor', on_delete=models.CASCADE, related_name="posts")
 
+    # temp field for content_media, need to eventually get rid of this
     content_media = models.BinaryField(
         max_length=Post.CONTENT_MAXLEN,
         null=True,
         blank=True,
     )
 
-    def get_comments_as_json(self):
+    @property
+    def author_as_json(self):
+        """ Gets the author of the post in JSON format. """
+        return self.author.as_json()
+
+    def comments_as_json(self):
         author_id = self.author.id
-        comments_set = Comment.objects.filter(
-            post=self.id).order_by('-pub_date')[:5]
+        comments_set = Comment.objects.filter(post=self.id).order_by('-pub_date')[:5]
         comment_list = [comment.as_json() for comment in comments_set]
         return {
             "type": "comments",
@@ -171,20 +196,6 @@ class LocalPost(Post):
             self.ContentType.JPEG,
             self.ContentType.BASE64
         ]
-
-    def when(self):
-        '''
-        Returns string describing when post the was created
-
-        For example,
-            3 days ago
-            1 min ago
-            5 secs ago
-            etc
-            ...
-        '''
-        now = dt.datetime.now(dt.timezone.utc)
-        return timeago.format(self.published, now)
 
     def total_likes(self):
         """
@@ -224,14 +235,14 @@ class LocalPost(Post):
             # comments about the post
             # return a maximum number of comments
             # total number of comments for this post
-            "count": self.count,
+            "count": 0,
             # the first page of comments
             "comments": f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}/comments/",
             # commentsSrc is OPTIONAL and can be missing
             # You should return ~ 5 comments per post.
             # should be sorted newest(first) to oldest(last)
             # this is to reduce API call counts
-            "commentsSrc": self.get_comments_as_json(),
+            "commentsSrc": self.comments_as_json(),
             # ISO 8601 TIMESTAMP
             "published": self.published.isoformat(),
             # visibility ["PUBLIC","FRIENDS"]
@@ -274,3 +285,10 @@ class InboxPost(Post):
     origin = models.URLField(max_length=Post.URL_MAXLEN)
 
     author = models.URLField(max_length=Post.URL_MAXLEN)
+
+    _author_json = models.JSONField()
+
+    @property
+    def author_as_json(self):
+        """ Gets the author of the post in JSON format. """
+        return self._author_json
