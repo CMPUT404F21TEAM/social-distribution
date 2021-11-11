@@ -1,1 +1,0 @@
-web: gunicorn code.cmput404.wsgi
