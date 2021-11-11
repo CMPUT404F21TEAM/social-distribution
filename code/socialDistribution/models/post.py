@@ -90,8 +90,9 @@ class Post(models.Model):
     )
 
     # temporariy a charfield
-    categories = models.CharField(
-        max_length=2000)
+    # categories = models.CharField(
+    #     max_length=2000
+    # )
 
     published = models.DateTimeField(
         default=timezone.now
