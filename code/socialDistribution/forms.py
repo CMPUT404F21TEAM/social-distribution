@@ -52,15 +52,15 @@ class PostForm(forms.Form):
         )
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user')
-        postId = 0
-        if 'postId' in kwargs:
-            postId = kwargs.pop('postId')
+        user_id = kwargs.pop('user_id')
+        post_id = 0
+        if 'post_id' in kwargs:
+            post_id = kwargs.pop('post_id')
         post = None
-        if postId > 0:
-            post = Post.objects.get(id=postId)
+        if post_id > 0:
+            post = Post.objects.get(id=post_id)
         super(PostForm, self).__init__(*args, **kwargs)
-        self.fields['post_recipients'].queryset = LocalAuthor.objects.all().exclude(id=user)
+        self.fields['post_recipients'].queryset = LocalAuthor.objects.all().exclude(id=user_id)
         if post:
             self.fields['title'].initial = post.title
             self.fields['description'].initial = post.description

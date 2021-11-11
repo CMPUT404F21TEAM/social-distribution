@@ -323,7 +323,7 @@ def posts(request, author_id):
     user_id = LocalAuthor.objects.get(user=request.user).id
 
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES, user=user_id)
+        form = PostForm(request.POST, request.FILES, user_id=user_id)
         if form.is_valid():
             bin_content = form.cleaned_data.get('content_media')
             if bin_content is not None:
@@ -378,7 +378,7 @@ def editPost(request, id):
         return HttpResponseBadRequest("Only public posts are editable")
 
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES, user=author.id)
+        form = PostForm(request.POST, request.FILES, user_id=author.id)
         if form.is_valid():
             bin_content = form.cleaned_data.get('content_media')
             if bin_content is not None:
