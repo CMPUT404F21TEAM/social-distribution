@@ -1,10 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
-
-from datetime import *
 
 from cmput404.constants import HOST, API_PREFIX
+import socialDistribution.requests as api_requests
 
 
 class Author(models.Model):
@@ -26,7 +24,8 @@ class Author(models.Model):
         # Makes a GET request to URL to get the Author data
         # The LocalAuthor method will override this, making it more efficient by fetching data
         # straight from the database instead of an HTTP request
-        pass
+        json_data = api_requests.get(self.url)
+        return json_data
 
 
 class LocalAuthor(Author):
@@ -90,7 +89,6 @@ class LocalAuthor(Author):
             # HATEOS url for Github API
             "github": self.githubUrl,
             # Image from a public domain
-            # #TODO
             "profileImage": self.profileImageUrl
         }
 

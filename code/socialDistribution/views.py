@@ -20,7 +20,7 @@ from .decorators import allowedUsers, unauthenticated_user
 from .models import *
 from .utility import make_request
 
-from .dispatchers import dispatch_post
+from .dispatchers import dispatch_post, dispatch_follow_request
 
 REQUIRE_SIGNUP_APPROVAL = False
 ''' 
@@ -214,22 +214,20 @@ def friend_request(request, author_id, action):
 
 
 def befriend(request, author_id):
+    """ Handles POST request to create a follow request.
+
+        Parameters:
+        - request (HttpRequest) - the HTTP request
+        - author_id (string) - the ID of the Author to follow
     """
-        User can send an author a follow request
-    """
+
     if request.method == 'POST':
-        author = get_object_or_404(LocalAuthor, pk=author_id)
-        curr_user = LocalAuthor.objects.get(user=request.user)
+        object = get_object_or_404(Author, id=author_id)
+        actor = LocalAuthor.objects.get(user=request.user)
 
-        if author.has_follower(curr_user):
-            messages.info(request, f'Already following {author.displayName}')
-
-        if author.has_req_from(curr_user):
-            messages.info(request, f'Follow request to {author.displayName} is pending')
-
-        if author.id != curr_user.id:
+        if object.id != actor.id:
             # send follow request
-            author.follow_requests.add(curr_user)
+            dispatch_follow_request(actor, object)
 
     return redirect('socialDistribution:author', author_id)
 
