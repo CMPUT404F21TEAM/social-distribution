@@ -347,6 +347,11 @@ def posts(request, author_id):
                 if categories is not None:
                     categories = categories.split()
 
+                    """
+                    This implementation makes category names case-insensitive.
+                    This makes handling Category objects cleaner, albeit slightly more
+                    involved.
+                    """
                     for category in categories:
                         try:
                             existing_category = Category.objects.get(category__iexact=category)
@@ -398,9 +403,14 @@ def editPost(request, id):
                     categories = categories.split()
                     categories_to_remove = [ cat.category for cat in post.category_set.all()]
 
+                    """
+                    This implementation makes category names case-insensitive.
+                    This makes handling Category objects cleaner, albeit slightly more
+                    involved.
+                    """
                     for category in categories:
                         try:
-                            existing_category = Category.objects.get(category__iexact=category)
+                            existing_category = Category.objects.get(category__iexact=category)     # case-insensitive lookup
                             cat_has_post = existing_category.posts.all().filter(id=post.id)
                         except Category.DoesNotExist:
                             existing_category = False
@@ -412,15 +422,16 @@ def editPost(request, id):
                             existing_category.posts.add(post)
                         
                         else:
-                            categories_to_remove.remove(existing_category.category)
+                            while existing_category.category in categories_to_remove:
+                                categories_to_remove.remove(existing_category.category)     # don't remove this category
 
                     for category in categories_to_remove:
                         cat_to_remove = Category.objects.get(category=category)
                         if cat_to_remove.posts.count() == 1:
-                            cat_to_remove.delete()
+                            cat_to_remove.delete()              # remove category itself
 
                         else:
-                            cat_to_remove.posts.remove(post)
+                            cat_to_remove.posts.remove(post)    # remove ref to post
 
                 post.save()
 
