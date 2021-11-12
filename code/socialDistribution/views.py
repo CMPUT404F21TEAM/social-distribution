@@ -411,14 +411,14 @@ def editPost(request, id):
                     for category in categories:
                         try:
                             existing_category = Category.objects.get(category__iexact=category)     # case-insensitive lookup
-                            cat_has_post = existing_category.posts.all().filter(id=post.id)
+                            existing_cat_to_post = existing_category.posts.all().filter(id=post.id)
                         except Category.DoesNotExist:
                             existing_category = False
                         
                         if not existing_category:
                             post.category_set.create(category=category)
 
-                        elif not cat_has_post:
+                        elif not existing_cat_to_post.exists():
                             existing_category.posts.add(post)
                         
                         else:
