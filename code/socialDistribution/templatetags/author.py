@@ -20,7 +20,7 @@ def card_author(*args, **kwargs):
     if profile_card:
         curr_user = kwargs['curr_user']
         is_following = author.has_follower(curr_user)
-        request_sent = author.inbox.has_req_from(curr_user)
+        request_sent = author.has_req_from(curr_user)
         is_friend = curr_user.is_friends_with(author)
         author_is_user = author.id == curr_user.id
 
