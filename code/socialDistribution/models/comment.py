@@ -26,7 +26,7 @@ class Comment(models.Model):
     )
     comment = models.CharField(max_length=200)
 
-    post = models.ForeignKey('Post', on_delete=models.CASCADE)
+    post = models.ForeignKey('LocalPost', on_delete=models.CASCADE)
     pub_date = models.DateTimeField()
 
     def when(self):

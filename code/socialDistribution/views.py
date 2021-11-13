@@ -12,11 +12,15 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 from django.urls import reverse
-from .models import *
-from datetime import datetime
-from .utility import make_request
 import base64
 import json
+
+from .forms import CreateUserForm, PostForm
+from .decorators import allowedUsers, unauthenticated_user
+from .models import *
+from .utility import make_request
+
+from .dispatchers import dispatch_post
 
 REQUIRE_SIGNUP_APPROVAL = False
 ''' 
@@ -117,7 +121,6 @@ def register(request):
                     githubUrl=github_url,
                     profileImageUrl=profile_image_url
                 )
-                Inbox.objects.create(author=author)
             except:
                 return HttpResponse("Sign up failed. Internal Server Error. Please Try again.", status=500)
 
@@ -151,7 +154,7 @@ def home(request):
     author = get_object_or_404(LocalAuthor, user=request.user)
 
     # get all local public posts
-    posts = Post.objects.listed().get_public()
+    posts = LocalPost.objects.listed().get_public()
 
     # get all posts created by author
     my_posts = author.posts.listed()
@@ -168,7 +171,7 @@ def home(request):
     if author.githubUrl:
         github_user = author.githubUrl.strip('/').split('/')[-1]
         github_events = pull_github_events(github_user)
-        
+
         if github_events is None:
             messages.info("An error occurred while fetching github events")
 
@@ -185,9 +188,13 @@ def home(request):
 
 
 def friend_request(request, author_id, action):
+    """ Handles POST request to resolve a pending follow request.
+
+        author_id: The ID of the author who created the friend request
+        action: The resolution of the friend request. Must be "accept" or "decline"
+
     """
-        Displays an author's friend requests 
-    """
+
     author = get_object_or_404(LocalAuthor, pk=author_id)
     curr_user = LocalAuthor.objects.get(user=request.user)
 
@@ -195,9 +202,9 @@ def friend_request(request, author_id, action):
         if action not in ['accept', 'decline']:
             return HttpResponseNotFound()
 
-        elif curr_user.id != author.id and curr_user.inbox.has_req_from(author) \
+        elif curr_user.id != author.id and curr_user.has_req_from(author) \
                 and not curr_user.has_follower(author):
-            curr_user.inbox.follow_requests.remove(author)
+            curr_user.follow_requests.remove(author)
             if action == 'accept':
                 curr_user.followers.add(author)
         else:
@@ -217,12 +224,12 @@ def befriend(request, author_id):
         if author.has_follower(curr_user):
             messages.info(request, f'Already following {author.displayName}')
 
-        if author.inbox.has_req_from(curr_user):
+        if author.has_req_from(curr_user):
             messages.info(request, f'Follow request to {author.displayName} is pending')
 
         if author.id != curr_user.id:
             # send follow request
-            author.inbox.follow_requests.add(curr_user)
+            author.follow_requests.add(curr_user)
 
     return redirect('socialDistribution:author', author_id)
 
@@ -249,40 +256,16 @@ def authors(request):
     """
     args = {}
 
-    # demonstration purposes: Authors on remote server
-    remote_authors = [
-        {
-            "data": {
-                "id": 16000,
-                "username": "johnd",
-                "displayName": "John Doe",
-                "profileImageUrl": "https://media-exp1.licdn.com/dms/image/C4E03AQEgrX3MR7UULQ/profile-displayphoto-shrink_200_200/0/1614384030904?e=1640822400&v=beta&t=vVdjlx5NgDHfpo-QHx7TMlFHpmwCaQi4vAW6viWjiYA",
-                "post__count": 0,
-            },
-            "type": "Remote"
-        },
-        {
-            "data": {
-                "id": 15000,
-                "username": "janed",
-                "displayName": "Hane Doe",
-                "profileImageUrl": "https://media-exp1.licdn.com/dms/image/C4D03AQFD4cImNWN_1A/profile-displayphoto-shrink_200_200/0/1620746712768?e=1640822400&v=beta&t=ItUGhKqEncBHOtBNlP1o3uZWRECUSAjQ0s3PZauSb0o",
-                "post__count": 0
-            },
-            "type": "Remote"
-        }
-    ]
-
     # Django Software Foundation, "Generating aggregates for each item in a QuerySet", 2021-10-13
     # https://docs.djangoproject.com/en/3.2/topics/db/aggregation/#generating-aggregates-for-each-item-in-a-queryset
-    authors = LocalAuthor.objects.annotate(
-        posts__count=Count("posts", filter=Q(posts__visibility=Post.PUBLIC)))
+    authors = LocalAuthor.objects.annotate(posts__count=Count(
+        "posts", filter=Q(posts__visibility=LocalPost.Visibility.PUBLIC)))
     local_authors = [{
         "data": author,
         "type": "Local"
     } for author in authors]
 
-    args["authors"] = local_authors + remote_authors
+    args["authors"] = local_authors
     return render(request, 'author/index.html', args)
 
 
@@ -316,7 +299,8 @@ def create(request):
 
 
 def posts(request, author_id):
-    """
+    """ Handles POST request to publish a post.
+
         Allows user to create a post. The newly created post will also be rendered. 
     """
     author = get_object_or_404(LocalAuthor, pk=author_id)
@@ -331,34 +315,35 @@ def posts(request, author_id):
             else:
                 content_media = None
 
-            pub_date = datetime.now()
-
             try:
-                post = Post.objects.create(
+                # create the post
+                new_post = LocalPost(
                     author_id=author_id,  # temporary
                     title=form.cleaned_data.get('title'),
-                    source=request.build_absolute_uri(request.path),  # will need to fix when moved to api
-                    origin=request.build_absolute_uri(request.path),  # will need to fix when moved to api
                     description=form.cleaned_data.get('description'),
-                    content_text=form.cleaned_data.get('content_text'),
+                    content=form.cleaned_data.get('content_text'),
                     visibility=form.cleaned_data.get('visibility'),
                     unlisted=form.cleaned_data.get('unlisted'),
                     content_media=content_media,
-                    pub_date=pub_date,
-                    count=0
                 )
-
-                if form.cleaned_data.get('visibility') == Post.PRIVATE:
-                    recipients = form.cleaned_data.get('post_recipients')
-                    for recipient in recipients:
-                        recipient.inbox.add_post(post)
+                new_post.save()
 
                 categories = form.cleaned_data.get('categories')
                 if categories is not None:
                     categories = categories.split()
 
                     for category in categories:
-                        Category.objects.create(category=category, post=post)
+                        Category.objects.create(category=category, post=new_post)
+
+                # get recipients for a private post
+                if form.cleaned_data.get('visibility') == LocalPost.Visibility.PRIVATE:
+                    recipients = form.cleaned_data.get('post_recipients')
+                else:
+                    recipients = None
+
+                # send to other authors
+                post = LocalPost.objects.get(id=new_post.id)
+                dispatch_post(post, recipients)
 
             except ValidationError:
                 messages.info(request, 'Unable to create new post.')
@@ -373,7 +358,7 @@ def editPost(request, id):
         Edits an existing post
     """
     author = LocalAuthor.objects.get(user=request.user)
-    post = Post.objects.get(id=id)
+    post = LocalPost.objects.get(id=id)
     if not post.is_public():
         return HttpResponseBadRequest("Only public posts are editable")
 
@@ -388,10 +373,8 @@ def editPost(request, id):
 
             try:
                 post.title = form.cleaned_data.get('title')
-                post.source = request.build_absolute_uri(request.path)    # will need to fix when moved to api
-                post.origin = request.build_absolute_uri(request.path)    # will need to fix when moved to api
                 post.description = form.cleaned_data.get('description')
-                post.content_text = form.cleaned_data.get('content_text')
+                post.content = form.cleaned_data.get('content_text')
                 post.visibility = form.cleaned_data.get('visibility')
                 post.unlisted = form.cleaned_data.get('unlisted')
                 post.content_media = content_media
@@ -422,13 +405,15 @@ def editPost(request, id):
     return redirect('socialDistribution:home')
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
+
+
 def likePost(request, id):
     """
         Like a specific post
     """
-    post = get_object_or_404(Post, id=id)
+    post = get_object_or_404(LocalPost, id=id)
     author = LocalAuthor.objects.get(user=request.user)
-    post = get_object_or_404(Post, id=id)
+    post = get_object_or_404(LocalPost, id=id)
     host = request.get_host()
     if request.method == 'POST':
         # create like object
@@ -455,7 +440,7 @@ def commentPost(request, id):
     '''
         Render Post and comments
     '''
-    post = get_object_or_404(Post, id=id)
+    post = get_object_or_404(LocalPost, id=id)
     author = get_object_or_404(LocalAuthor, user=request.user)
 
     try:
@@ -473,26 +458,27 @@ def commentPost(request, id):
 
     return render(request, 'posts/comments.html', context)
 
+
 def likeComment(request, id):
     '''
         Likes a comment
     '''
 
-    comment = get_object_or_404(Comment, id = id)
+    comment = get_object_or_404(Comment, id=id)
     author = get_object_or_404(LocalAuthor, user=request.user)
 
     host = request.get_host()
     prev_page = request.META['HTTP_REFERER']
 
     if request.method == 'POST':
-    # create like object
-        like =  {
-        "@context": "https://www.w3.org/ns/activitystreams",
-        "summary": f"{author.username} Likes your comment",         
-        "type": "like",
-        "author":author.as_json(),
-        "object":f"http://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
-        }  
+        # create like object
+        like = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "summary": f"{author.username} Likes your comment",
+            "type": "like",
+            "author": author.as_json(),
+            "object": f"http://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
+        }
 
     # redirect request to remote/local api
     make_request('POST', f'http://{host}/api/author/{comment.author.id}/inbox/', json.dumps(like))
@@ -508,7 +494,7 @@ def deletePost(request, id):
         Deletes a post
     """
     # move functionality to API
-    post = get_object_or_404(Post, id=id)
+    post = get_object_or_404(LocalPost, id=id)
     author = LocalAuthor.objects.get(user=request.user)
     if post.author == author:
         post.delete()
@@ -537,8 +523,8 @@ def inbox(request):
         Renders info in a user's inbox
     """
     author = LocalAuthor.objects.get(user=request.user)
-    follow_requests = author.inbox.follow_requests.all()
-    posts = author.inbox.posts.all()
+    follow_requests = author.follow_requests.all()
+    posts = author.inbox_posts.all()
     context = {
         'author': author,
         'follow_requests': follow_requests,

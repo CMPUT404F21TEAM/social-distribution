@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+
 from datetime import *
 
 from cmput404.constants import HOST, API_PREFIX
@@ -13,7 +15,7 @@ class Author(models.Model):
         rely on API calls to get the data corresponding to the author from a remote server.
 
         In the future, caching can be used with this model to reduce the number of API calls being sent out.
-        
+
         When a local author is created, it must be re-fetched from the database in order to access the auto-generated author.url attribute.
     """
 
@@ -41,8 +43,10 @@ class LocalAuthor(Author):
         profileImageUrl     Author's profile image url (text)
 
         posts               Posts created by the author
-        friend_requests     fksdjfskl;jfaskdf
-        followers           Author's followers (array)
+        followers           Followers of the author (Collection of LocalAuthor objects)
+
+        friend_requests     Authors who have requested to follow author (Collection of LocalAuthor objects)
+        inbox_posts         Posts sent to the inbox of the author
     '''
 
     user = models.OneToOneField(User, null=True, on_delete=models.CASCADE)
@@ -52,6 +56,9 @@ class LocalAuthor(Author):
     profileImageUrl = models.CharField(max_length=50, null=True)
 
     followers = models.ManyToManyField('LocalAuthor', blank=True)
+
+    follow_requests = models.ManyToManyField('LocalAuthor', related_name="follow_requests_reverse")
+    inbox_posts = models.ManyToManyField('InboxPost')
 
     def has_follower(self, author):
         """
@@ -91,13 +98,20 @@ class LocalAuthor(Author):
         super().save(*args, **kwargs)  # Call the "real" save() method.
         self._set_url()
 
-    
     def _set_url(self):
         """ Sets the URL of the author to be "http://{HOST}/{API_PREFIX}/author/{self.id}" if one was not set when created. This 
             sets the URL attribute of all local authors.
         """
-        # Clark, https://stackoverflow.com/users/10424244/clark, "Django - How to get self.id when saving a new object?", 
+        # Clark, https://stackoverflow.com/users/10424244/clark, "Django - How to get self.id when saving a new object?",
         # 2021-02-19, https://stackoverflow.com/a/66271445, CC BY-SA 4.0
         url = f"http://{HOST}/{API_PREFIX}/author/{self.id}"
         if self.url != url:
             Author.objects.filter(id=self.id).update(url=url)
+
+    # temp
+
+    def has_req_from(self, author):
+        """
+        Returns True if the user has a request from a specific author, False otherwise 
+        """
+        return self.follow_requests.filter(pk=author.id).exists()
