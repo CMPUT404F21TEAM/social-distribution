@@ -86,6 +86,8 @@ class Post(models.Model):
     origin = models.URLField(max_length=URL_MAXLEN)
     description = models.CharField(max_length=DESCRIPTION_MAXLEN)
 
+    categories = models.ManyToManyField('Category', blank=True, related_name="categories")
+
     content_type = models.CharField(
         choices=PostContentType.choices,
         max_length=4,

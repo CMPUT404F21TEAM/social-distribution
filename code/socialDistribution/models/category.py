@@ -8,4 +8,3 @@ class Category(models.Model):
         posts                reference to post (Many-to-Many relationship)
     '''
     category = models.CharField(max_length=50)
-    posts = models.ManyToManyField('Post', blank=False)

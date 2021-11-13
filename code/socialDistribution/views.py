@@ -353,15 +353,11 @@ def posts(request, author_id):
                     involved.
                     """
                     for category in categories:
-                        try:
-                            existing_category = Category.objects.get(category__iexact=category)
-                        except Category.DoesNotExist:
-                            existing_category = False
-
-                        if not existing_category:
-                            post.category_set.create(category=category)
-                        else:
-                            existing_category.posts.add(post)
+                        category_obj, created = Category.objects.get_or_create(
+                            category__iexact=category, 
+                            defaults={'category': category}
+                        )
+                        post.categories.add(category_obj)
 
             except ValidationError:
                 messages.info(request, 'Unable to create new post.')
@@ -401,7 +397,7 @@ def editPost(request, id):
 
                 if categories is not None:
                     categories = categories.split()
-                    categories_to_remove = [ cat.category for cat in post.category_set.all()]
+                    categories_to_remove = [ cat.category for cat in post.categories.all()]
 
                     """
                     This implementation makes category names case-insensitive.
@@ -409,29 +405,17 @@ def editPost(request, id):
                     involved.
                     """
                     for category in categories:
-                        try:
-                            existing_category = Category.objects.get(category__iexact=category)     # case-insensitive lookup
-                            existing_cat_to_post = existing_category.posts.all().filter(id=post.id)
-                        except Category.DoesNotExist:
-                            existing_category = False
+                        category_obj, created = Category.objects.get_or_create(
+                            category__iexact=category,
+                            defaults={'category': category}
+                        )
+                        post.categories.add(category_obj)
                         
-                        if not existing_category:
-                            post.category_set.create(category=category)
-
-                        elif not existing_cat_to_post.exists():
-                            existing_category.posts.add(post)
-                        
-                        else:
-                            while existing_category.category in categories_to_remove:
-                                categories_to_remove.remove(existing_category.category)     # don't remove this category
+                        while category_obj.category in categories_to_remove:
+                            categories_to_remove.remove(category_obj.category)     # don't remove this category
 
                     for category in categories_to_remove:
-                        cat_to_remove = Category.objects.get(category=category)
-                        if cat_to_remove.posts.count() == 1:
-                            cat_to_remove.delete()              # remove category itself
-
-                        else:
-                            cat_to_remove.posts.remove(post)    # remove ref to post
+                        post.categories.get(category=category).delete()
 
                 post.save()
 
