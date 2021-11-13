@@ -10,4 +10,5 @@ def make_request(method='GET', url='http://127.0.0.1:8000/', body=''):
         r = requests.get(url)
     elif method == 'POST':
         r = requests.post(url, data=body)
-    #todo: handle status codes
+    
+    return r
