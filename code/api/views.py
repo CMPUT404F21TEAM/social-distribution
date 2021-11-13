@@ -390,7 +390,9 @@ class InboxView(View):
                 raise ValueError("Unknown object received by inbox")
 
         except KeyError as e:
-            return HttpResponseBadRequest("JSON body could not be parsed")
+            return JsonResponse({
+                "error": "JSON body could not be parsed"
+            })
 
         except ValueError as e:
             return JsonResponse({
