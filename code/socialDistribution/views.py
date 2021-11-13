@@ -368,9 +368,12 @@ def sharePost(request, id):
     """
     author = LocalAuthor.objects.get(user=request.user)
     post = Post.objects.get(id=id)
+    oldSource = post.get_id()
+    
     post.pk = None # duplicate the post
     post.author = author
     post.pub_date = datetime.now()
+    post.source = oldSource
     post.save()
     
     return redirect('socialDistribution:home')

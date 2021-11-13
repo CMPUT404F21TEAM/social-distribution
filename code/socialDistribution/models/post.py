@@ -167,6 +167,9 @@ class Post(models.Model):
         Returns total likes
         """
         return self.likes.count()
+    
+    def get_id(self):
+        return f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}"
 
     def as_json(self):
         previousCategories = Category.objects.filter(post=self)
@@ -176,7 +179,7 @@ class Post(models.Model):
             # title of a post
             "title": self.title,
             # id of the post
-            "id": f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}",
+            "id": self.get_id(),
             # where did you get this post from?
             "source": self.source,
             # where is it actually from
