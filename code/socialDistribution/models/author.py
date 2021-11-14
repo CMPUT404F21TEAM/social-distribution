@@ -72,6 +72,9 @@ class LocalAuthor(Author):
         """
         return self.followers.filter(pk=author.id).exists() and \
             author.followers.filter(pk=self.id).exists()
+            
+    def friends(self):
+        return [follower for follower in self.followers.filter(pk=self.id) if self.is_friends_with(follower)]
 
     def __str__(self):
         return self.displayName

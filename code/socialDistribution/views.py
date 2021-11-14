@@ -1,3 +1,4 @@
+from logging import error
 from django.db.models.fields.related import OneToOneField
 from django.http.response import *
 from django.shortcuts import redirect, render, get_object_or_404
@@ -364,6 +365,10 @@ def sharePost(request, id):
     """
     author = LocalAuthor.objects.get(user=request.user)
     post = LocalPost.objects.get(id=id)
+    
+    if not post.is_public() and not post.is_friends():
+        return redirect('socialDistribution:home')
+    
     oldSource = post.get_id()
     
     post.pk = None # duplicate the post
@@ -371,6 +376,7 @@ def sharePost(request, id):
     post.published = timezone.now()
     post.source = oldSource
     post.save()
+    
     
     dispatch_post(post, [])
     
