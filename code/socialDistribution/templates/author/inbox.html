@@ -11,30 +11,89 @@
 {% load post_card %}
 {% load github_event %}
 {% block body %}
-    {% if not follow_requests and not posts and not github_events %}
-        <div class="text-center pt-5">
-            <p class="h2">
-                Your inbox is empty &#128237;
-            </p>
-        </div>
-    {% endif %}
-    <div class="list-group mx-auto w-50" id='github-activity'>
-        {% if github_events %}
-            {% for github_event in github_events %}
-                {% card_gh_event github_event %}
-            {% endfor %}
-        {% else %}
-            <h3 class="text-center m-5">No github activity at this time</h3>
-        {% endif %}
-    </div>
-    <div class="list-group mx-auto w-50">
-        {% for sender in follow_requests %}
-            {% friend_card sender=sender %}
-        {% endfor %}
-    </div>
     <div class="container align-self-center" id="post_container">
-        {% for post in posts %}
-            {% post_card post author %}
-        {% endfor %}
+        {% if follow_requests or posts or github_events %}
+            <div class="d-flex justify-content-center">
+                <label class="btn btn-primary rounded-pill mx-3 mt-md-3 w-25 active" id="inbox-posts-radio">
+                    <input 
+                        type="radio" 
+                        class="d-none" 
+                        name="feed-type" 
+                        id="inbox-posts-radio"
+                        value="1"
+                        autocomplete="off" 
+                        checked
+                    >
+                        Posts
+                    </input>
+                </label>
+                <label class="btn btn-primary rounded-pill mx-3 mt-md-3 w-25" id="follow-radio">
+                    <input 
+                        type="radio"
+                        class="d-none" 
+                        name="feed-type" 
+                        id="follow-radio" 
+                        value="2"
+                        autocomplete="off"
+                    >
+                        Follow Requests
+                    </input>
+                </label>
+                <label class="btn btn-primary rounded-pill mx-3 mt-md-3 w-25" id="github-radio">
+                    <input 
+                        type="radio"
+                        class="d-none" 
+                        name="feed-type" 
+                        id="github-radio" 
+                        value="3"
+                        autocomplete="off"
+                    >
+                        Github Activity
+                    </input>
+                </label>
+            </div>
+
+        {% else %}
+            <div class="text-center pt-5">
+                <p class="h2">
+                    Your inbox is empty &#128237;
+                </p>
+            </div>
+        {% endif %}
+
+        <div id='inbox-posts'>
+            {% if posts %}
+                {% for post in posts %}
+                    {% post_card post author %}
+                {% endfor %}
+            {% elif github_events or follow_requests %}
+                <h3 class="text-center m-5">No posts at this time</h3>
+            {% endif %}
+        </div>
+
+        <div id='follow-requests'>
+            {% if follow_requests %}
+                <div id='follow-requests'>
+                    {% for sender in follow_requests %}
+                        {% friend_card sender=sender %}
+                    {% endfor %}
+                </div>
+            {% elif github_events or posts %}
+                <h3 class="text-center m-5">No follow requests at this time</h3>
+            {% endif %}
+        </div>
+        
+        <div id='github-activity'>
+            {% if github_events %}
+                {% for github_event in github_events %}
+                    {% card_gh_event github_event %}
+                {% endfor %}
+            {% elif follow_requests or posts %}
+                <h3 class="text-center m-5">No github activity at this time</h3>
+            {% endif %}
+        </div>
     </div>
+
+{% load static %}
+<script src="{% static 'js/inbox.js' %}"></script>   
 {% endblock %}
