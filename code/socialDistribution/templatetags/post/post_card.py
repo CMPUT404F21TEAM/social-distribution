@@ -15,6 +15,7 @@ def post_card(post, author):
     # Delete/Edit
     isAuthor = post.author == author
     isPublic = post.is_public()
+    isFriends = post.is_friends()
 
     # Likes
     isLiked = False # temp post.likes.filter(author=author).exists()
@@ -45,4 +46,5 @@ def post_card(post, author):
         'isLiked': isLiked, 
         'likeText': likeText,        
         'isPublic': isPublic,
+        'isFriends': isFriends,
         }

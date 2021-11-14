@@ -44,6 +44,7 @@
                                 class="fas fa-comment"></i></button></a>
 
                     <!-- Launch Share Modal -->
+                    {% if isPublic or isFriends %}
                     <button 
                         type="button" 
                         class="btn btn btn-secondary mx-2" 
@@ -51,6 +52,7 @@
                         data-bs-target="#share_post_modal{{ post.id }}">
                             <i class="fas fa-share-square"></i>
                     </button>
+                    {% endif %}
 
                     
 

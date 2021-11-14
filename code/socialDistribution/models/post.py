@@ -129,6 +129,11 @@ class Post(models.Model):
         """ Check if post is public. """
 
         return self.visibility == self.Visibility.PUBLIC
+    
+    def is_friends(self):
+        """ Check if post is friends. """
+
+        return self.visibility == self.Visibility.FRIENDS
 
     def when(self):
         """ Returns string describing when post the was created.
