@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.utils import timezone
 
 from .forms import CreateUserForm, PostForm
 from .decorators import allowedUsers, unauthenticated_user
@@ -362,14 +363,17 @@ def sharePost(request, id):
         Friend posts are shared to friends
     """
     author = LocalAuthor.objects.get(user=request.user)
-    post = Post.objects.get(id=id)
+    post = LocalPost.objects.get(id=id)
     oldSource = post.get_id()
+    print(oldSource)
     
     post.pk = None # duplicate the post
     post.author = author
-    post.pub_date = datetime.now()
+    post.published = timezone.now()
     post.source = oldSource
     post.save()
+    
+    dispatch_post(post, [])
     
     return redirect('socialDistribution:home')
 
