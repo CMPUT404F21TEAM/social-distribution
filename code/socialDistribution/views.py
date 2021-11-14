@@ -1,9 +1,12 @@
+from logging import error
+from django.db.models.fields.related import OneToOneField
 from django.http.response import *
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.utils import timezone
 
 from .forms import CreateUserForm, PostForm
 from .decorators import allowedUsers, unauthenticated_user
@@ -341,6 +344,33 @@ def posts(request, author_id):
 
     # if using view name, app_name: must prefix the view name
     # In this case, app_name is socialDistribution
+    return redirect('socialDistribution:home')
+
+# https://books.agiliq.com/projects/django-orm-cookbook/en/latest/copy.html - How to copy or clone an existing model object
+def sharePost(request, id):
+    """
+        Allows user to share a post.
+        The user that is sharing is the owner of the shared post
+        Public posts are shared to everyone
+        Friend posts are shared to friends
+    """
+    author = LocalAuthor.objects.get(user=request.user)
+    post = LocalPost.objects.get(id=id)
+    
+    if not post.is_public() and not post.is_friends():
+        return redirect('socialDistribution:home')
+    
+    oldSource = post.get_id()
+    
+    post.pk = None # duplicate the post
+    post.author = author
+    post.published = timezone.now()
+    post.source = oldSource
+    post.save()
+    
+    
+    dispatch_post(post, [])
+    
     return redirect('socialDistribution:home')
 
 
