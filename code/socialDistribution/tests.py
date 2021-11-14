@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.db.utils import IntegrityError
 from mixer.backend.django import mixer
 
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from .models import *
 from .builders import *
 
@@ -45,9 +45,14 @@ class LocalAuthorTests(TestCase):
 
 class PostTest(TestCase):
     def test_post_is_public(self):
-        visibility = Post.FRIENDS
+        visibility = LocalPost.Visibility.FRIENDS
         post = PostBuilder().visibility(visibility).build()
         self.assertFalse(post.is_public())
+        
+    def test_post_is_friends(self):
+        visibility = LocalPost.Visibility.FRIENDS
+        post = PostBuilder().visibility(visibility).build()
+        self.assertTrue(post.is_friends())
 
     def test_post_when(self):
         time = datetime.now(timezone.utc)
@@ -60,6 +65,22 @@ class PostTest(TestCase):
         self.assertTrue(post.total_likes() == likes)
 
     # TODO test all PostQuerySet methods
+    
+class SharePostTest(TestCase):
+    def test_share_public_post(self):
+        visibility = LocalPost.Visibility.PUBLIC
+        post = PostBuilder().visibility(visibility).build()
+        self.client.post('socialDistribution:sharePost', id=post.id)
+        self.assertEquals(LocalPost.objects.latest("published").visibility, LocalPost.Visibility.PUBLIC)
+        
+    def test_share_private_post(self):
+        '''
+            sharing a private post shouldn't be possible
+        '''
+        visibility = LocalPost.Visibility.PRIVATE
+        post = PostBuilder().visibility(visibility).build()
+        self.client.post('socialDistribution:sharePost', id=post.id)
+        self.assertEquals(LocalPost.objects.latest("published"), post)
 
 
 class CommentModelTests(TestCase):
@@ -69,7 +90,7 @@ class CommentModelTests(TestCase):
             comment.when() returns just now right after post creation
         '''
         author = mixer.blend(LocalAuthor)
-        post = mixer.blend(Post, author=author)
+        post = mixer.blend(LocalPost, author=author)
         comment = mixer.blend(Comment, author=author, post=post, pub_date=datetime.now(timezone.utc))
 
         self.assertIs(comment.when() == 'just now', True)
@@ -79,7 +100,7 @@ class CommentModelTests(TestCase):
             comment.when() returns 10 seconds ago after the time has passed
         '''
         author = mixer.blend(LocalAuthor)
-        post = mixer.blend(Post, author=author)
+        post = mixer.blend(LocalPost, author=author)
 
         pub_date = datetime.now(timezone.utc) - timedelta(seconds=10)
         comment = mixer.blend(Comment, author=author, post=post, pub_date=pub_date)
@@ -93,7 +114,7 @@ class LikeTests(TransactionTestCase):
     def test_post_like(self):
         """ Test successfully liking a Post """
 
-        post = mixer.blend(Post)
+        post = mixer.blend(LocalPost)
         author = mixer.blend(Author)
 
         # like a post
@@ -115,7 +136,7 @@ class LikeTests(TransactionTestCase):
     def test_no_author(self):
         """ Test creating a Like with no Author """
 
-        post = mixer.blend(Post)
+        post = mixer.blend(LocalPost)
         with self.assertRaises(IntegrityError):
             post.likes.create()
 
@@ -132,7 +153,7 @@ class LikeTests(TransactionTestCase):
     def test_double_like(self):
         """ Test liking a post multiple times """
 
-        post = mixer.blend(Post)
+        post = mixer.blend(LocalPost)
         author = mixer.blend(Author)
 
         # add a like

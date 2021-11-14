@@ -33,7 +33,7 @@ def get_comments_json(post, comments):
 class PostCommentsViewTest(TestCase):
 
     def test_get_comment_basic(self):
-        post = mixer.blend('socialDistribution.post')
+        post = mixer.blend('socialDistribution.localpost')
         expected = get_comments_json(post, [])
         expected_data = json.dumps(expected)
 
@@ -42,7 +42,7 @@ class PostCommentsViewTest(TestCase):
         self.assertJSONEqual(response.content, expected_data)
 
     def test_comment_single_author(self):
-        post = mixer.blend('socialDistribution.post')
+        post = mixer.blend('socialDistribution.localpost')
         comment_author = create_author(
             100,
             "John Doe",
@@ -87,7 +87,7 @@ class PostCommentsViewTest(TestCase):
 
 
     def test_comment_multiple_authors(self):
-        post = mixer.blend('socialDistribution.post')
+        post = mixer.blend('socialDistribution.localpost')
         author1 = create_author(
             100,
             "John Doe",
@@ -203,7 +203,7 @@ class PostCommentsViewTest(TestCase):
                 "Expected response does NOT contain:\n" + str(comment))
 
     def test_404_unmatching_authors(self):
-        post = mixer.blend('socialDistribution.post')
+        post = mixer.blend('socialDistribution.localpost')
         author = create_author(
             100,
             "John Doe",
@@ -225,7 +225,7 @@ class PostCommentsViewTest(TestCase):
             "Expected 404 status code, but instead got" + str(response.status_code))
 
     def test_multi_comments_same_author(self):
-        post = mixer.blend('socialDistribution.post')
+        post = mixer.blend('socialDistribution.localpost')
         author = create_author(
             100,
             "John Doe",
