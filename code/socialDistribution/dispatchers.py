@@ -33,7 +33,6 @@ def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None):
             send(post, follower)
 
     elif post.visibility == LocalPost.Visibility.FRIENDS:
-        print(post.author.friends())
         for friend in post.author.friends():
             send(post, friend)
 
