@@ -365,7 +365,6 @@ def sharePost(request, id):
     author = LocalAuthor.objects.get(user=request.user)
     post = LocalPost.objects.get(id=id)
     oldSource = post.get_id()
-    print(oldSource)
     
     post.pk = None # duplicate the post
     post.author = author
