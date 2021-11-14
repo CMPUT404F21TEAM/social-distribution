@@ -26,4 +26,6 @@ urlpatterns = [
   path('like-comment/<int:id>', views.likeComment, name='likeComment'),
   path('delete-post/<int:id>', views.deletePost, name='deletePost'),
   path('edit-post/<int:id>', views.editPost, name='editPost'),
+  path('share-post/<int:id>', views.sharePost, name='sharePost'),
+  
 ]

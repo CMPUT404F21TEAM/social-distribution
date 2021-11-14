@@ -48,6 +48,11 @@ class PostTest(TestCase):
         visibility = LocalPost.Visibility.FRIENDS
         post = PostBuilder().visibility(visibility).build()
         self.assertFalse(post.is_public())
+        
+    def test_post_is_friends(self):
+        visibility = LocalPost.Visibility.FRIENDS
+        post = PostBuilder().visibility(visibility).build()
+        self.assertTrue(post.is_friends())
 
     def test_post_when(self):
         time = datetime.now(timezone.utc)
@@ -60,6 +65,22 @@ class PostTest(TestCase):
         self.assertTrue(post.total_likes() == likes)
 
     # TODO test all PostQuerySet methods
+    
+class SharePostTest(TestCase):
+    def test_share_public_post(self):
+        visibility = LocalPost.Visibility.PUBLIC
+        post = PostBuilder().visibility(visibility).build()
+        self.client.post('socialDistribution:sharePost', id=post.id)
+        self.assertEquals(LocalPost.objects.latest("published").visibility, LocalPost.Visibility.PUBLIC)
+        
+    def test_share_private_post(self):
+        '''
+            sharing a private post shouldn't be possible
+        '''
+        visibility = LocalPost.Visibility.PRIVATE
+        post = PostBuilder().visibility(visibility).build()
+        self.client.post('socialDistribution:sharePost', id=post.id)
+        self.assertEquals(LocalPost.objects.latest("published"), post)
 
 
 class CommentModelTests(TestCase):
