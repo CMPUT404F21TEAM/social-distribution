@@ -16,6 +16,7 @@ def post_card(post, author):
     # Delete/Edit
     is_author = post.author == author
     is_public = post.is_public()
+    is_friends = post.is_friends()
     if type(post) is InboxPost:
         post_host = 'remote'
     else:
@@ -51,4 +52,5 @@ def post_card(post, author):
         'is_liked': is_liked, 
         'like_text': like_text,        
         'is_public': is_public,
+        'is_friends': is_friends
         }
