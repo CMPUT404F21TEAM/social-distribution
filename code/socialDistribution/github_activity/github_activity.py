@@ -14,7 +14,11 @@ def get_event_description(event_name, event_data):
     github_event = event_factory.get_event(event_name)
     github_event.set_event_data(event_data)
     
-    return github_event.get_description(), github_event.time_ago()
+    return (
+        github_event.get_description(), 
+        github_event.time_ago(), 
+        github_event.time_ago_delta()
+    )
 
 
 def pull_github_events(github_user):
@@ -38,3 +42,14 @@ def pull_github_events(github_user):
         ) for event in events_json]
 
     return None
+
+
+def compare_funct(github_event):
+    '''
+        Function used as an argument for sorting a list of github events
+        like the list returned by pull_github_events
+
+        Hence, github_event is a tuple of the form:
+                (event_descr, time_ago, time_ago, time_ago_delta)
+    '''
+    return github_event[2]

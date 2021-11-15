@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import timeago
 
 class GithubEvent:
@@ -28,6 +28,14 @@ class GithubEvent:
         dt_created_at = datetime.strptime(
             self.created_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
         return timeago.format(dt_created_at, now)
+
+    def time_ago_delta(self):
+        ''' Get when the event in question was created in time delta format
+        '''
+        now = datetime.now(timezone.utc)
+        dt_created_at = datetime.strptime(
+            self.created_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        return now - dt_created_at
 
     def get_description(self):
         ''' Must be implemented by sub-class

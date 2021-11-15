@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from .forms import CreateUserForm, PostForm
 from .decorators import allowedUsers, unauthenticated_user
-from .github_activity.github_activity import pull_github_events
+from .github_activity.github_activity import pull_github_events, compare_funct
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.db.models import Count, Q
@@ -559,6 +559,8 @@ def inbox(request):
                 error_occurred = True
             else:
                 github_events.extend(pulled_events)
+
+    github_events.sort(key=compare_funct)
 
     if error_occurred:
         messages.info(request, "An error occurred while fetching github events")
