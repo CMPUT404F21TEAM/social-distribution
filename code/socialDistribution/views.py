@@ -315,32 +315,50 @@ def posts(request, author_id):
 
         Allows user to create a post. The newly created post will also be rendered. 
     """
-    author = get_object_or_404(LocalAuthor, pk=author_id)
     user_id = LocalAuthor.objects.get(user=request.user).id
 
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES, user=user_id)
         if form.is_valid():
-            bin_content = form.cleaned_data.get('content_media')
-            if bin_content is not None:
-                content_media = base64.b64encode(bin_content.read())
-                Image.objects.create(
+            media = form.cleaned_data.get('content_media')
+            content = form.cleaned_data.get('content_text')
+            if media is not None:
+                uploaded_img = Image.objects.create(
                     caption=form.cleaned_data.get('description'),
-                    image=bin_content
+                    image=media
                 )
             else:
-                content_media = None
+                uploaded_img = None
 
+            # determine post's content type
+            if content is not None:
+                content_type = LocalPost.ContentType.PLAIN  # temp, will have to enforce md type in ui
+
+            elif uploaded_img is not None:
+                jpeg_mime = LocalPost.ContentType.get_JPEG_display().strip(';base64')
+                png_mime = LocalPost.ContentType.get_PNG_display().strip(';base64')
+
+                # check image type
+                if uploaded_img.content_type == jpeg_mime:
+                    content_type = LocalPost.ContentType.JPEG
+
+                elif uploaded_img.content_type == png_mime:
+                    content_type = LocalPost.ContentType.PNG
+
+            else:
+                content_type = LocalPost.ContentType.BASE64
+                
             try:
                 # create the post
                 new_post = LocalPost(
                     author_id=author_id,  # temporary
                     title=form.cleaned_data.get('title'),
                     description=form.cleaned_data.get('description'),
-                    content=form.cleaned_data.get('content_text'),
+                    content_type=content_type,
+                    content=content,
                     visibility=form.cleaned_data.get('visibility'),
                     unlisted=form.cleaned_data.get('unlisted'),
-                    content_media=content_media,
+                    image=uploaded_img,
                 )
                 new_post.save()
 
@@ -408,35 +426,68 @@ def editPost(request, id):
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES, user=author)
         if form.is_valid():
-            bin_content = form.cleaned_data.get('content_media')
-            if bin_content is not None:
-                content_media = base64.b64encode(bin_content.read())
+            media = form.cleaned_data.get('content_media')
+            content = form.cleaned_data.get('content_text')
+
+            if media is not None:
+                if media:
+                    uploaded_img = Image.objects.create(
+                        caption=form.cleaned_data.get('description'),
+                        image=media
+                    )
+                else:
+                    Image.objects.get(pk=post.image.id).delete()
+                    post.image = None
+                    uploaded_img = None
             else:
-                content_media = post.content_media
+                uploaded_img = None
+
+            # determine post's content type
+            if content is not None:
+                content_type = LocalPost.ContentType.PLAIN  # temp, will have to enforce md type in ui
+
+            elif uploaded_img:
+                jpeg_mime = LocalPost.ContentType.get_JPEG_display().strip(';base64')
+                png_mime = LocalPost.ContentType.get_PNG_display().strip(';base64')
+
+                # check image type
+                if uploaded_img.content_type == jpeg_mime:
+                    content_type = LocalPost.ContentType.JPEG
+
+                elif uploaded_img.content_type == png_mime:
+                    content_type = LocalPost.ContentType.PNG
+
+            else:
+                content_type = LocalPost.ContentType.BASE64
 
             try:
                 post.title = form.cleaned_data.get('title')
                 post.description = form.cleaned_data.get('description')
-                post.content = form.cleaned_data.get('content_text')
                 post.visibility = form.cleaned_data.get('visibility')
                 post.unlisted = form.cleaned_data.get('unlisted')
-                post.content_media = content_media
+                post.content_type = content_type
+                post.content = content
 
-                categories = form.cleaned_data.get('categories').split()
-                previousCategories = Category.objects.filter(post=post)
-                previousCategoriesNames = [
-                    cat.category for cat in previousCategories]
+                if uploaded_img is not None:
+                    if post.image is not None:
+                        Image.objects.get(pk=post.image.id).delete()
+                    post.image = uploaded_img
+
+                # categories = form.cleaned_data.get('categories').split()
+                # previousCategories = Category.objects.filter(post=post)
+                # previousCategoriesNames = [
+                #     cat.category for cat in previousCategories]
 
                 # Create new categories
-                for category in categories:
-                    if category in previousCategoriesNames:
-                        previousCategoriesNames.remove(category)
-                    else:
-                        Category.objects.create(category=category, post=post)
+                # for category in categories:
+                #     if category in previousCategoriesNames:
+                #         previousCategoriesNames.remove(category)
+                #     else:
+                #         Category.objects.create(category=category, post=post)
 
-                # Remove old categories that were deleted
-                for category in previousCategoriesNames:
-                    Category.objects.get(category=category, post=post).delete()
+                # # Remove old categories that were deleted
+                # for category in previousCategoriesNames:
+                #     Category.objects.get(category=category, post=post).delete()
 
                 post.save()
 

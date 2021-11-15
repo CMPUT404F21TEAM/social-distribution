@@ -83,6 +83,12 @@ class Post(models.Model):
     #     blank=True,
     # )
 
+    image = models.ForeignKey('Image',
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE
+    )
+
     # temporarily a charfield
     content = models.CharField(
         max_length=CONTENT_MAXLEN,

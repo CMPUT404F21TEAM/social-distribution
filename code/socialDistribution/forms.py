@@ -69,6 +69,9 @@ class PostForm(forms.Form):
             previousCategoriesNames = " ".join([cat.category for cat in previousCategories])
             self.fields['categories'].initial = previousCategoriesNames
             
+            if post.image is not None:
+                self.fields['content_media'].initial = post.image.image
+                
             self.fields['content_text'].initial = post.content
             
             # self.fields['content_media'].initial = post.content_media
