@@ -190,25 +190,26 @@ def home(request):
 def friend_request(request, author_id, action):
     """ Handles POST request to resolve a pending follow request.
 
-        author_id: The ID of the author who created the friend request
-        action: The resolution of the friend request. Must be "accept" or "decline"
+        Parameters:
+        - request (HttpRequest): the HTTP request
+        - author_id (string): The ID of the author who created the friend request
+        - action (string): The resolution of the friend request. Must be "accept" or "decline"
 
     """
 
-    requestee = get_object_or_404(LocalAuthor, pk=author_id)
-    curr_user = LocalAuthor.objects.get(user=request.user)
+    if action not in ['accept', 'decline']:
+        return HttpResponseNotFound()
 
     if request.method == 'POST':
-        if action not in ['accept', 'decline']:
-            return HttpResponseNotFound()
+        # get models
+        requestee = get_object_or_404(LocalAuthor, pk=author_id)
+        curr_user = LocalAuthor.objects.get(user=request.user)
 
-        elif curr_user.id != requestee.id and curr_user.has_req_from(requestee) \
-                and not curr_user.has_follower(requestee):
-            curr_user.follow_requests.remove(requestee)
-            if action == 'accept':
-                curr_user.follows.create(actor=requestee)
-        else:
-            messages.info(request, f'Couldn\'t {action} request')
+        # process action
+        if curr_user.has_follow_request(requestee):
+            is_accept = action == 'accept'
+            curr_user.handle_follow_request(requestee, is_accept)
+
 
     return redirect('socialDistribution:inbox')
 
@@ -217,8 +218,8 @@ def befriend(request, author_id):
     """ Handles POST request to create a follow request.
 
         Parameters:
-        - request (HttpRequest) - the HTTP request
-        - author_id (string) - the ID of the Author to follow
+        - request (HttpRequest): the HTTP request
+        - author_id (string): the ID of the Author to follow
     """
 
     if request.method == 'POST':
@@ -235,7 +236,12 @@ def befriend(request, author_id):
 def un_befriend(request, author_id):
     """ Handles a POST request to unfollow an author.
 
+        Parameters:
+        - request (HttpRequest): the HTTP request
+        - author_id (string): the ID of the Author to follow
     """
+
+    # FIX THIS
 
     if request.method == 'POST':
         author = get_object_or_404(LocalAuthor, pk=author_id)
@@ -278,7 +284,7 @@ def author(request, author_id):
 
     # TODO: Should become an API request since won't know if author is local/remote
 
-    if False: #author.is_friends_with(curr_user):
+    if False:  # author.is_friends_with(curr_user):
         posts = author.posts.listed().get_friend()
     else:
         posts = author.posts.listed().get_public()
