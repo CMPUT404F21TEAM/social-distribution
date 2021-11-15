@@ -196,7 +196,7 @@ class PostView(View):
 
     def get(self, request, author_id, post_id):
         author = get_object_or_404(LocalAuthor, pk=int(author_id))
-        post = get_object_or_404(Post, pk=int(post_id))
+        post = get_object_or_404(LocalPost, pk=int(post_id))
         accepted_types = request.headers['Accept']
 
         if 'image' in accepted_types and post.content_media is not None and post.unlisted:
