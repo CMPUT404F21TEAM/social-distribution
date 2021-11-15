@@ -129,6 +129,11 @@ class Post(models.Model):
         """ Check if post is public. """
 
         return self.visibility == self.Visibility.PUBLIC
+    
+    def is_friends(self):
+        """ Check if post is friends. """
+
+        return self.visibility == self.Visibility.FRIENDS
 
     def when(self):
         """ Returns string describing when post the was created.
@@ -220,6 +225,9 @@ class LocalPost(Post):
             self.ContentType.JPEG,
             self.ContentType.BASE64
         ]
+        
+    def get_id(self):
+        return f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}"
 
     def as_json(self):
         previousCategories = Category.objects.filter(post=self)
@@ -229,7 +237,7 @@ class LocalPost(Post):
             # title of a post
             "title": self.title,
             # id of the post
-            "id": f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}",
+            "id": self.get_id(),
             # where did you get this post from?
             "source": "blah",
             # where is it actually from

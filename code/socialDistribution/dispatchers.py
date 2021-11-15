@@ -4,6 +4,19 @@ import json
 
 from .models import LocalPost, Author, LocalAuthor
 
+def send(post, follower):
+    author_inbox = follower.url + "/inbox"
+    headers = {
+        "Content-Type": "application/json",
+    }
+    data = post.as_json()
+
+    requests.post(
+        url=author_inbox,
+        headers=headers,
+        data=json.dumps(data)
+    )
+
 
 def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None):
     """ Sends a post to the inbox of all followers who have permission to view the post.
@@ -16,21 +29,11 @@ def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None):
     if post.visibility == LocalPost.Visibility.PUBLIC:
         # send posts to all followers
         for follower in post.author.followers.all():
-            author_inbox = follower.url + "/inbox"
-            headers = {
-                "Content-Type": "application/json",
-            }
-            data = post.as_json()
-
-            requests.post(
-                url=author_inbox,
-                headers=headers,
-                data=json.dumps(data)
-            )
+            send(post, follower)
 
     elif post.visibility == LocalPost.Visibility.FRIENDS:
-        # TODO
-        pass
+        for friend in post.author.friends():
+            send(post, friend)
 
     elif post.visibility == LocalPost.Visibility.PRIVATE:
         for follower in recipients:

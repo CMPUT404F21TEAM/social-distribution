@@ -92,6 +92,9 @@ class LocalAuthor(Author):
 
         if accept == True:
             self.follows.get_or_create(actor=author)
+            
+    def friends(self):
+        return [follower for follower in self.followers.filter(pk=self.id) if self.is_friends_with(follower)]
 
     def __str__(self):
         return self.displayName
