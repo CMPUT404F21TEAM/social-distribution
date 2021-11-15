@@ -2,6 +2,7 @@ from django import template
 import base64
 from socialDistribution.forms import PostForm
 from socialDistribution.models.post import LocalPost, InboxPost
+from socialDistribution.utility import make_request
 
 register = template.Library()
 
@@ -17,15 +18,34 @@ def post_card(post, author):
     is_author = post.author == author
     is_public = post.is_public()
     is_friends = post.is_friends()
+
+    # if the post is remote, need to fetch likes
     if type(post) is InboxPost:
         post_host = 'remote'
+        request_url = post.public_id.strip('/') + '/likes'
+        response = make_request('GET', request_url)
+
+        if response.status_code == 200:
+            likes_list = response.json()
+
+            for like in likes_list:
+                if like['author']['id'] == author.get_url_id():
+                    is_liked = True
+                    break
+
+            likes = len(likes_list)
+
+        else:
+            is_liked = None
+            likes = 0
+
     else:
         post_host = 'local'
+        is_liked = post.likes.filter(author=author).exists()
+        likes = post.total_likes()
 
     # Likes
-    is_liked = False # temp post.likes.filter(author=author).exists()
     like_text = ''
-    likes = 0 #temp post.total_likes()
     if is_liked:
         likes -= 1
         if likes >= 2:
