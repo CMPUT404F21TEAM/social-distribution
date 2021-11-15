@@ -9,12 +9,52 @@
 
 {% load post_card %}
 {% load modal %}
+{% load github_event %}
 {% block body %}
-    {% if latest_posts %}
+    {% if latest_posts or github_events %}
         <div class="container align-self-center" id="post_container">
-            {% for post in latest_posts %}
-                {% post_card post author %}
-            {% endfor %}
+            <div class="d-flex justify-content-center">
+                <label class="btn btn-primary rounded-pill mx-3 mt-md-3 w-25 active" id="posts-radio">
+                    <input 
+                        type="radio" 
+                        class="d-none" 
+                        name="feed-type" 
+                        id="posts-radio"
+                        value="1"
+                        autocomplete="off" 
+                        checked
+                    >
+                        Posts
+                    </input>
+                </label>
+                <label class="btn btn-primary rounded-pill mx-3 mt-md-3 w-25" id="github-radio">
+                    <input 
+                        type="radio"
+                        class="d-none" 
+                        name="feed-type" 
+                        id="github-radio" 
+                        value="2"
+                        autocomplete="off"
+                    >
+                        Github Activity
+                    </input>
+                </label>
+            </div>
+
+            <div id="github-activity">
+                {% if github_events %}
+                {% for github_event in github_events %}
+                    {% card_gh_event github_event %}
+                {% endfor %}
+                {% else %}
+                    <h3 class="text-center m-5">No github activity at this time</h3>
+                {% endif %}
+            </div>
+            <div id="regular-posts">
+                {% for post in latest_posts %}
+                    {% post_card post author %}
+                {% endfor %}
+            </div>
         </div>
     {% endif %}
 
@@ -27,9 +67,6 @@
         {% modal user=author.id id="add_post_modal" type=modal_type label="Create Post" title="Create Post" btn="Publish"%}
     </form>
 
-    <script>
-        $('#add_post_modal').on('hidden.bs.modal', function() {
-            $('#create_post_form').trigger('reset');
-        })
-    </script>
+    {% load static %}
+    <script src="{% static 'js/home.js' %}"></script>        
 {% endblock %}

@@ -1,7 +1,7 @@
 <div class="card shadow border-light bg-white" id="post" height="100%">
     <div class="card-header bg-white">
         <div class="fs-5" style="line-height: 20px;">
-            {{ post.author.displayName }}
+            {{ post.author_as_json.displayName }}
         </div>
         <small class="text-muted">
             {{ post.when }}
@@ -11,7 +11,7 @@
         <h4 class="card-title mx-auto">{{ post.title }}</h4>
         <p class="card-text text-center">
             <span class="mx-auto">{{ post.description }}<span><br>
-                    <span class="p-1 content-markdown">{{ post.content_text | safe}}</span>
+                    <span class="p-1 content-markdown">{{ post.content | safe}}</span>
         </p>
         {% if content_media %}
         <img src="data:image/png;charset=utf-8;base64,{{ content_media }}" alt="Post content media">
@@ -42,9 +42,22 @@
                     <a href="{% url 'socialDistribution:commentPost' post.id %}"> <button class="btn btn-secondary"><i
                                 class="fas fa-comment"></i></button></a>
 
+                    <!-- Launch Share Modal -->
+                    {% if isPublic or isFriends %}
+                    <button 
+                        type="button" 
+                        class="btn btn btn-secondary mx-2" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#share_post_modal{{ post.id }}">
+                            <i class="fas fa-share-square"></i>
+                    </button>
+                    {% endif %}
+
+                    
+
                 </div>
 
-                {% if isAuthor %}
+                {% if isAuthor and isPublic%}
                 <span>
                     <!-- Launch Edit Modal -->
                     <button 
@@ -78,5 +91,9 @@
     <form method="POST" action="{% url 'socialDistribution:deletePost' post.id %}">
         {% csrf_token %}
         {% modal id="delete_post_modal"|addstr:post.id type="delete" label="Delete Post" title="Delete Post" btn="Delete" postid=post.id%}
+    </form>
+    <form method="POST" action="{% url 'socialDistribution:sharePost' post.id %}">
+        {% csrf_token %}
+        {% modal id="share_post_modal"|addstr:post.id type="share" label="Share Post" title="Share Post" btn="Share" postid=post.id%}
     </form>
 </div>

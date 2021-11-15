@@ -1,4 +1,6 @@
 from django import template
+import base64
+from socialDistribution.forms import PostForm
 
 register = template.Library()
 
@@ -12,11 +14,13 @@ def post_card(post, author):
 
     # Delete/Edit
     isAuthor = post.author == author
+    isPublic = post.is_public()
+    isFriends = post.is_friends()
 
     # Likes
-    isLiked = post.likes.filter(author=author).exists()
+    isLiked = False # temp post.likes.filter(author=author).exists()
     likeText = ''
-    likes = post.total_likes()
+    likes = 0 #temp post.total_likes()
     if isLiked:
         likes -= 1
         if likes >= 2:
@@ -26,20 +30,21 @@ def post_card(post, author):
         else:
             likeText = f'Liked by you'
     else:
-        likes = post.likes.count()
         if likes > 1:
             likeText = f'Liked by {likes} others'
         elif likes == 1:
             likeText = f'Liked by 1 other'
 
     content_media = None
-    if post.content_media is not None:
-        content_media = post.content_media.decode('utf-8')
+    # if post.content_media is not None:
+    #     content_media = post.content_media.decode('utf-8')
 
     return {
         'post': post, 
         'content_media': content_media, 
         'isAuthor': isAuthor, 
         'isLiked': isLiked, 
-        'likeText': likeText,
+        'likeText': likeText,        
+        'isPublic': isPublic,
+        'isFriends': isFriends,
         }

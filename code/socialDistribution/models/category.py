@@ -8,4 +8,4 @@ class Category(models.Model):
         post                reference to post (Many-to-One relationship)
     '''
     category = models.CharField(max_length=50)
-    post = models.ForeignKey('Post', on_delete=models.CASCADE)
+    post = models.ForeignKey('LocalPost', on_delete=models.CASCADE)
