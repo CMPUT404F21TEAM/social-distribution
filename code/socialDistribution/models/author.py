@@ -42,7 +42,7 @@ class LocalAuthor(Author):
         profileImageUrl     Author's profile image url (text)
 
         posts               Posts created by the author
-        followers           Followers of the author (Collection of LocalAuthor objects)
+        follows             Followers of the author (Collection of Follow objects)
 
         friend_requests     Authors who have requested to follow author (Collection of LocalAuthor objects)
         inbox_posts         Posts sent to the inbox of the author
@@ -54,9 +54,7 @@ class LocalAuthor(Author):
     githubUrl = models.CharField(max_length=50, null=True)
     profileImageUrl = models.CharField(max_length=50, null=True)
 
-    followers = models.ManyToManyField('LocalAuthor', blank=True)
-
-    follow_requests = models.ManyToManyField('LocalAuthor', related_name="follow_requests_reverse")
+    follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')
 
     def has_follower(self, author):
