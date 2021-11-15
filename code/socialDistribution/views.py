@@ -284,7 +284,7 @@ def author(request, author_id):
 
     # TODO: Should become an API request since won't know if author is local/remote
 
-    if False:  # author.is_friends_with(curr_user):
+    if curr_user.has_friend(author):
         posts = author.posts.listed().get_friend()
     else:
         posts = author.posts.listed().get_public()
