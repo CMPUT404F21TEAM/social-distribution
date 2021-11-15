@@ -324,6 +324,10 @@ def posts(request, author_id):
             bin_content = form.cleaned_data.get('content_media')
             if bin_content is not None:
                 content_media = base64.b64encode(bin_content.read())
+                Image.objects.create(
+                    caption=form.cleaned_data.get('description'),
+                    image=bin_content
+                )
             else:
                 content_media = None
 

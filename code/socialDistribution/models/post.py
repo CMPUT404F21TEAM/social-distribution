@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import Q, manager
 from django.contrib.auth.models import User
 from django.utils import timezone
+from jsonfield import JSONField
 import datetime as dt
 import timeago
 
@@ -312,7 +313,7 @@ class InboxPost(Post):
 
     author = models.URLField(max_length=Post.URL_MAXLEN)
 
-    _author_json = models.JSONField()
+    _author_json = JSONField()
 
     @property
     def author_as_json(self):
