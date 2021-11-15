@@ -7,11 +7,11 @@ from django.core import serializers
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from urllib.parse import urlparse
+
 import json
 import logging
 from datetime import datetime, timezone
-import pprint
+from urllib.parse import urlparse, unquote_plus
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
@@ -124,6 +124,16 @@ class FollowersView(View):
         return JsonResponse(response)
 
 
+class FollowersSingleView(View):
+
+    def get(self, request, author_id, foreign_author_id):
+        """ GET - Check if {foreign_author_id} is a follower of {author_id} """
+
+        foreign_author_url = unquote_plus(author_id)
+
+        return JsonResponse({"follower": "Working on it..."})
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class LikedView(View):
 
@@ -166,7 +176,7 @@ class PostsView(View):
             size = request.GET.get("size")
             author = get_object_or_404(LocalAuthor, id=author_id)
             posts = LocalPost.objects.listed().get_public().filter(author=author)
-        
+
             jsonPosts = []
             for post in posts:
                 jsonPosts.append(post.as_json())
@@ -331,27 +341,25 @@ class InboxView(View):
                 return HttpResponse(status=200)
 
             elif data["type"] == "follow":
-                # actor requests to follow Object
-
+                # actor requests to follow object
                 actor, obj = data["actor"], data["object"]
-                if not url_parser.is_local_url(actor["id"]) or not url_parser.is_local_url(obj["id"]):
-                    raise ValueError()
+                if not url_parser.is_local_url(obj["id"]):
+                    raise ValueError("Author not hosted on this server")
 
-                follower_id = url_parser.parse_author(actor["id"])  # only works for local followers right now
-                followee_id = url_parser.parse_author(obj["id"])
+                actor_url_id = actor["id"]
+                object_id = url_parser.parse_author(obj["id"])
 
                 # check if this is the correct endpoint
-                if followee_id != author_id:
+                if object_id != author_id:
                     raise ValueError("Object ID does not match inbox ID")
 
-                followee_author = get_object_or_404(LocalAuthor, id=followee_id)
+                object_author = get_object_or_404(LocalAuthor, id=object_id)
+                actor_author, created = Author.objects.get_or_create(
+                    url=actor_url_id
+                )
 
                 # add follow request to inbox
-                try:
-                    follower_author = LocalAuthor.objects.get(id=follower_id)
-                    followee_author.follow_requests.add(follower_author)
-                except LocalAuthor.DoesNotExist:
-                    raise ValueError()
+                object_author.follow_requests.add(actor_author)
 
                 return HttpResponse(status=200)
 

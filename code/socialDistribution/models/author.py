@@ -57,11 +57,10 @@ class LocalAuthor(Author):
     follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')
 
-    def has_follower(self, author):
+    def has_follower(self, author: Author):
+        """ Returns True if an author follows a user, False otherwise.
         """
-        Returns True if an author follows a user, False otherwise 
-        """
-        return self.followers.filter(pk=author.id).exists()
+        return self.follows.filter(actor=author).exists()
 
     def is_friends_with(self, author):
         """

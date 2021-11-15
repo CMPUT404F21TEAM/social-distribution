@@ -162,10 +162,10 @@ def home(request):
 
     # get all friend posts from authors friends
     # this should probably just get from recieved_posts (TODO)
-    for other in author.followers.all():
-        if author.is_friends_with(other):
-            friend_posts = other.posts.listed().get_friend()
-            posts = posts.union(friend_posts)
+    # for other in author.followers.all():
+    #     if author.is_friends_with(other):
+    #         friend_posts = other.posts.listed().get_friend()
+    #         posts = posts.union(friend_posts)
 
     github_events = None
     if author.githubUrl:
@@ -195,18 +195,18 @@ def friend_request(request, author_id, action):
 
     """
 
-    author = get_object_or_404(LocalAuthor, pk=author_id)
+    requestee = get_object_or_404(LocalAuthor, pk=author_id)
     curr_user = LocalAuthor.objects.get(user=request.user)
 
     if request.method == 'POST':
         if action not in ['accept', 'decline']:
             return HttpResponseNotFound()
 
-        elif curr_user.id != author.id and curr_user.has_req_from(author) \
-                and not curr_user.has_follower(author):
-            curr_user.follow_requests.remove(author)
+        elif curr_user.id != requestee.id and curr_user.has_req_from(requestee) \
+                and not curr_user.has_follower(requestee):
+            curr_user.follow_requests.remove(requestee)
             if action == 'accept':
-                curr_user.followers.add(author)
+                curr_user.follows.create(actor=requestee)
         else:
             messages.info(request, f'Couldn\'t {action} request')
 
@@ -233,9 +233,10 @@ def befriend(request, author_id):
 
 
 def un_befriend(request, author_id):
+    """ Handles a POST request to unfollow an author.
+
     """
-        User can unfriend an author
-    """
+
     if request.method == 'POST':
         author = get_object_or_404(LocalAuthor, pk=author_id)
         curr_user = LocalAuthor.objects.get(user=request.user)
@@ -277,7 +278,7 @@ def author(request, author_id):
 
     # TODO: Should become an API request since won't know if author is local/remote
 
-    if author.is_friends_with(curr_user):
+    if False: #author.is_friends_with(curr_user):
         posts = author.posts.listed().get_friend()
     else:
         posts = author.posts.listed().get_public()
