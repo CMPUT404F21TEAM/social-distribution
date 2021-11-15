@@ -70,7 +70,7 @@ class SharePostTest(TestCase):
     def test_share_public_post(self):
         visibility = LocalPost.Visibility.PUBLIC
         post = PostBuilder().visibility(visibility).build()
-        self.client.post('socialDistribution:sharePost', id=post.id)
+        self.client.post('socialDistribution:share-post', id=post.id)
         self.assertEquals(LocalPost.objects.latest("published").visibility, LocalPost.Visibility.PUBLIC)
         
     def test_share_private_post(self):
@@ -79,7 +79,7 @@ class SharePostTest(TestCase):
         '''
         visibility = LocalPost.Visibility.PRIVATE
         post = PostBuilder().visibility(visibility).build()
-        self.client.post('socialDistribution:sharePost', id=post.id)
+        self.client.post('socialDistribution:share-post', id=post.id)
         self.assertEquals(LocalPost.objects.latest("published"), post)
 
 
