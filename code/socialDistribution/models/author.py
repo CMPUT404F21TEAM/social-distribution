@@ -3,13 +3,14 @@ from django.contrib.auth.models import User
 
 from cmput404.constants import HOST, API_PREFIX
 import socialDistribution.requests as api_requests
+from .follow import Follow
 
 
 class Author(models.Model):
-    """ Author model which represents all authors. 
+    """ Author model which represents all authors.
 
-        All authors that interact with the application will be stored as an author. That is, 
-        the Author model can store both remote and local authors. Methods on an Author instance primarily 
+        All authors that interact with the application will be stored as an author. That is,
+        the Author model can store both remote and local authors. Methods on an Author instance primarily
         rely on API calls to get the data corresponding to the author from a remote server.
 
         In the future, caching can be used with this model to reduce the number of API calls being sent out.
@@ -58,16 +59,39 @@ class LocalAuthor(Author):
     inbox_posts = models.ManyToManyField('InboxPost')
 
     def has_follower(self, author: Author):
-        """ Returns True if an author follows a user, False otherwise.
-        """
-        return self.follows.filter(actor=author).exists()
+        """ Returns true if author is a follower of self, false otherwise. """
 
-    def is_friends_with(self, author):
+        try:
+            self.follows.get(actor=author)
+            return True
+        except Follow.DoesNotExist:
+            return False
+
+    def has_friend(self, author: Author):
+        """ Returns true if author is a friend of self, false otherwise. """
+
+        try:
+            follow = self.follows.get(actor=author)
+            return follow.is_friend()
+        except Follow.DoesNotExist:
+            return False
+
+    def has_follow_request(self, author: Author):
+        """ Returns true if self has a follow request from author, false otherwise. """
+
+        return self.follow_requests.filter(id=author.id).exists()
+
+    def handle_follow_request(self, author: Author, accept: bool):
+        """ Removes author from follow requests (if exists) and resolves the request. If accept is 
+            true, they are added as a follower of self. 
         """
-        Returns True if an author is friends wtih a user, False otherwise 
-        """
-        return self.followers.filter(pk=author.id).exists() and \
-            author.followers.filter(pk=self.id).exists()
+
+        query_result = self.follow_requests.filter(id=author.id)
+        if query_result.exists():
+            self.follow_requests.remove(query_result.first())
+
+        if accept == True:
+            self.follows.get_or_create(actor=author)
 
     def __str__(self):
         return self.displayName
