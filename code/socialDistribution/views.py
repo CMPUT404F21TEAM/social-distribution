@@ -473,6 +473,8 @@ def editPost(request, id):
                         Image.objects.get(pk=post.image.id).delete()
                     post.image = uploaded_img
 
+                # Will be fixed when merging with a PR waiting to be approved
+
                 # categories = form.cleaned_data.get('categories').split()
                 # previousCategories = Category.objects.filter(post=post)
                 # previousCategoriesNames = [
