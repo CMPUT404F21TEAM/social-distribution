@@ -17,6 +17,7 @@ from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
 from .decorators import authenticate_request
 from .parsers import url_parser
+from .utility import paginate
 
 # References for entire file:
 # Django Software Foundation, "Introduction to class-based views", 2021-10-13
@@ -47,12 +48,32 @@ class AuthorsView(View):
 
     @method_decorator(ensure_csrf_cookie)
     def get(self, request):
-        """ GET - Retrieve all user profiles """
-
+        """ GET - Retrieve all user profiles 
+            'page' is indexed from 1, NOT 0.
+            'size' must be greater than 0
+        """
+        authors = [author.as_json() for author in LocalAuthor.objects.all()]
         page = request.GET.get("page")
         size = request.GET.get("size")
-
-        authors = [author.as_json() for author in LocalAuthor.objects.all()]
+        
+        # ensure query params are valid
+        if page and size:
+            page = int(page)
+            size = int(size)
+            try:
+                if page < 1 or size < 1:
+                    return HttpResponseBadRequest("Malformed query: page and size must be > 0")
+            except:
+                print('hi')
+                return HttpResponseBadRequest("Malformed query")
+            page -= 1
+            # collect authors based on query
+            paginated = paginate(authors, size)
+            # return the last page if specified page is too large
+            if page > len(paginated) - 1:
+                authors = paginated[-1]
+            else:
+                authors = paginate(authors, size)[page]
 
         response = {
             "type": "authors",
