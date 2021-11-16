@@ -14,7 +14,6 @@
                     <span class="p-1 content-markdown">{{ post.content | safe}}</span>
         </p>
         {% if image %}
-        {% comment %} <img src="data:image/png;charset=utf-8;base64,{{ image }}" alt="{{ post.image.caption }}"> {% endcomment %}
         <img src="{{ image }}" alt="{{ post.image.caption }}">
         {% endif %}
     </div>
