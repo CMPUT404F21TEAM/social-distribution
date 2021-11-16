@@ -245,7 +245,21 @@ class PostCommentsView(View):
             if post.author.id != author.id:
                 return HttpResponseNotFound()
 
-            response = post.comments_as_json
+            comment_list = post.comments()
+            
+            if page and size:
+                page = int(page)
+                size = int(size)
+                comment_list = getPaginated(comment_list, page, size)
+                
+            response = {
+                    "type": "comments",
+                    "page": page,
+                    "size": size,
+                    "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}",
+                    "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}/comments",
+                    "comments": comment_list
+                }
 
         except Exception as e:
             logger.error(e, exc_info=True)

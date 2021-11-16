@@ -200,16 +200,22 @@ class LocalPost(Post):
         """ Gets the comments of the post in JSON format. """
 
         author_id = self.author.id
-        comments_set = Comment.objects.filter(post=self.id).order_by('-pub_date')[:5]
-        comment_list = [comment.as_json() for comment in comments_set]
         return {
             "type": "comments",
-            "page": 1,
-            "size": 5,
+            "page": None,
+            "size": None,
             "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}",
             "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}/comments",
-            "comments": comment_list
+            "comments": self.comments()
         }
+        
+    def comments(self):
+        """ Gets the comments of the post format. """
+
+        author_id = self.author.id
+        comments_set = Comment.objects.filter(post=self.id).order_by('-pub_date')[:5]
+        comment_list = [comment.as_json() for comment in comments_set]
+        return comment_list
 
     def total_likes(self):
         """ Gets the total number of likes on the post. """
