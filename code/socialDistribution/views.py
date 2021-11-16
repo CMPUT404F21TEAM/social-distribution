@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from .forms import CreateUserForm, PostForm
 from .decorators import allowedUsers, unauthenticated_user
-from .github_activity.github_activity import pull_github_events
+from .github_activity.github_activity import pull_github_events, compare_funct
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.db.models import Count, Q
@@ -170,17 +170,8 @@ def home(request):
             friend_posts = other.posts.listed().get_friend()
             posts = posts.union(friend_posts)
 
-    github_events = None
-    if author.githubUrl:
-        github_user = author.githubUrl.strip('/').split('/')[-1]
-        github_events = pull_github_events(github_user)
-
-        if github_events is None:
-            messages.info("An error occurred while fetching github events")
-
     context = {
         'author': author,
-        'github_events': github_events,
         'modal_type': 'post',
         'latest_posts': posts.chronological(),
         'error': False,
@@ -573,8 +564,28 @@ def inbox(request):
     author = LocalAuthor.objects.get(user=request.user)
     follow_requests = author.follow_requests.all()
     posts = author.inbox_posts.all()
+
+    github_events = []
+    error_occurred = False
+    local_authors = LocalAuthor.objects.all()
+    for author in local_authors:
+        if author.githubUrl:
+            github_user = author.githubUrl.strip('/').split('/')[-1]
+            pulled_events = pull_github_events(github_user)
+
+            if pulled_events is None:
+                error_occurred = True
+            else:
+                github_events.extend(pulled_events)
+
+    github_events.sort(key=compare_funct)
+
+    if error_occurred:
+        messages.info(request, "An error occurred while fetching github events")
+
     context = {
         'author': author,
+        'github_events': github_events,
         'follow_requests': follow_requests,
         'posts': posts
     }
