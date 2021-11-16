@@ -2,16 +2,15 @@ from django.contrib.auth import get_user_model
 from django.http.response import *
 from django.http import HttpResponse, JsonResponse
 from django.http.response import HttpResponseBadRequest
-from django.shortcuts import redirect, render, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404
 from django.core import serializers
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 
+from datetime import datetime, timezone
 import json
 import logging
-from datetime import datetime, timezone
-from urllib.parse import urlparse, unquote_plus
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
@@ -138,6 +137,7 @@ class FollowersSingleView(View):
             follow = author.follows.get(actor=follower)
             return JsonResponse(follow.actor.as_json())
         except (Author.DoesNotExist, Follow.DoesNotExist):
+            # return 404 if author not found
             return HttpResponseNotFound()
 
 
@@ -353,8 +353,8 @@ class InboxView(View):
                 if not url_parser.is_local_url(obj["id"]):
                     raise ValueError("Author not hosted on this server")
 
-                actor_url_id = actor["id"]
                 object_id = url_parser.parse_author(obj["id"])
+                actor_url_id = actor["id"]
 
                 # check if this is the correct endpoint
                 if object_id != author_id:
@@ -365,31 +365,28 @@ class InboxView(View):
                     url=actor_url_id
                 )
 
-                # add follow request to inbox
+                # add follow request
                 object_author.follow_requests.add(actor_author)
 
                 return HttpResponse(status=200)
 
             elif data["type"] == "like":
-                # extract data from request body
-                object_url = urlparse(data['object']).path.strip('/')
-                split_url = object_url.split('/')
-                object = split_url[-2]
-                id = split_url[-1]
-                liking_author_url = data["author"]["id"]
-
                 # retrieve author
+                liking_author_url = data["author"]["id"]
                 liking_author, created = Author.objects.get_or_create(
                     url=liking_author_url
                 )
 
-                # check if liking post or comment
-                if object == 'comments':
-                    context_object = get_object_or_404(Comment, id=id)
-                elif (object == 'posts'):
+                # retrieve object
+                object_type = url_parser.get_object_type(data['object'])
+                if object_type == "posts":
+                    _, id = url_parser.parse_post(data['object'])
                     context_object = get_object_or_404(LocalPost, id=id)
+                elif object_type == "comments":
+                    _, __, id = url_parser.parse_comment(data['object'])
+                    context_object = get_object_or_404(Comment, id=id)
                 else:
-                    raise ValueError("Unknown object for like")
+                    raise ValueError("Unknown object type")
 
                 if context_object.likes.filter(author=liking_author).exists():
                     # if like already exists, remove it
