@@ -52,7 +52,7 @@ class AuthorsView(View):
             'page' is indexed from 1, NOT 0.
             'size' must be greater than 0
         """
-        authors = [author.as_json() for author in LocalAuthor.objects.all()]
+        authors = LocalAuthor.objects.order_by('id')
         page = request.GET.get("page")
         size = request.GET.get("size")
         
@@ -61,6 +61,7 @@ class AuthorsView(View):
             size = int(size)
             authors = getPaginated(authors, page, size)
 
+        authors = [author.as_json() for author in authors]
         response = {
             "type": "authors",
             "items": authors
@@ -172,22 +173,21 @@ class PostsView(View):
             page = request.GET.get("page")
             size = request.GET.get("size")
             author = get_object_or_404(LocalAuthor, id=author_id)
-            posts = LocalPost.objects.listed().get_public().filter(author=author)
+            posts = LocalPost.objects.listed().get_public().filter(author=author).order_by('id')
         
-            jsonPosts = []
-            for post in posts:
-                jsonPosts.append(post.as_json())
                 
             if page and size:
                 page = int(page)
                 size = int(size)
-                jsonPosts = getPaginated(jsonPosts, page, size)
+                posts = getPaginated(posts, page, size)
+                
+            posts = [post.as_json() for post in posts]
             
             response = {
                 "type": "posts",
                 "page": page,
                 "size": size,
-                "items": jsonPosts
+                "items": posts
             }
 
         except Exception as e:
@@ -245,20 +245,21 @@ class PostCommentsView(View):
             if post.author.id != author.id:
                 return HttpResponseNotFound()
 
-            comment_list = post.comments()
+            comments = post.comments()
             
             if page and size:
                 page = int(page)
                 size = int(size)
-                comment_list = getPaginated(comment_list, page, size)
-                
+                comments = getPaginated(comments, page, size)
+            
+            comments = [comment.as_json() for comment in comments]
             response = {
                     "type": "comments",
                     "page": page,
                     "size": size,
                     "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}",
                     "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}/comments",
-                    "comments": comment_list
+                    "comments": comments
                 }
 
         except Exception as e:

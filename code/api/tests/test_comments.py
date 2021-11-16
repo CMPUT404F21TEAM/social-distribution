@@ -426,3 +426,91 @@ class PostCommentsViewTest(TestCase):
         for comment in res_data["comments"]:
             self.assertTrue(str(comment) in str(expected),
                 "Expected response does NOT contain:\n" + str(comment))
+            
+    def test_comment_multiple_authors_paginated_page_2(self):
+        self.maxDiff = None
+        post = mixer.blend('socialDistribution.localpost')
+        page = 2
+        size = 1
+        author1 = create_author(
+            100,
+            "John Doe",
+            "johnDoe",
+            "https://github.com/johnDoe",
+            "https://i.imgur.com/k7XVwpB.jpeg"
+        )
+
+        author2 = create_author(
+            200,
+            "Jane Smith",
+            "jane_smith",
+            "https://github.com/jane_smith",
+            "https://i.imgur.com/k7XVwpB.jpeg"
+        )
+
+        author3 = create_author(
+            204,
+            "Lara Croft",
+            "lara_croft",
+            "https://github.com/lara_croft",
+            "https://i.imgur.com/k7XVwpB.jpeg"
+        )
+
+        comment_author1 = create_comment(
+            1,
+            author1,
+            "text/markdown",
+            "Hello there",
+            post
+        )
+
+        comment_author2 = create_comment(
+            2,
+            author2,
+            "text/markdown",
+            "This is great for testing",
+            post
+        )
+
+        comment_author3 =create_comment(
+            3,
+            author3,
+            "text/markdown",
+            "Wow! This is such a nice comment for testing",
+            post
+        )
+
+        expected_comments = [
+            {
+                "type": "comment",
+                "author": {
+                    "type": "author",
+                    "id": f"http://127.0.0.1:8000/api/author/204",
+                    "host": "http://127.0.0.1:8000/api/",
+                    "displayName": "lara_croft",
+                    "url": f"http://127.0.0.1:8000/api/author/204",
+                    "github": "https://github.com/lara_croft",
+                    "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
+                },
+                "comment": "Wow! This is such a nice comment for testing",
+                "contentType": "text/markdown",
+                "published": str(comment_author3.pub_date),
+                "id": f"http://127.0.0.1:8000/api/author/{post.author.id}/posts/{post.id}/comments/3"
+            }
+        ]
+
+        expected = get_comments_json(post, expected_comments, page, size)
+        response = self.client.get(reverse('api:post_comments', args=(post.author.id, post.id)) + f'?page={page}&size={size}')
+
+        self.assertEqual(response.status_code, 200)
+        res_data = json.loads(response.content)
+        
+
+        expected_len = len(str(expected))
+        res_data_len = len(str(res_data))
+        self.assertEqual(expected_len, res_data_len,
+            f"Expected response length to be {expected_len}")
+
+        for comment in res_data["comments"]:
+            self.assertTrue(str(comment) in str(expected),
+                "Expected response does NOT contain:\n" + str(comment))
