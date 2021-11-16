@@ -8,6 +8,9 @@ def get(url, params=None):
         Parameters:
          - url (string): The URL endpoint for the HTTP request
          - params (dict): The query string parameters (default is None)
+
+        Returns:
+         - (dict): JSON response data if status code of request is 200 OK. Otherwise, return None
     """
 
     headers = {
@@ -15,6 +18,7 @@ def get(url, params=None):
     }
 
     response = requests.get(url, headers=headers, params=params)
+    
     if response.status_code == 200:
         return response.json()
     else:
@@ -28,6 +32,9 @@ def post(url, params=None, body={}):
          - url (string): The URL endpoint for the HTTP request
          - params (dict): The query string parameters (default is None)
          - body (dict): Request parameters to send in JSON body (default is {})
+
+        Returns:
+         - (dict): JSON response data if status code of request is 200 OK. Otherwise, return None
     """
 
     headers = {
@@ -36,4 +43,8 @@ def post(url, params=None, body={}):
     }
 
     response = requests.post(url, headers=headers, params=params, json=body)
-    return response.json()
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
