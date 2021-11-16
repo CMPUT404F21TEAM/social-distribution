@@ -318,7 +318,7 @@ def posts(request, author_id):
     user_id = LocalAuthor.objects.get(user=request.user).id
 
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES, user=user_id)
+        form = PostForm(request.POST, request.FILES, user_id=user_id)
         if form.is_valid():
             media = form.cleaned_data.get('content_media')
             content = form.cleaned_data.get('content_text')
@@ -366,8 +366,17 @@ def posts(request, author_id):
                 if categories is not None:
                     categories = categories.split()
 
+                    """
+                    This implementation makes category names case-insensitive.
+                    This makes handling Category objects cleaner, albeit slightly more
+                    involved.
+                    """
                     for category in categories:
-                        Category.objects.create(category=category, post=new_post)
+                        category_obj, created = Category.objects.get_or_create(
+                            category__iexact=category, 
+                            defaults={'category': category}
+                        )
+                        new_post.categories.add(category_obj)
 
                 # get recipients for a private post
                 if form.cleaned_data.get('visibility') == LocalPost.Visibility.PRIVATE:
@@ -418,13 +427,13 @@ def editPost(request, id):
     """
         Edits an existing post
     """
-    author = LocalAuthor.objects.get(user=request.user).id
+    author = LocalAuthor.objects.get(user=request.user)
     post = LocalPost.objects.get(id=id)
     if not post.is_public():
         return HttpResponseBadRequest("Only public posts are editable")
 
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES, user=author)
+        form = PostForm(request.POST, request.FILES, user_id=author.id)
         if form.is_valid():
             media = form.cleaned_data.get('content_media')
             content = form.cleaned_data.get('content_text')
@@ -475,21 +484,30 @@ def editPost(request, id):
 
                 # Will be fixed when merging with a PR waiting to be approved
 
-                # categories = form.cleaned_data.get('categories').split()
-                # previousCategories = Category.objects.filter(post=post)
-                # previousCategoriesNames = [
-                #     cat.category for cat in previousCategories]
+                categories = form.cleaned_data.get('categories')
 
-                # Create new categories
-                # for category in categories:
-                #     if category in previousCategoriesNames:
-                #         previousCategoriesNames.remove(category)
-                #     else:
-                #         Category.objects.create(category=category, post=post)
+                if categories is not None:
+                    categories = categories.split()
+                    categories_to_remove = [ cat.category for cat in post.categories.all()]
 
-                # # Remove old categories that were deleted
-                # for category in previousCategoriesNames:
-                #     Category.objects.get(category=category, post=post).delete()
+                    """
+                    This implementation makes category names case-insensitive.
+                    This makes handling Category objects cleaner, albeit slightly more
+                    involved.
+                    """
+                    for category in categories:
+                        category_obj, created = Category.objects.get_or_create(
+                            category__iexact=category,
+                            defaults={'category': category}
+                        )
+                        post.categories.add(category_obj)
+                        
+                        while category_obj.category in categories_to_remove:
+                            categories_to_remove.remove(category_obj.category)     # don't remove this category
+
+                    for category in categories_to_remove:
+                        category_obj = Category.objects.get(category=category)
+                        post.categories.remove(category_obj)
 
                 post.save()
 
