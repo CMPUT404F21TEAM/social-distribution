@@ -17,9 +17,9 @@ class Follow(models.Model):
 
     def is_friend(self):
         # make api request
-        actor_url = self.object.url.strip('/')
+        actor_url = self.actor.url.strip('/')
         object_url = self.object.url.strip('/')
-        endpoint = actor_url.strip('/') + '/followers/' + object_url
+        endpoint = actor_url + '/followers/' + object_url
         response_body = api_requests.get(endpoint)
 
         # check if GET request came back with author object
