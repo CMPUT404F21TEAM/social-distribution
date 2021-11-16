@@ -69,3 +69,23 @@ class PostsViewTest(TestCase):
         response = self.client.get(reverse('api:posts', args=(post1.author.id,)) + f'?page={page}&size={size}')
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(response.content, expected)
+        
+    def test_get_posts_paginated_page_2(self):
+        self.maxDiff = None
+        page = 2
+        size = 2
+        author = mixer.blend(LocalAuthor)
+        post1 = mixer.blend(LocalPost, content_type='PL', author=author)
+        post2 = mixer.blend(LocalPost, content_type='PL', author=author)
+        post3 = mixer.blend(LocalPost, content_type='PL', author=author)
+
+        expected = {
+                "type": "posts",
+                "page": page,
+                "size": size,
+                "items": [get_post_json(post3)]
+            }
+        
+        response = self.client.get(reverse('api:posts', args=(post1.author.id,)) + f'?page={page}&size={size}')
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(response.content, expected)

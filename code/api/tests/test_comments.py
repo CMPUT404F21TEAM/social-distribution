@@ -431,7 +431,7 @@ class PostCommentsViewTest(TestCase):
         self.maxDiff = None
         post = mixer.blend('socialDistribution.localpost')
         page = 2
-        size = 1
+        size = 2
         author1 = create_author(
             100,
             "John Doe",
@@ -505,7 +505,6 @@ class PostCommentsViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         res_data = json.loads(response.content)
         
-
         expected_len = len(str(expected))
         res_data_len = len(str(res_data))
         self.assertEqual(expected_len, res_data_len,

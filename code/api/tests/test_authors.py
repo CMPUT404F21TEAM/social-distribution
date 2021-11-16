@@ -177,6 +177,56 @@ class AuthorsViewTests(TestCase):
 
         items = data.get("items")
         self.assertListEqual(items, expected)
+        
+    def test_get_authors_multiple_paginated_page_2(self):
+        self.maxDiff = None
+        page = 2
+        size = 2
+        user = mixer.blend(User)
+        author1 = create_author(
+            1,
+            "user1",
+            "John Smith",
+            "https://github.com/smith",
+            "https://i.imgur.com/k7XVwpB.jpeg"
+        )
+        author2 = create_author(
+            2,
+            "user2",
+            "Apple J Doe",
+            "https://github.com/apple",
+            "https://i.imgur.com/k7XVwpB.jpeg"
+        )
+        author3 = create_author(
+            3,
+            "user3",
+            "Jane Smith G. Sr.",
+            "https://github.com/another",
+            "https://i.imgur.com/k7XVwpB.jpeg"
+        )
+        
+        expected = [
+            {
+                "type": "author",
+                "id": "http://127.0.0.1:8000/api/author/3",
+                "host": "http://127.0.0.1:8000/api/",
+                "displayName": "Jane Smith G. Sr.",
+                "url": "http://127.0.0.1:8000/api/author/3",
+                "github": "https://github.com/another",
+                "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
+            }
+        ]
+
+        response = self.client.get(reverse("api:authors") + f'?page={page}&size={size}')
+        data = json.loads(response.content)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data.get("type"), "authors")
+        self.assertEqual(len(data.get("items")), 1,
+                         "Expected to recieve list of 1 authors")
+
+        items = data.get("items")
+        self.assertListEqual(items, expected)
 
     def test_get_author(self):
         author = create_author(

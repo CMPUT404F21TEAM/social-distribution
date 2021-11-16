@@ -52,7 +52,7 @@ class AuthorsView(View):
             'page' is indexed from 1, NOT 0.
             'size' must be greater than 0
         """
-        authors = LocalAuthor.objects.order_by('id')
+        authors = LocalAuthor.objects.order_by('pk')
         page = request.GET.get("page")
         size = request.GET.get("size")
         
@@ -173,7 +173,7 @@ class PostsView(View):
             page = request.GET.get("page")
             size = request.GET.get("size")
             author = get_object_or_404(LocalAuthor, id=author_id)
-            posts = LocalPost.objects.listed().get_public().filter(author=author).order_by('id')
+            posts = LocalPost.objects.listed().get_public().filter(author=author).order_by('pk')
         
                 
             if page and size:
