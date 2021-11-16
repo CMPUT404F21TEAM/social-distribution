@@ -65,7 +65,7 @@ class PostForm(forms.Form):
             self.fields['title'].initial = post.title
             self.fields['description'].initial = post.description
             
-            previousCategories = Category.objects.filter(post=post)
+            previousCategories = post.categories.all()
             previousCategoriesNames = " ".join([cat.category for cat in previousCategories])
             self.fields['categories'].initial = previousCategoriesNames
             

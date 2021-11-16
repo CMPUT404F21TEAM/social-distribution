@@ -6,6 +6,7 @@ Django==3.2.8
 Faker==4.0.0
 fontawesome-free==5.15.4
 idna==3.3
+jsonfield==3.1.0
 mixer==7.0.6
 Pillow==8.3.2
 pycodestyle==2.8.0
