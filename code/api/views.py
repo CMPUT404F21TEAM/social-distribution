@@ -199,14 +199,18 @@ class PostView(View):
         post = get_object_or_404(LocalPost, pk=int(post_id))
         accepted_types = request.headers['Accept']
 
-        if 'image' in accepted_types and post.content_media is not None and post.unlisted:
+        if 'image' in accepted_types and post.image is not None and post.unlisted:
             accepted_types = accepted_types.split(',')
             for mime_type in accepted_types:
                 format = mime_type.split('/')[-1]
                 format = format.split(';')[0]
+
+                # Save post image as webp
+                # The markdown parser uses webp
+                # to display embedded images
                 if format.lower() == 'webp':
-                    content_media = base64.b64decode(post.content_media)
-                    img = Image.open(BytesIO(content_media))
+                    image_binary = post.image.image.read()
+                    img = Image.open(BytesIO(image_binary))
                     webp_bytes_arr = BytesIO()
                     img.save(webp_bytes_arr, 'webp')
                     webp_img = webp_bytes_arr.getvalue()
