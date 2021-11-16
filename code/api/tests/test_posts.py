@@ -12,6 +12,17 @@ from .test_authors import create_author
 from cmput404.constants import HOST, API_PREFIX
 from datetime import datetime
 
+def create_post(title, author):
+    return LocalPost.objects.create(
+            author_id=author.id,
+            title=title,
+            description="testDesc",
+            content_type=LocalPost.ContentType.PLAIN,
+            content="testContexxt",
+            visibility=LocalPost.Visibility.PUBLIC,
+            unlisted=False,
+        )
+
 
 def get_post_json(post):
     previousCategories = Category.objects.filter(post=post)
@@ -39,7 +50,8 @@ class PostsViewTest(TestCase):
 
     def test_get_posts_basic(self):
         self.maxDiff = None
-        post = mixer.blend(LocalPost, content_type='PL')
+        author = mixer.blend(LocalAuthor)
+        post = create_post("first", author)
         expected = {
             "type":"posts",
             "page": None,
@@ -56,8 +68,8 @@ class PostsViewTest(TestCase):
         page = 1
         size = 2
         author = mixer.blend(LocalAuthor)
-        post1 = mixer.blend(LocalPost, content_type='PL', author=author)
-        post2 = mixer.blend(LocalPost, content_type='PL', author=author)
+        post1 = create_post("first", author)
+        post2 = create_post("second", author)
 
         expected = {
                 "type": "posts",
@@ -75,9 +87,9 @@ class PostsViewTest(TestCase):
         page = 2
         size = 2
         author = mixer.blend(LocalAuthor)
-        post1 = mixer.blend(LocalPost, content_type='PL', author=author)
-        post2 = mixer.blend(LocalPost, content_type='PL', author=author)
-        post3 = mixer.blend(LocalPost, content_type='PL', author=author)
+        post1 = create_post("first", author)
+        post2 = create_post("second", author)
+        post3 = create_post("third", author)
 
         expected = {
                 "type": "posts",
