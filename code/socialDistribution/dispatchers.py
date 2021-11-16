@@ -4,19 +4,6 @@ import json
 
 from .models import LocalPost, Author, LocalAuthor
 
-def send(post, follower):
-    author_inbox = follower.url + "/inbox"
-    headers = {
-        "Content-Type": "application/json",
-    }
-    data = post.as_json()
-
-    requests.post(
-        url=author_inbox,
-        headers=headers,
-        data=json.dumps(data)
-    )
-
 
 def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None):
     """ Sends a post to the inbox of all followers who have permission to view the post.
@@ -29,25 +16,35 @@ def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None):
     if post.visibility == LocalPost.Visibility.PUBLIC:
         # send posts to all followers
         for follower in post.author.followers.all():
-            send(post, follower)
+            inbox = follower.url + "/inbox"
+            send_post(post, inbox)
 
     elif post.visibility == LocalPost.Visibility.FRIENDS:
-        for friend in post.author.friends():
-            send(post, friend)
+        # send posts to friends
+        for friend in post.author.get_friends():
+            inbox = friend.url + "/inbox"
+            send_post(post, inbox)
 
     elif post.visibility == LocalPost.Visibility.PRIVATE:
+        # send posts to private recipients
         for follower in recipients:
-            author_inbox = follower.url + "/inbox"
-            headers = {
-                "Content-Type": "application/json",
-            }
-            data = post.as_json()
+            inbox = follower.url + "/inbox"
+            send_post(post, inbox)
 
-            requests.post(
-                url=author_inbox,
-                headers=headers,
-                data=json.dumps(data)
-            )
+
+def send_post(post: LocalPost, url: str):
+    """ Sends a post to the given URL via a POST request. """
+    
+    headers = {
+        "Content-Type": "application/json",
+    }
+    data = post.as_json()
+
+    requests.post(
+        url=url,
+        headers=headers,
+        data=json.dumps(data)
+    )
 
 
 def dispatch_follow_request(actor: LocalAuthor, object: Author):

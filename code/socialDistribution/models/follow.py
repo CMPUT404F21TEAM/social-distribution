@@ -1,7 +1,5 @@
 from django.db import models
 
-from urllib.parse import quote_plus, urljoin
-
 from socialDistribution import requests as api_requests
 
 
@@ -18,9 +16,14 @@ class Follow(models.Model):
         ]
 
     def is_friend(self):
-        encoded_object_url = quote_plus(self.object.url)
-        actor_url = self.object.url
-        endpoint = urljoin(actor_url, f"follow/{encoded_object_url}")
+        # make api request
+        actor_url = self.object.url.strip('/')
+        object_url = self.object.url.strip('/')
+        endpoint = actor_url.strip('/') + '/followers/' + object_url
         response_body = api_requests.get(endpoint)
 
-        return True if response_body.get("status") else False
+        # check if GET request came back with author object
+        if response_body and response_body.get("id") == object_url:
+            return True 
+        else:
+            return False

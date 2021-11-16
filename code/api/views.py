@@ -114,7 +114,7 @@ class FollowersView(View):
         """ GET - Get a list of authors who are the followers of {author_id} """
 
         author = get_object_or_404(LocalAuthor, pk=author_id)
-        followers = [follower.as_json() for follower in author.followers.all()]
+        followers = [follow.actor.as_json() for follow in author.follows.all()]
 
         response = {
             "type": "followers",
@@ -129,9 +129,14 @@ class FollowersSingleView(View):
     def get(self, request, author_id, foreign_author_id):
         """ GET - Check if {foreign_author_id} is a follower of {author_id} """
 
-        foreign_author_url = unquote_plus(author_id)
+        author = get_object_or_404(LocalAuthor, pk=author_id)
 
-        return JsonResponse({"follower": "Working on it..."})
+        try:
+            follower = Author.objects.get(url=foreign_author_id)
+            follow = author.follows.get(actor=follower)
+            return JsonResponse(follow.actor.as_json())
+        except (Author.DoesNotExist, Follow.DoesNotExist):
+            return HttpResponseNotFound()
 
 
 @method_decorator(csrf_exempt, name='dispatch')

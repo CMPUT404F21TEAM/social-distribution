@@ -15,7 +15,10 @@ def get(url, params=None):
     }
 
     response = requests.get(url, headers=headers, params=params)
-    return response.json()
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
 
 
 def post(url, params=None, body={}):
