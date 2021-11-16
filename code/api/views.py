@@ -346,7 +346,8 @@ class InboxView(View):
 
                 # won't execute if post was created
                 for category in categories_to_remove:
-                    received_post.categories.get(category=category).delete()
+                    category_obj = Category.objects.get(category=category)
+                    received_post.categories.remove(category_obj)
 
                 # add post to inbox of author
                 receiving_author.inbox_posts.add(received_post)

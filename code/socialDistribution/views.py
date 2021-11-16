@@ -440,7 +440,8 @@ def editPost(request, id):
                             categories_to_remove.remove(category_obj.category)     # don't remove this category
 
                     for category in categories_to_remove:
-                        post.categories.get(category=category).delete()
+                        category_obj = Category.objects.get(category=category)
+                        post.categories.remove(category_obj)
 
                 post.save()
 
