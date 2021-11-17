@@ -205,15 +205,15 @@ class PostView(View):
                 format = mime_type.split('/')[-1]
                 format = format.split(';')[0]
 
-                # Save post image as webp
-                # The markdown parser uses webp
-                # to display embedded images
+                # Save post image as webp into a byte stream (BytesIO)
+                # The markdown parser uses webp to display embedded images
                 if format.lower() == 'webp':
                     image_binary = post.image.image.read()
                     img = Image.open(BytesIO(image_binary))
                     webp_bytes_arr = BytesIO()
                     img.save(webp_bytes_arr, 'webp')
                     webp_img = webp_bytes_arr.getvalue()
+                    
                     response = HttpResponse()
                     response.write(webp_img)
                     response['Content-Type'] = 'image/webp'
