@@ -205,7 +205,7 @@ def friend_request(request, author_id, action):
 
     if request.method == 'POST':
         # get models
-        requestee = get_object_or_404(LocalAuthor, pk=author_id)
+        requestee = get_object_or_404(Author, pk=author_id)
         curr_user = LocalAuthor.objects.get(user=request.user)
 
         # process action
@@ -244,7 +244,8 @@ def un_befriend(request, author_id):
         - author_id (string): the ID of the Author to follow
     """
 
-    # FIX THIS
+    # THIS DOES NOT RIGHT NOW
+    # STILL BASED ON OLD LOCALAUTHOR METHOD
 
     if request.method == 'POST':
         author = get_object_or_404(LocalAuthor, pk=author_id)

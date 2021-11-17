@@ -1,5 +1,9 @@
+""" File that contains wrapper methods for all API HTTP requests. Use this file for makeing GET, POST, PUT, 
+    DELETE, etc requests to any social distribution API server. Functions in this file just act as a wrapper for 
+    adding appropriate headers and parsing the response as JSON.
+"""
+
 import requests
-import json
 
 
 def get(url, params=None):
@@ -18,7 +22,7 @@ def get(url, params=None):
     }
 
     response = requests.get(url, headers=headers, params=params)
-    
+
     if response.status_code == 200:
         return response.json()
     else:
