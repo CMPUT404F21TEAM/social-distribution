@@ -2,13 +2,18 @@ from typing import List
 from typing_extensions import ParamSpecArgs
 import requests
 import json
+import base64
+
 
 from .models import LocalPost, LocalAuthor
 
 def send(post, follower):
     author_inbox = follower.url + "/inbox"
+    authToken = base64.b64encode(b"remotegroup:topsecret!").decode("ascii")
+
     headers = {
         "Content-Type": "application/json",
+        'Authorization' : 'Basic %s' %  authToken
     }
     data = post.as_json()
 

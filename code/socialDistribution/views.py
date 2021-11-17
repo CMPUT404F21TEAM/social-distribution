@@ -473,7 +473,13 @@ def likePost(request, id):
             "object": f"http://{host}/author/{post.author.id}/posts/{id}"
         }
     # redirect request to remote/local api
-    make_request('POST', f'http://{host}/api/author/{post.author.id}/inbox/', json.dumps(like))
+    make_request(
+        'POST', 
+        f'http://{host}/api/author/{post.author.id}/inbox/', json.dumps(like), 
+        {
+            "Content-Type": "application/json"
+        }
+    )
     prev_page = request.META['HTTP_REFERER']
 
     if prev_page is None:
@@ -529,7 +535,14 @@ def likeComment(request, id):
         }
 
     # redirect request to remote/local api
-    make_request('POST', f'http://{host}/api/author/{comment.author.id}/inbox/', json.dumps(like))
+    make_request(
+        'POST', 
+        f'http://{host}/api/author/{comment.author.id}/inbox/', 
+        json.dumps(like),
+        {
+            "Content-Type": "application/json"
+        }
+    )
 
     if prev_page is None:
         return redirect('socialDistribution:home')
