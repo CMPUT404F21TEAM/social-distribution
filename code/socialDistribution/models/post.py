@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import Q, manager
 from django.contrib.auth.models import User
 from django.utils import timezone
+from jsonfield import JSONField
 import datetime as dt
 import timeago
 
@@ -69,6 +70,8 @@ class Post(models.Model):
     public_id = models.URLField()
 
     description = models.CharField(max_length=DESCRIPTION_MAXLEN)
+
+    categories = models.ManyToManyField('Category', blank=True)
 
     content_type = models.CharField(
         choices=ContentType.choices,
@@ -230,7 +233,7 @@ class LocalPost(Post):
         return f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}"
 
     def as_json(self):
-        previousCategories = Category.objects.filter(post=self)
+        previousCategories = self.categories.all()
         previousCategoriesNames = [cat.category for cat in previousCategories]
         return {
             "type": "post",
@@ -312,7 +315,7 @@ class InboxPost(Post):
 
     author = models.URLField(max_length=Post.URL_MAXLEN)
 
-    _author_json = models.JSONField()
+    _author_json = JSONField()
 
     @property
     def author_as_json(self):
