@@ -3,6 +3,7 @@ import requests
 import json
 
 from .models import LocalPost, Author, LocalAuthor
+import socialDistribution.requests as api_requests
 
 
 def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None):
@@ -15,36 +16,28 @@ def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None):
 
     if post.visibility == LocalPost.Visibility.PUBLIC:
         # send posts to all followers
-        for follower in post.author.followers.all():
-            inbox = follower.url + "/inbox"
+        for follower in post.author.get_followers():
+            inbox = follower.get_inbox()
             send_post(post, inbox)
 
     elif post.visibility == LocalPost.Visibility.FRIENDS:
         # send posts to friends
         for friend in post.author.get_friends():
-            inbox = friend.url + "/inbox"
+            inbox = friend.get_inbox()
             send_post(post, inbox)
 
     elif post.visibility == LocalPost.Visibility.PRIVATE:
         # send posts to private recipients
         for follower in recipients:
-            inbox = follower.url + "/inbox"
+            inbox = follower.get_inbox()
             send_post(post, inbox)
 
 
 def send_post(post: LocalPost, url: str):
     """ Sends a post to the given URL via a POST request. """
-    
-    headers = {
-        "Content-Type": "application/json",
-    }
-    data = post.as_json()
 
-    requests.post(
-        url=url,
-        headers=headers,
-        data=json.dumps(data)
-    )
+    data = post.as_json()
+    api_requests.post(url=url, body=data)
 
 
 def dispatch_follow_request(actor: LocalAuthor, object: Author):
@@ -58,10 +51,8 @@ def dispatch_follow_request(actor: LocalAuthor, object: Author):
     actor_json = actor.as_json()
     object_json = object.as_json()
 
-    object_inbox = object.url + "/inbox"
-    headers = {
-        "Content-Type": "application/json",
-    }
+    object_inbox = object.get_inbox()
+
     data = {
         "type": "follow",
         "summary": f"{actor_json['displayName']} wants to follow {object_json['displayName']}",
@@ -69,8 +60,4 @@ def dispatch_follow_request(actor: LocalAuthor, object: Author):
         "object": object_json
     }
 
-    requests.post(
-        url=object_inbox,
-        headers=headers,
-        data=json.dumps(data)
-    )
+    api_requests.post(url=object_inbox, body=data)

@@ -20,6 +20,11 @@ class Author(models.Model):
 
     url = models.URLField()
 
+    def get_inbox(self):
+        """ Gets the URL of the Authors inbox. """
+
+        return self.url.strip("/") + "/inbox"
+
     def as_json(self):
         # This method is an example, not yet implemented
         # Makes a GET request to URL to get the Author data
@@ -92,8 +97,17 @@ class LocalAuthor(Author):
 
         if accept == True:
             self.follows.get_or_create(actor=author)
-            
+
+    def get_followers(self):
+        """ Gets the Authors who are followers of self. """
+
+        follows = self.follows.all()
+        followers = [f.actor for f in follows]
+        return followers
+
     def get_friends(self):
+        """ Gets the Authors who are friends of self. """
+
         follows = self.follows.all()
         friends = [f.actor for f in follows if self.has_friend(f.actor)]
         return friends

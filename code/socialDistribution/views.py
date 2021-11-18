@@ -164,11 +164,15 @@ def home(request):
     posts = posts.union(my_posts)
 
     # get all friend posts from authors friends
-    # this should probably just get from recieved_posts (TODO)
-    # for other in author.followers.all():
-    #     if author.is_friends_with(other):
-    #         friend_posts = other.posts.listed().get_friend()
-    #         posts = posts.union(friend_posts)
+    for other in author.get_followers():
+        if author.has_friend(other):
+            # can only get local posts if local author
+            try:
+                local_other = LocalAuthor.objects.get(id=other.id)
+                friend_posts = local_other.posts.listed().get_friend()
+                posts = posts.union(friend_posts)
+            except LocalAuthor.DoesNotExist:
+                pass
 
     github_events = None
     if author.githubUrl:

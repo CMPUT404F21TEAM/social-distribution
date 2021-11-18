@@ -23,6 +23,7 @@ def get(url, params=None):
 
     response = requests.get(url, headers=headers, params=params)
 
+    # TODO Fine tune response handling, do error handling / status code checks
     if response.status_code == 200:
         return response.json()
     else:
@@ -47,8 +48,9 @@ def post(url, params=None, body={}):
     }
 
     response = requests.post(url, headers=headers, params=params, json=body)
-
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return None
+    
+    # TODO Fine tune response handling, do error handling / status code checks
+    # if response.status_code == 200:
+    #     return response.json()
+    # else:
+    #     return None
