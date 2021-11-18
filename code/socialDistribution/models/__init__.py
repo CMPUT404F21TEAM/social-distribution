@@ -8,3 +8,4 @@ from .post import LocalPost, InboxPost
 from .category import Category
 from .comment import Comment
 from .like import PostLike, CommentLike
+from .follow import Follow
