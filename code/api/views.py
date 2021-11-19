@@ -58,6 +58,11 @@ class AuthorsView(View):
         if page and size:
             page = int(page)
             size = int(size)
+            try:
+                if page < 1 or size < 1:
+                    return HttpResponseBadRequest("Malformed query: page and size must be > 0")
+            except Exception as e:
+                return HttpResponseBadRequest(e)
             authors = getPaginated(authors, page, size)
 
         authors = [author.as_json() for author in authors]
@@ -196,6 +201,11 @@ class PostsView(View):
             if page and size:
                 page = int(page)
                 size = int(size)
+                try:
+                    if page < 1 or size < 1:
+                        return HttpResponseBadRequest("Malformed query: page and size must be > 0")
+                except Exception as e:
+                    return HttpResponseBadRequest(e)
                 posts = getPaginated(posts, page, size)
                 
             posts = [post.as_json() for post in posts]
@@ -267,6 +277,12 @@ class PostCommentsView(View):
             if page and size:
                 page = int(page)
                 size = int(size)
+                try:
+                    if page < 1 or size < 1:
+                        return HttpResponseBadRequest("Malformed query: page and size must be > 0")
+                except Exception as e:
+                    return HttpResponseBadRequest(e)
+
                 comments = getPaginated(comments, page, size)
             
             comments = [comment.as_json() for comment in comments]
