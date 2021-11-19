@@ -9,3 +9,4 @@ from .category import Category
 from .comment import Comment
 from .like import PostLike, CommentLike
 from .image import Image
+from .follow import Follow

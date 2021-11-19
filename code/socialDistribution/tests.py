@@ -1,6 +1,9 @@
+# python manage.py test api.tests.tests
+
 from django.test import TestCase, TransactionTestCase
 from django.contrib.auth.models import User
 from django.db.utils import IntegrityError
+from django.test.testcases import LiveServerTestCase, LiveServerThread
 from mixer.backend.django import mixer
 
 from datetime import datetime, timedelta, timezone
@@ -8,7 +11,7 @@ from .models import *
 from .builders import *
 
 
-class AuthorTests(TestCase):
+class AuthorTests(LiveServerTestCase):
     """ Unit tests for Author. """
 
     def test_create_author(self):
@@ -20,6 +23,17 @@ class AuthorTests(TestCase):
 
         fetched = Author.objects.get(id=id)
         self.assertEqual(url, fetched.url)
+
+    # a bit more work needed to get this to correctly find the debug server
+    # def test_get_author_json(self):
+    #     # makes an API call, server must be running
+    #     local = mixer.blend(LocalAuthor)
+    #     remote = Author.objects.get(id=local.id)
+
+    #     print(self.live_server_url)
+    #     print(socket.gethostname())
+    #     author_json = remote.as_json()
+    #     print(author_json)
 
 
 class LocalAuthorTests(TestCase):
@@ -42,13 +56,12 @@ class LocalAuthorTests(TestCase):
         self.assertEqual(f"http://127.0.0.1:8000/api/author/{author.id}", vanilla_author.url)
 
 
-
 class PostTest(TestCase):
     def test_post_is_public(self):
         visibility = LocalPost.Visibility.FRIENDS
         post = PostBuilder().visibility(visibility).build()
         self.assertFalse(post.is_public())
-        
+
     def test_post_is_friends(self):
         visibility = LocalPost.Visibility.FRIENDS
         post = PostBuilder().visibility(visibility).build()
@@ -65,21 +78,22 @@ class PostTest(TestCase):
         self.assertTrue(post.total_likes() == likes)
 
     # TODO test all PostQuerySet methods
-    
+
+
 class SharePostTest(TestCase):
     def test_share_public_post(self):
         visibility = LocalPost.Visibility.PUBLIC
         post = PostBuilder().visibility(visibility).build()
-        self.client.post('socialDistribution:sharePost', id=post.id)
+        self.client.post('socialDistribution:share-post', id=post.id)
         self.assertEquals(LocalPost.objects.latest("published").visibility, LocalPost.Visibility.PUBLIC)
-        
+
     def test_share_private_post(self):
         '''
             sharing a private post shouldn't be possible
         '''
         visibility = LocalPost.Visibility.PRIVATE
         post = PostBuilder().visibility(visibility).build()
-        self.client.post('socialDistribution:sharePost', id=post.id)
+        self.client.post('socialDistribution:share-post', id=post.id)
         self.assertEquals(LocalPost.objects.latest("published"), post)
 
 

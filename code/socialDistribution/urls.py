@@ -22,11 +22,10 @@ urlpatterns = [
   path('profile/', views.profile, name='profile'),
   path('user/', views.user, name='user'),
 
-  path('like-post/<int:id>', views.likePost, name='likePost'),
-  path('comment-post/<int:id>', views.commentPost, name='commentPost'),
-  path('like-comment/<int:id>', views.likeComment, name='likeComment'),
-  path('delete-post/<int:id>', views.deletePost, name='deletePost'),
-  path('edit-post/<int:id>', views.editPost, name='editPost'),
-  path('share-post/<int:id>', views.sharePost, name='sharePost'),
-  
+  path('like-post/<int:id>/<str:post_host>', views.like_post, name='like-post'),
+  path('comment-post/<int:id>', views.comment_post, name='comment-post'),
+  path('like-comment/<int:id>', views.like_comment, name='like-comment'),
+  path('delete-post/<int:id>', views.delete_post, name='delete-post'),
+  path('edit-post/<int:id>', views.edit_post, name='edit-post'),
+  path('share-post/<int:id>', views.share_post, name='share-post')
 ]

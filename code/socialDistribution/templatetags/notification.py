@@ -10,8 +10,9 @@ def friend_card(sender):
         Handle people who send you friend requests
     """
     action_link = 'socialDistribution:friend-request'
+    displayName = sender.as_json()["displayName"]
     return {
-        'header': f'{sender.displayName} wants to follow you',
+        'header': f'{displayName} wants to follow you',
         'sender': sender,
         'action_link': action_link
     }
