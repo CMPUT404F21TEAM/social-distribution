@@ -1,17 +1,15 @@
-from logging import error
-from django.db.models.fields.related import OneToOneField
 from django.http.response import *
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
-from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
+from django.http import HttpResponse, HttpResponseNotFound
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.utils import timezone
 
 from .forms import CreateUserForm, PostForm
-from .decorators import allowedUsers, unauthenticated_user
+from .decorators import unauthenticated_user
 from .github_activity.github_activity import pull_github_events, compare_funct
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 from django.urls import reverse
@@ -19,9 +17,10 @@ import base64
 import json
 
 from .forms import CreateUserForm, PostForm
-from .decorators import allowedUsers, unauthenticated_user
+from .decorators import unauthenticated_user
 from .models import *
 from .utility import make_request
+from cmput404.constants import API_PREFIX
 
 from .dispatchers import dispatch_post, dispatch_follow_request
 
@@ -174,6 +173,17 @@ def home(request):
             except LocalAuthor.DoesNotExist:
                 pass
 
+<<<<<<< HEAD
+=======
+    github_events = None
+    if author.githubUrl:
+        github_user = author.githubUrl.strip('/').split('/')[-1]
+        github_events = pull_github_events(github_user)
+
+        if github_events is None:
+            messages.info(request, "An error occurred while fetching github events")
+
+>>>>>>> master
     context = {
         'author': author,
         'modal_type': 'post',
@@ -249,7 +259,7 @@ def un_befriend(request, author_id):
         if author.has_follower(curr_user):
             author.followers.remove(curr_user)
         else:
-            messages.info(f'Couldn\'t un-befriend {author.displayName}')
+            messages.info(request, f'Couldn\'t un-befriend {author.displayName}')
 
     return redirect('socialDistribution:author', author_id)
 
@@ -366,7 +376,7 @@ def posts(request, author_id):
     return redirect('socialDistribution:home')
 
 # https://books.agiliq.com/projects/django-orm-cookbook/en/latest/copy.html - How to copy or clone an existing model object
-def sharePost(request, id):
+def share_post(request, id):
     """
         Allows user to share a post.
         The user that is sharing is the owner of the shared post
@@ -387,13 +397,12 @@ def sharePost(request, id):
     post.source = oldSource
     post.save()
     
-    
     dispatch_post(post, [])
     
     return redirect('socialDistribution:home')
 
 
-def editPost(request, id):
+def edit_post(request, id):
     """
         Edits an existing post
     """
@@ -456,14 +465,23 @@ def editPost(request, id):
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
 
 
-def likePost(request, id):
+def like_post(request, id, post_host):
     """
         Like a specific post
     """
-    post = get_object_or_404(LocalPost, id=id)
+    if post_host == 'remote':
+        post = get_object_or_404(InboxPost, id=id)
+        request_url = post.author.strip('/') + '/inbox'
+        obj = post.public_id.strip('/')
+    else:
+        post = get_object_or_404(LocalPost, id=id)
+        host = request.get_host()
+        request_url = f'http://{host}/{API_PREFIX}/author/{post.author.id}/inbox'
+        obj = f'http://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
+
     author = LocalAuthor.objects.get(user=request.user)
-    post = get_object_or_404(LocalPost, id=id)
-    host = request.get_host()
+    prev_page = request.META['HTTP_REFERER']
+    
     if request.method == 'POST':
         # create like object
         like = {
@@ -471,11 +489,14 @@ def likePost(request, id):
             "summary": f"{author.username} Likes your post",
             "type": "like",
             "author": author.as_json(),
-            "object": f"http://{host}/author/{post.author.id}/posts/{id}"
+            "object": obj
         }
-    # redirect request to remote/local api
-    make_request('POST', f'http://{host}/api/author/{post.author.id}/inbox/', json.dumps(like))
-    prev_page = request.META['HTTP_REFERER']
+
+        # redirect request to remote/local api
+        response = make_request('POST', request_url, json.dumps(like))
+
+        if response.status_code >= 400:
+            messages.error(request, 'An error occurred while liking post')
 
     if prev_page is None:
         return redirect('socialDistribution:home')
@@ -485,7 +506,7 @@ def likePost(request, id):
         return redirect(prev_page)
 
 
-def commentPost(request, id):
+def comment_post(request, id):
     '''
         Render Post and comments
     '''
@@ -508,7 +529,7 @@ def commentPost(request, id):
     return render(request, 'posts/comments.html', context)
 
 
-def likeComment(request, id):
+def like_comment(request, id):
     '''
         Likes a comment
     '''
@@ -538,7 +559,7 @@ def likeComment(request, id):
         return redirect(prev_page)
 
 
-def deletePost(request, id):
+def delete_post(request, id):
     """
         Deletes a post
     """
@@ -573,6 +594,7 @@ def inbox(request):
     """
     author = LocalAuthor.objects.get(user=request.user)
     follow_requests = author.follow_requests.all()
+<<<<<<< HEAD
     posts = author.inbox_posts.all()
 
     github_events = []
@@ -593,6 +615,9 @@ def inbox(request):
     if error_occurred:
         messages.info(request, "An error occurred while fetching github events")
 
+=======
+    posts = author.inbox_posts.all().order_by('-published')
+>>>>>>> master
     context = {
         'author': author,
         'github_events': github_events,
