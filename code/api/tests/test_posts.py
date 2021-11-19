@@ -14,7 +14,7 @@ from datetime import datetime
 
 
 def get_post_json(post):
-    previousCategories = Category.objects.filter(post=post)
+    previousCategories = post.categories.all()
     previousCategoriesNames = [cat.category for cat in previousCategories]
     return {
         "type":"posts",

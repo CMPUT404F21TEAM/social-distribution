@@ -8,5 +8,5 @@ def post_form(user_id, post_id):
     '''
         Returns Post Form
     '''
-    form = PostForm(user=user_id, postId=post_id)
+    form = PostForm(user_id=user_id, post_id=post_id)
     return {'form': form}

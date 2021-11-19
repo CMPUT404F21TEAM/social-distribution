@@ -71,6 +71,8 @@ class Post(models.Model):
 
     description = models.CharField(max_length=DESCRIPTION_MAXLEN)
 
+    categories = models.ManyToManyField('Category', blank=True)
+
     content_type = models.CharField(
         choices=ContentType.choices,
         max_length=4,
@@ -231,7 +233,7 @@ class LocalPost(Post):
         return f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}"
 
     def as_json(self):
-        previousCategories = Category.objects.filter(post=self)
+        previousCategories = self.categories.all()
         previousCategoriesNames = [cat.category for cat in previousCategories]
         return {
             "type": "post",
