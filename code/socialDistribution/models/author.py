@@ -1,17 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
-
-from datetime import *
 
 from cmput404.constants import HOST, API_PREFIX
+import socialDistribution.requests as api_requests
+from .follow import Follow
 
 
 class Author(models.Model):
-    """ Author model which represents all authors. 
+    """ Author model which represents all authors.
 
-        All authors that interact with the application will be stored as an author. That is, 
-        the Author model can store both remote and local authors. Methods on an Author instance primarily 
+        All authors that interact with the application will be stored as an author. That is,
+        the Author model can store both remote and local authors. Methods on an Author instance primarily
         rely on API calls to get the data corresponding to the author from a remote server.
 
         In the future, caching can be used with this model to reduce the number of API calls being sent out.
@@ -21,12 +20,18 @@ class Author(models.Model):
 
     url = models.URLField()
 
+    def get_inbox(self):
+        """ Gets the URL of the Authors inbox. """
+
+        return self.url.strip("/") + "/inbox"
+
     def as_json(self):
         # This method is an example, not yet implemented
         # Makes a GET request to URL to get the Author data
         # The LocalAuthor method will override this, making it more efficient by fetching data
         # straight from the database instead of an HTTP request
-        pass
+        json_data = api_requests.get(self.url)
+        return json_data
 
 
 class LocalAuthor(Author):
@@ -43,7 +48,7 @@ class LocalAuthor(Author):
         profileImageUrl     Author's profile image url (text)
 
         posts               Posts created by the author
-        followers           Followers of the author (Collection of LocalAuthor objects)
+        follows             Followers of the author (Collection of Follow objects)
 
         friend_requests     Authors who have requested to follow author (Collection of LocalAuthor objects)
         inbox_posts         Posts sent to the inbox of the author
@@ -55,9 +60,7 @@ class LocalAuthor(Author):
     githubUrl = models.CharField(max_length=50, null=True)
     profileImageUrl = models.CharField(max_length=50, null=True)
 
-    followers = models.ManyToManyField('LocalAuthor', blank=True)
-
-    follow_requests = models.ManyToManyField('LocalAuthor', related_name="follow_requests_reverse")
+    follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')
 
     def get_url_id(self):
@@ -66,21 +69,54 @@ class LocalAuthor(Author):
         """
         return f'http://{HOST}/{API_PREFIX}/{self.id}'
 
-    def has_follower(self, author):
-        """
-        Returns True if an author follows a user, False otherwise 
-        """
-        return self.followers.filter(pk=author.id).exists()
+    def has_follower(self, author: Author):
+        """ Returns true if author is a follower of self, false otherwise. """
 
-    def is_friends_with(self, author):
+        try:
+            self.follows.get(actor=author)
+            return True
+        except Follow.DoesNotExist:
+            return False
+
+    def has_friend(self, author: Author):
+        """ Returns true if author is a friend of self, false otherwise. """
+
+        try:
+            follow = self.follows.get(actor=author)
+            return follow.is_friend()
+        except Follow.DoesNotExist:
+            return False
+
+    def has_follow_request(self, author: Author):
+        """ Returns true if self has a follow request from author, false otherwise. """
+
+        return self.follow_requests.filter(id=author.id).exists()
+
+    def handle_follow_request(self, author: Author, accept: bool):
+        """ Removes author from follow requests (if exists) and resolves the request. If accept is 
+            true, they are added as a follower of self. 
         """
-        Returns True if an author is friends wtih a user, False otherwise 
-        """
-        return self.followers.filter(pk=author.id).exists() and \
-            author.followers.filter(pk=self.id).exists()
-            
-    def friends(self):
-        return [follower for follower in self.followers.filter(pk=self.id) if self.is_friends_with(follower)]
+
+        query_result = self.follow_requests.filter(id=author.id)
+        if query_result.exists():
+            self.follow_requests.remove(query_result.first())
+
+        if accept == True:
+            self.follows.get_or_create(actor=author)
+
+    def get_followers(self):
+        """ Gets the Authors who are followers of self. """
+
+        follows = self.follows.all()
+        followers = [f.actor for f in follows]
+        return followers
+
+    def get_friends(self):
+        """ Gets the Authors who are friends of self. """
+
+        follows = self.follows.all()
+        friends = [f.actor for f in follows if self.has_friend(f.actor)]
+        return friends
 
     def __str__(self):
         return self.displayName
@@ -99,7 +135,6 @@ class LocalAuthor(Author):
             # HATEOS url for Github API
             "github": self.githubUrl,
             # Image from a public domain
-            # #TODO
             "profileImage": self.profileImageUrl
         }
 

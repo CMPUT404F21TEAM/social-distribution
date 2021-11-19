@@ -21,7 +21,7 @@ from .models import *
 from .utility import make_request
 from cmput404.constants import API_PREFIX
 
-from .dispatchers import dispatch_post
+from .dispatchers import dispatch_post, dispatch_follow_request
 
 REQUIRE_SIGNUP_APPROVAL = False
 ''' 
@@ -162,11 +162,15 @@ def home(request):
     posts = posts.union(my_posts)
 
     # get all friend posts from authors friends
-    # this should probably just get from recieved_posts (TODO)
-    for other in author.followers.all():
-        if author.is_friends_with(other):
-            friend_posts = other.posts.listed().get_friend()
-            posts = posts.union(friend_posts)
+    for other in author.get_followers():
+        if author.has_friend(other):
+            # can only get local posts if local author
+            try:
+                local_other = LocalAuthor.objects.get(id=other.id)
+                friend_posts = local_other.posts.listed().get_friend()
+                posts = posts.union(friend_posts)
+            except LocalAuthor.DoesNotExist:
+                pass
 
     github_events = None
     if author.githubUrl:
@@ -191,54 +195,60 @@ def home(request):
 def friend_request(request, author_id, action):
     """ Handles POST request to resolve a pending follow request.
 
-        author_id: The ID of the author who created the friend request
-        action: The resolution of the friend request. Must be "accept" or "decline"
+        Parameters:
+        - request (HttpRequest): the HTTP request
+        - author_id (string): The ID of the author who created the friend request
+        - action (string): The resolution of the friend request. Must be "accept" or "decline"
 
     """
 
-    author = get_object_or_404(LocalAuthor, pk=author_id)
-    curr_user = LocalAuthor.objects.get(user=request.user)
+    if action not in ['accept', 'decline']:
+        return HttpResponseNotFound()
 
     if request.method == 'POST':
-        if action not in ['accept', 'decline']:
-            return HttpResponseNotFound()
+        # get models
+        requestee = get_object_or_404(Author, pk=author_id)
+        curr_user = LocalAuthor.objects.get(user=request.user)
 
-        elif curr_user.id != author.id and curr_user.has_req_from(author) \
-                and not curr_user.has_follower(author):
-            curr_user.follow_requests.remove(author)
-            if action == 'accept':
-                curr_user.followers.add(author)
-        else:
-            messages.info(request, f'Couldn\'t {action} request')
+        # process action
+        if curr_user.has_follow_request(requestee):
+            is_accept = action == 'accept'
+            curr_user.handle_follow_request(requestee, is_accept)
+
 
     return redirect('socialDistribution:inbox')
 
 
 def befriend(request, author_id):
+    """ Handles POST request to create a follow request.
+
+        Parameters:
+        - request (HttpRequest): the HTTP request
+        - author_id (string): the ID of the Author to follow
     """
-        User can send an author a follow request
-    """
+
     if request.method == 'POST':
-        author = get_object_or_404(LocalAuthor, pk=author_id)
-        curr_user = LocalAuthor.objects.get(user=request.user)
+        object = get_object_or_404(Author, id=author_id)
+        actor = LocalAuthor.objects.get(user=request.user)
 
-        if author.has_follower(curr_user):
-            messages.info(request, f'Already following {author.displayName}')
-
-        if author.has_req_from(curr_user):
-            messages.info(request, f'Follow request to {author.displayName} is pending')
-
-        if author.id != curr_user.id:
+        if object.id != actor.id:
             # send follow request
-            author.follow_requests.add(curr_user)
+            dispatch_follow_request(actor, object)
 
     return redirect('socialDistribution:author', author_id)
 
 
 def un_befriend(request, author_id):
+    """ Handles a POST request to unfollow an author.
+
+        Parameters:
+        - request (HttpRequest): the HTTP request
+        - author_id (string): the ID of the Author to follow
     """
-        User can unfriend an author
-    """
+
+    # THIS DOES NOT RIGHT NOW
+    # STILL BASED ON OLD LOCALAUTHOR METHOD
+
     if request.method == 'POST':
         author = get_object_or_404(LocalAuthor, pk=author_id)
         curr_user = LocalAuthor.objects.get(user=request.user)
@@ -280,7 +290,7 @@ def author(request, author_id):
 
     # TODO: Should become an API request since won't know if author is local/remote
 
-    if author.is_friends_with(curr_user):
+    if curr_user.has_friend(author):
         posts = author.posts.listed().get_friend()
     else:
         posts = author.posts.listed().get_public()

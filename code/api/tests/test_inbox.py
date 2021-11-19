@@ -71,7 +71,10 @@ class InboxViewTests(TestCase):
 
         query_set = author2.follow_requests.all()
         self.assertEqual(query_set.count(), 1)
-        self.assertEqual(query_set[0], author1)
+
+        follow_request_author = author2.follow_requests.first()
+        follow_request_author = LocalAuthor.objects.get(id=follow_request_author.id)
+        self.assertEqual(follow_request_author, author1)
 
     def test_post_local_post(self):
         # NOTE: This test is very basic. More work needed on this endpoint.

@@ -1,5 +1,5 @@
 from django.db import models
-from datetime import *
+from datetime import datetime, timezone
 import timeago
 
 from cmput404.constants import HOST, API_PREFIX
