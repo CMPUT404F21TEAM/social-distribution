@@ -63,6 +63,12 @@ class LocalAuthor(Author):
     follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')
 
+    def get_url_id(self):
+        """
+        Returns the id of the author in url form
+        """
+        return f'http://{HOST}/{API_PREFIX}/{self.id}'
+
     def has_follower(self, author: Author):
         """ Returns true if author is a follower of self, false otherwise. """
 
