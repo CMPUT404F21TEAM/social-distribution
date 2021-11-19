@@ -2,16 +2,15 @@ from django.contrib.auth import get_user_model
 from django.http.response import *
 from django.http import HttpResponse, JsonResponse
 from django.http.response import HttpResponseBadRequest
-from django.shortcuts import redirect, render, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404
 from django.core import serializers
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from urllib.parse import urlparse
+
+from datetime import datetime, timezone
 import json
 import logging
-from datetime import datetime, timezone
-import pprint
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
@@ -114,7 +113,7 @@ class FollowersView(View):
         """ GET - Get a list of authors who are the followers of {author_id} """
 
         author = get_object_or_404(LocalAuthor, pk=author_id)
-        followers = [follower.as_json() for follower in author.followers.all()]
+        followers = [follow.actor.as_json() for follow in author.follows.all()]
 
         response = {
             "type": "followers",
@@ -122,6 +121,24 @@ class FollowersView(View):
         }
 
         return JsonResponse(response)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class FollowersSingleView(View):
+
+    def get(self, request, author_id, foreign_author_id):
+        """ GET - Check if {foreign_author_id} is a follower of {author_id} """
+
+        author = get_object_or_404(LocalAuthor, pk=author_id)
+
+        try:
+            # try to find and return follower author object
+            follower = Author.objects.get(url=foreign_author_id)
+            follow = author.follows.get(actor=follower)
+            return JsonResponse(follow.actor.as_json())
+        except (Author.DoesNotExist, Follow.DoesNotExist):
+            # return 404 if author not found
+            return HttpResponseNotFound()
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -166,7 +183,7 @@ class PostsView(View):
             size = request.GET.get("size")
             author = get_object_or_404(LocalAuthor, id=author_id)
             posts = LocalPost.objects.listed().get_public().filter(author=author)
-        
+
             jsonPosts = []
             for post in posts:
                 jsonPosts.append(post.as_json())
@@ -356,50 +373,45 @@ class InboxView(View):
                 return HttpResponse(status=200)
 
             elif data["type"] == "follow":
-                # actor requests to follow Object
-
+                # actor requests to follow object
                 actor, obj = data["actor"], data["object"]
-                if not url_parser.is_local_url(actor["id"]) or not url_parser.is_local_url(obj["id"]):
-                    raise ValueError()
+                if not url_parser.is_local_url(obj["id"]):
+                    raise ValueError("Author not hosted on this server")
 
-                follower_id = url_parser.parse_author(actor["id"])  # only works for local followers right now
-                followee_id = url_parser.parse_author(obj["id"])
+                object_id = url_parser.parse_author(obj["id"])
+                actor_url_id = actor["id"]
 
                 # check if this is the correct endpoint
-                if followee_id != author_id:
+                if object_id != author_id:
                     raise ValueError("Object ID does not match inbox ID")
 
-                followee_author = get_object_or_404(LocalAuthor, id=followee_id)
+                object_author = get_object_or_404(LocalAuthor, id=object_id)
+                actor_author, created = Author.objects.get_or_create(
+                    url=actor_url_id
+                )
 
-                # add follow request to inbox
-                try:
-                    follower_author = LocalAuthor.objects.get(id=follower_id)
-                    followee_author.follow_requests.add(follower_author)
-                except LocalAuthor.DoesNotExist:
-                    raise ValueError()
+                # add follow request
+                object_author.follow_requests.add(actor_author)
 
                 return HttpResponse(status=200)
 
             elif data["type"] == "like":
-                # extract data from request body
-                object_url = urlparse(data['object']).path.strip('/')
-                split_url = object_url.split('/')
-                object = split_url[-2]
-                id = split_url[-1]
-                liking_author_url = data["author"]["id"]
-
                 # retrieve author
+                liking_author_url = data["author"]["id"]
                 liking_author, created = Author.objects.get_or_create(
                     url=liking_author_url
                 )
 
-                # check if liking post or comment
-                if object == 'comments':
-                    context_object = get_object_or_404(Comment, id=id)
-                elif (object == 'posts'):
+                # retrieve object
+                object_type = url_parser.get_object_type(data['object'])
+                if object_type == "posts":
+                    _, id = url_parser.parse_post(data['object'])
                     context_object = get_object_or_404(LocalPost, id=id)
+                elif object_type == "comments":
+                    _, __, id = url_parser.parse_comment(data['object'])
+                    context_object = get_object_or_404(Comment, id=id)
                 else:
-                    raise ValueError("Unknown object for like")
+                    raise ValueError("Unknown object type")
 
                 if context_object.likes.filter(author=liking_author).exists():
                     # if like already exists, remove it
@@ -415,7 +427,9 @@ class InboxView(View):
                 raise ValueError("Unknown object received by inbox")
 
         except KeyError as e:
-            return HttpResponseBadRequest("JSON body could not be parsed")
+            return JsonResponse({
+                "error": "JSON body could not be parsed"
+            })
 
         except ValueError as e:
             return JsonResponse({

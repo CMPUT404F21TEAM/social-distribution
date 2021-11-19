@@ -5,16 +5,32 @@ from cmput404.constants import HOST, API_PREFIX
 class UrlParser():
 
     def is_local_url(self, url):
-        """ Check that a URL is hosted on the local server. If not, return a ValueError.
+        """ Returns true if url is hosted on the local server. Otherwise, returns false.
         """
 
         o = urlsplit(url)
         host = o.netloc
         return host == HOST
 
+    def get_object_type(self, url):
+        """ Gets the object type of the url.
+        """
+
+        o = urlsplit(url)
+        path_components = o.path.strip('/').split('/')
+        if path_components[0] == API_PREFIX:
+            path_components.pop(0)
+
+        if len(path_components) % 2 != 0:
+            # if odd number of path components, cannot be ID of an object
+            # e.g. /author/123131/post does not identify a unique post, but /author/123131/post/34423 does
+            raise ValueError("URL is not a valid object ID")
+
+        return path_components[-2]
+
     def parse_author(self, url):
-        """ Parse the URL of a local author and return the author_id. Throws value error if the URL
-            is not hosted on the local server.
+        """ Parse the URL of a local author and return the author_id. Assumes URL is 
+            hosted on the local server.
         """
 
         o = urlsplit(url)
@@ -28,8 +44,8 @@ class UrlParser():
         return path_components[1]
 
     def parse_post(self, url):
-        """ Parse the URL of a local post and return the author_id, post_id. Throws value error if the URL
-            is not hosted on the local server.
+        """ Parse the URL of a local post and return the author_id, post_id. Assumes URL is 
+            hosted on the local server.
         """
 
         o = urlsplit(url)
@@ -41,6 +57,21 @@ class UrlParser():
             raise ValueError("URL does not match format of post ID")
 
         return path_components[1], path_components[3]
+
+    def parse_comment(self, url):
+        """ Parse the URL of a local comment and return the author_id, post_id, comment_id. Assumes URL is 
+            hosted on the local server.
+        """
+
+        o = urlsplit(url)
+        path_components = o.path.strip('/').split('/')
+        if path_components[0] == API_PREFIX:
+            path_components.pop(0)
+
+        if len(path_components) != 6 or path_components[0] != "author" or path_components[2] != "posts" or path_components[4] != "comments":
+            raise ValueError("URL does not match format of post ID")
+
+        return path_components[1], path_components[3], path_components[5]
 
 
 url_parser = UrlParser()
