@@ -4,7 +4,7 @@
 """
 
 import requests
-from api.nodes import ALLOWED_NODES
+from api.node_manager import node_manager
 import base64
 from api.parsers import url_parser
 
@@ -53,8 +53,9 @@ def post(url, params=None, body={}, sendBasicAuthHeader=False):
     
     # Add Basic Auth Header specific to a node for Inbox api 
     host = url_parser.get_host(url)
-    if (sendBasicAuthHeader and ALLOWED_NODES[host]):
-        authToken = base64.b64encode(ALLOWED_NODES[host]).decode("ascii")
+    auth_credentials = node_manager.get_host_credentials(host)
+    if (sendBasicAuthHeader and auth_credentials):
+        authToken = base64.b64encode(auth_credentials).decode("ascii")
         headers['Authorization'] = 'Basic %s' %  authToken
     
     try:

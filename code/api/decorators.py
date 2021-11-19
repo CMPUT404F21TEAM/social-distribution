@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from socialDistribution.models import LocalAuthor
-from .nodes import ALLOWED_NODES
+from .node_manager import node_manager
 import base64
 
 
@@ -37,7 +37,7 @@ def validate_node(view_func):
 
         expectedCredentials = base64.b64encode(b'remotegroup:topsecret!').decode()
 
-        if request.META['HTTP_HOST'] not in list(ALLOWED_NODES) or token_type != 'Basic' or receivedCredentials != expectedCredentials:
+        if not node_manager.get_host_credentials(request.META['HTTP_HOST']) or token_type != 'Basic' or receivedCredentials != expectedCredentials:
             return HttpResponse(status=401)
 
         return view_func(request, *args, **kwargs)

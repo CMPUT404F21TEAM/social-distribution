@@ -7,8 +7,8 @@ from mixer.backend.django import mixer
 from datetime import datetime, timezone
 
 from socialDistribution.models import LocalAuthor, LocalPost, Comment
+from api.models import Node
 from cmput404.constants import *
-from api.nodes import ALLOWED_NODES
 import base64
 
 # Documentation and code samples taken from the following references:
@@ -26,8 +26,11 @@ def create_author(id, username, displayName, githubUrl):
 
 class InboxViewTests(TestCase):
     basicAuthHeaders = {
-        'HTTP_AUTHORIZATION': 'Basic %s' % base64.b64encode(ALLOWED_NODES[HOST]).decode("ascii"),
+        'HTTP_AUTHORIZATION': 'Basic %s' % base64.b64encode(b'remotegroup:topsecret!').decode("ascii"),
     }
+
+    def setUp(self):
+        Node.objects.create(host=HOST, basic_auth_credentials='remotegroup:topsecret!')
 
     def test_post_local_follow(self):
         author1 = create_author(
