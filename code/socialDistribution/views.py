@@ -256,7 +256,7 @@ def un_befriend(request, author_id):
         curr_user = LocalAuthor.objects.get(user=request.user)
 
         if author.has_follower(curr_user):
-            author.followers.remove(curr_user)
+            author.follows.filter(actor=curr_user).delete()
         else:
             messages.info(f'Couldn\'t un-befriend {author.displayName}')
 

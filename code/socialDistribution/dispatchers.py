@@ -39,7 +39,7 @@ def send_post(post: LocalPost, url: str):
     """ Sends a post to the given URL via a POST request. """
 
     data = post.as_json()
-    api_requests.post(url=url, body=data)
+    api_requests.post(url=url, body=data, sendBasicAuthHeader=True)
 
 
 def dispatch_follow_request(actor: LocalAuthor, object: Author):
@@ -62,4 +62,4 @@ def dispatch_follow_request(actor: LocalAuthor, object: Author):
         "object": object_json
     }
 
-    api_requests.post(url=object_inbox, body=data)
+    api_requests.post(url=object_inbox, body=data, sendBasicAuthHeader=True)

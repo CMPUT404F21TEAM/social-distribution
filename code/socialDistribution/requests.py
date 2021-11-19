@@ -1,9 +1,12 @@
-""" File that contains wrapper methods for all API HTTP requests. Use this file for makeing GET, POST, PUT, 
+""" File that contains wrapper methods for all API HTTP requests. Use this file for making GET, POST, PUT, 
     DELETE, etc requests to any social distribution API server. Functions in this file just act as a wrapper for 
     adding appropriate headers and parsing the response as JSON.
 """
 
 import requests
+from api.nodes import ALLOWED_NODES
+import base64
+from api.parsers import url_parser
 
 
 def get(url, params=None):
@@ -30,7 +33,7 @@ def get(url, params=None):
         return None
 
 
-def post(url, params=None, body={}):
+def post(url, params=None, body={}, sendBasicAuthHeader=False):
     """ Makes a POST request at the given URL and returns the JSON body of the HTTP response. 
 
         Parameters:
@@ -47,10 +50,23 @@ def post(url, params=None, body={}):
         "Accept": "application/json"
     }
 
-    response = requests.post(url, headers=headers, params=params, json=body)
+    
+    # Add Basic Auth Header specific to a node for Inbox api 
+    host = url_parser.get_host(url)
+    if (sendBasicAuthHeader and ALLOWED_NODES[host]):
+        authToken = base64.b64encode(ALLOWED_NODES[host]).decode("ascii")
+        headers['Authorization'] = 'Basic %s' %  authToken
+    
+    try:
+        response = requests.post(url, headers=headers, params=params, json=body)
+
+        if response.status_code == 200:
+            return response.json() 
+        
+        return None
+    
+    except Exception as error:
+        print(error) 
     
     # TODO Fine tune response handling, do error handling / status code checks
-    # if response.status_code == 200:
-    #     return response.json()
-    # else:
-    #     return None
+    # caller should wrap in try and catch show error message to user

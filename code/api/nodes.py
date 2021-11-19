@@ -1,7 +1,9 @@
 '''
-    Manage Nodes Configurations of remtote groups here.
-    Server Admins can add nodes adding domains to the 
-    list called ALLOWED_NODES.
+    Manage Node Configurations of remtote groups here.
+    
+    Server Admins can add nodes by adding domain and remote basic
+    auth username/passowrd as an attribute of to the 
+    dictionary called ALLOWED_NODES.
 
     Requests sent to the inbox will
     be processed only if it is from the allowed nodes.
@@ -23,14 +25,14 @@
         )
 
     Test using:
-        http -a remotegroup:topsecret! GET http://127.0.0.1:8000/api/authors/
+        http -a remotegroup:topsecret! GET http://example.com/
 '''
 
-ALLOWED_NODES = [
+ALLOWED_NODES = {
     # OUR GROUP 1 - T04
-    '127.0.0.1:8000',
+    '127.0.0.1:8000': b'remotegroup:topsecret!',
     # REMOTE GROUP 1 - T11
-    '127.0.0.1:8011',
+    '127.0.0.1:8011': b'remotegroup11:anothaSecret!',
     # REMOTE GROUP 2 - T??
-    'example.com'
-]
+    'example.com': b'remotegroup2:meow!'
+}

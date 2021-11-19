@@ -37,7 +37,8 @@ def validate_node(view_func):
 
         expectedCredentials = base64.b64encode(b'remotegroup:topsecret!').decode()
 
-        if request.META['HTTP_HOST'] not in ALLOWED_NODES or token_type != 'Basic' or receivedCredentials != expectedCredentials:
+        print('\n\n\n\n', request.META['HTTP_HOST'], '\n\n\n\n')
+        if request.META['HTTP_HOST'] not in list(ALLOWED_NODES) or token_type != 'Basic' or receivedCredentials != expectedCredentials:
             return HttpResponse(status=401)
 
         return view_func(request, *args, **kwargs)
