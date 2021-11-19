@@ -444,7 +444,7 @@ def like_post(request, id, post_host):
         obj = post.public_id.strip('/')
     else:
         post = get_object_or_404(LocalPost, id=id)
-        host = request.gethost()
+        host = request.get_host()
         request_url = f'http://{host}/{API_PREFIX}/author/{post.author.id}/inbox'
         obj = f'http://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
 
