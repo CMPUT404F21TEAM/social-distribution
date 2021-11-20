@@ -4,6 +4,11 @@
 """
 
 import requests
+import json
+import logging 
+
+# Django Software Foundation, "Logging", https://docs.djangoproject.com/en/3.2/topics/logging/
+logger = logging.getLogger(__name__)
 
 
 def get(url, params=None):
@@ -23,11 +28,18 @@ def get(url, params=None):
 
     response = requests.get(url, headers=headers, params=params)
 
-    # TODO Fine tune response handling, do error handling / status code checks
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return None
+    # parse JSON response if OK
+    try:
+        if response.status_code == 200:
+            data = response.json()
+        else:
+            data = None
+    except json.decoder.JSONDecodeError:
+        data = None
+
+    logger.info(f"API GET request to {url} and received {response.status_code}")
+
+    return response.status_code, data
 
 
 def post(url, params=None, body={}):
@@ -49,8 +61,15 @@ def post(url, params=None, body={}):
 
     response = requests.post(url, headers=headers, params=params, json=body)
     
-    # TODO Fine tune response handling, do error handling / status code checks
-    # if response.status_code == 200:
-    #     return response.json()
-    # else:
-    #     return None
+    # parse JSON response if OK
+    try:
+        if response.status_code == 200:
+            data = response.json()
+        else:
+            data = None
+    except json.decoder.JSONDecodeError:
+        data = None
+    
+    logger.info(f"API POST request to {url} and received {response.status_code}")
+
+    return response.status_code, data
