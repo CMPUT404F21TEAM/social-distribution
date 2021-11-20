@@ -30,7 +30,7 @@ class Author(models.Model):
         # Makes a GET request to URL to get the Author data
         # The LocalAuthor method will override this, making it more efficient by fetching data
         # straight from the database instead of an HTTP request
-        json_data = api_requests.get(self.url)
+        status_code, json_data = api_requests.get(self.url)
         return json_data
 
 
@@ -67,7 +67,7 @@ class LocalAuthor(Author):
         """
         Returns the id of the author in url form
         """
-        return f'http://{HOST}/{API_PREFIX}/{self.id}'
+        return self.url
 
     def has_follower(self, author: Author):
         """ Returns true if author is a follower of self, false otherwise. """

@@ -1,8 +1,11 @@
+import socialDistribution.requests as api_requests
 from .models import LocalPost
 from json import JSONDecodeError
 import requests
 
 # make an http requests and handle status codes
+
+
 def make_request(method='GET', url='http://127.0.0.1:8000/', body=''):
     """
     Makes an HTTP request
@@ -12,7 +15,7 @@ def make_request(method='GET', url='http://127.0.0.1:8000/', body=''):
         r = requests.get(url)
     elif method == 'POST':
         r = requests.post(url, data=body)
-    
+
     return r
 
 
@@ -31,22 +34,21 @@ def get_post_like_info(post, author):
 
     else:
         request_url = post.public_id.strip('/') + '/likes'
-        response = make_request('GET', request_url)
+        status_code, response_body = api_requests.get(request_url)
 
-        if response.status_code == 200:
-            try:
-                likes_list = response.json()
-            except JSONDecodeError:
-                return None, 0
+        if status_code == 200:
+            likes_list = response_body["items"]
 
-            else:
-                is_liked = False
-                for like in likes_list:
-                    if like['author']['id'] == author.get_url_id():
-                        is_liked = True
-                        break
+            is_liked = False
+            for like in likes_list:
+                print(like['id'])
+                print(author.get_url_id())
+                print(author.get_url_id() == like["id"])
+                if like['id'] == author.get_url_id():
+                    is_liked = True
+                    break
 
-                return is_liked, len(likes_list)
+            return is_liked, len(likes_list)
 
         else:
             return None, 0
@@ -64,7 +66,7 @@ def get_like_text(is_liked, likes_count):
     """
     like_text = ''
     if is_liked:
-        likes_count  -= 1
+        likes_count -= 1
         if likes_count >= 2:
             like_text = f'Liked by you and {likes_count} others'
         elif likes_count == 1:

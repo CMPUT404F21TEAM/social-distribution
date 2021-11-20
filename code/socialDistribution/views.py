@@ -5,23 +5,23 @@ from django.http import HttpResponse, HttpResponseNotFound
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.utils import timezone
-
-from .forms import CreateUserForm, PostForm
-from .github_activity.github_activity import pull_github_events
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 from django.urls import reverse
+from .forms import CreateUserForm, PostForm
+
 import base64
 import json
 
+import socialDistribution.requests as api_requests
+from cmput404.constants import API_PREFIX
 from .forms import CreateUserForm, PostForm
 from .decorators import unauthenticated_user
 from .models import *
 from .utility import make_request
-from cmput404.constants import API_PREFIX
-
 from .dispatchers import dispatch_post, dispatch_follow_request
+from .github_activity.github_activity import pull_github_events
 
 REQUIRE_SIGNUP_APPROVAL = False
 ''' 
@@ -490,9 +490,9 @@ def like_post(request, id, post_host):
         }
 
         # redirect request to remote/local api
-        response = make_request('POST', request_url, json.dumps(like))
+        status_code, response_data = api_requests.post(url=request_url, body=like)
 
-        if response.status_code >= 400:
+        if status_code >= 400:
             messages.error(request, 'An error occurred while liking post')
 
     if prev_page is None:
@@ -548,7 +548,8 @@ def like_comment(request, id):
         }
 
     # redirect request to remote/local api
-    make_request('POST', f'http://{host}/api/author/{comment.author.id}/inbox/', json.dumps(like))
+    endpoint = f'http://{host}/api/author/{comment.author.id}/inbox/'
+    api_requests.post(url=endpoint, body=like)
 
     if prev_page is None:
         return redirect('socialDistribution:home')
