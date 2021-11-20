@@ -548,8 +548,8 @@ def like_comment(request, id):
         }
 
     # redirect request to remote/local api
-    endpoint = f'http://{host}/api/author/{comment.author.id}/inbox/'
-    api_requests.post(url=endpoint, data=like)
+    request_url = f'http://{host}/api/author/{comment.author.id}/inbox/'
+    api_requests.post(url=request_url, data=like)
 
     if prev_page is None:
         return redirect('socialDistribution:home')

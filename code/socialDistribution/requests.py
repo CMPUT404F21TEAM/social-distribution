@@ -19,7 +19,7 @@ def get(url, params=None):
          - params (dict): The query string parameters (default is None)
 
         Returns:
-         - (int): Status code to the HTTP response
+         - (int): Status code of the HTTP response
          - (dict): JSON response data if status code of request is 200 OK and JSON parsing was successful. Otherwise, return None
     """
 
@@ -52,7 +52,7 @@ def post(url, params=None, data={}):
          - data (dict): Request parameters to send in JSON body (default is {})
 
         Returns:
-         - (int): Status code to the HTTP response
+         - (int): Status code of the HTTP response
          - (dict): JSON response data if status code of request is 200 OK and JSON parsing was successful. Otherwise, return None
     """
 
