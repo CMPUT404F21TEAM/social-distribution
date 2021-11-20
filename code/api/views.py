@@ -3,7 +3,6 @@ from django.http.response import *
 from django.http import HttpResponse, JsonResponse
 from django.http.response import HttpResponseBadRequest
 from django.shortcuts import redirect, get_object_or_404
-from django.core import serializers
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator

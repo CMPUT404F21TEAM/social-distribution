@@ -41,9 +41,6 @@ def get_post_like_info(post, author):
 
             is_liked = False
             for like in likes_list:
-                print(like['id'])
-                print(author.get_url_id())
-                print(author.get_url_id() == like["id"])
                 if like['id'] == author.get_url_id():
                     is_liked = True
                     break

@@ -1,8 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-from cmput404.constants import HOST, API_PREFIX
 import socialDistribution.requests as api_requests
+from cmput404.constants import HOST, API_PREFIX
 from .follow import Follow
 
 

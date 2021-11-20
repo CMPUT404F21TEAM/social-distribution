@@ -1,6 +1,6 @@
 from django.db import models
 
-from socialDistribution import requests as api_requests
+import socialDistribution.requests as api_requests
 
 
 class Follow(models.Model):
@@ -16,6 +16,10 @@ class Follow(models.Model):
         ]
 
     def is_friend(self):
+        """ Checks if follow is bidirectional. That is, checks if object also follows actor. This method makes an
+            HTTP request. 
+        """
+
         # make api request
         actor_url = self.actor.url.strip('/')
         object_url = self.object.url.strip('/')

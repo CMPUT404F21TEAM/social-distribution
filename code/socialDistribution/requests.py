@@ -19,7 +19,8 @@ def get(url, params=None):
          - params (dict): The query string parameters (default is None)
 
         Returns:
-         - (dict): JSON response data if status code of request is 200 OK. Otherwise, return None
+         - (int): Status code to the HTTP response
+         - (dict): JSON response data if status code of request is 200 OK and JSON parsing was successful. Otherwise, return None
     """
 
     headers = {
@@ -31,27 +32,28 @@ def get(url, params=None):
     # parse JSON response if OK
     try:
         if response.status_code == 200:
-            data = response.json()
+            response_data = response.json()
         else:
-            data = None
+            response_data = None
     except json.decoder.JSONDecodeError:
-        data = None
+        response_data = None
 
     logger.info(f"API GET request to {url} and received {response.status_code}")
 
-    return response.status_code, data
+    return response.status_code, response_data
 
 
-def post(url, params=None, body={}):
+def post(url, params=None, data={}):
     """ Makes a POST request at the given URL and returns the JSON body of the HTTP response. 
 
         Parameters:
          - url (string): The URL endpoint for the HTTP request
          - params (dict): The query string parameters (default is None)
-         - body (dict): Request parameters to send in JSON body (default is {})
+         - data (dict): Request parameters to send in JSON body (default is {})
 
         Returns:
-         - (dict): JSON response data if status code of request is 200 OK. Otherwise, return None
+         - (int): Status code to the HTTP response
+         - (dict): JSON response data if status code of request is 200 OK and JSON parsing was successful. Otherwise, return None
     """
 
     headers = {
@@ -59,17 +61,17 @@ def post(url, params=None, body={}):
         "Accept": "application/json"
     }
 
-    response = requests.post(url, headers=headers, params=params, json=body)
+    response = requests.post(url, headers=headers, params=params, json=data)
     
     # parse JSON response if OK
     try:
         if response.status_code == 200:
-            data = response.json()
+            response_data = response.json()
         else:
             data = None
     except json.decoder.JSONDecodeError:
-        data = None
+        response_data = None
     
     logger.info(f"API POST request to {url} and received {response.status_code}")
 
-    return response.status_code, data
+    return response.status_code, response_data
