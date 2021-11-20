@@ -13,7 +13,7 @@ def comment_card(*args, **kwargs):
     author_type = kwargs['author_type']
     comment = kwargs['comment']
     post = kwargs['post']
-    is_friend = author.is_friends_with(comment.author)
+    is_friend = author.has_friend(comment.author)
 
     # manage comment like data
     is_liked = comment.likes.filter(author=author).exists()
