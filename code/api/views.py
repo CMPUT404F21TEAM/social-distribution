@@ -229,9 +229,20 @@ class PostsView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostView(View):
-
     def get(self, request, author_id, post_id):
-        return HttpResponse("This is the authors/aid/posts/pid/ endpoint")
+        """ GET - Get json for post {post_id} """
+        try:
+            post = LocalPost.objects.get(id=post_id)
+            response = post.as_json()
+            
+        except LocalPost.DoesNotExist:
+            return HttpResponseNotFound()
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseServerError()
+
+        return JsonResponse(response)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
