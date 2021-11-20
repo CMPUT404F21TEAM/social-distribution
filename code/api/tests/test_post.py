@@ -58,3 +58,12 @@ class PostViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(response.content, expected)
         
+    def test_delete_post(self):
+        self.maxDiff = None
+        author = mixer.blend(LocalAuthor)
+        post = create_post("first", author)
+
+        response = self.client.delete(reverse('api:post', args=(post.author.id,post.id)))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(LocalPost.objects.filter(id=post.id).exists())
+        

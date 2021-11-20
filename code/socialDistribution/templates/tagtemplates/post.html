@@ -90,20 +90,18 @@
         </div>
     </div>
 
-    {% if post_host == 'local' %}
-        {% load modal %}
-        {% load utility %}
-        <form method="POST" action="{% url 'socialDistribution:edit-post' post.id %}">
-            {% csrf_token %}
-            {% modal id="edit_post_modal"|addstr:post.id type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
-        </form>
-        <form method="POST" action="{% url 'socialDistribution:delete-post' post.id %}">
-            {% csrf_token %}
-            {% modal id="delete_post_modal"|addstr:post.id type="delete" label="Delete Post" title="Delete Post" btn="Delete" postid=post.id%}
-        </form>
-        <form method="POST" action="{% url 'socialDistribution:share-post' post.id %}">
-            {% csrf_token %}
-            {% modal id="share_post_modal"|addstr:post.id type="share" label="Share Post" title="Share Post" btn="Share" postid=post.id%}
-        </form>
-    {% endif %}
+    {% load modal %}
+    {% load utility %}
+    <form method="POST" action="{% url 'socialDistribution:edit-post' post.id %}">
+        {% csrf_token %}
+        {% modal id="edit_post_modal"|addstr:post.id type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
+    </form>
+    <form method="POST" action="{% url 'socialDistribution:delete-post' post.id post_host %}">
+        {% csrf_token %}
+        {% modal id="delete_post_modal"|addstr:post.id type="delete" label="Delete Post" title="Delete Post" btn="Delete" postid=post.id%}
+    </form>
+    <form method="POST" action="{% url 'socialDistribution:share-post' post.id %}">
+        {% csrf_token %}
+        {% modal id="share_post_modal"|addstr:post.id type="share" label="Share Post" title="Share Post" btn="Share" postid=post.id%}
+    </form>
 </div>

@@ -556,16 +556,32 @@ def like_comment(request, id):
         return redirect(prev_page)
 
 
-def delete_post(request, id):
+def delete_post(request, id, post_host):
     """
         Deletes a post
     """
-    # move functionality to API
-    post = get_object_or_404(LocalPost, id=id)
-    author = LocalAuthor.objects.get(user=request.user)
-    if post.author == author:
-        post.delete()
-    return redirect('socialDistribution:home')
+    if post_host == 'remote':
+        post = get_object_or_404(InboxPost, id=id)
+        request_url = post.author.strip('/') + f'/posts/{id}'
+    else:
+        post = get_object_or_404(LocalPost, id=id)
+        host = request.get_host()
+        request_url = f'http://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
+        
+    prev_page = request.META['HTTP_REFERER']
+    
+    if request.method == 'POST':
+        # redirect request to remote/local api
+        response = make_request('DELETE', request_url)
+        if response.status_code >= 400:
+            messages.error(request, 'An error occurred while deleting post')
+
+    if prev_page is None:
+        return redirect('socialDistribution:home')
+    else:
+        # prev_page -> url to inbox at the moment
+        # will have to edit this if other endpoints require args
+        return redirect(prev_page)
 
 
 def profile(request):

@@ -243,6 +243,22 @@ class PostView(View):
             return HttpResponseServerError()
 
         return JsonResponse(response)
+    
+    #TODO: authenticate
+    def delete(self, request, author_id, post_id):
+        """ GET - Delete post {post_id} """
+        try:
+            post = LocalPost.objects.get(id=post_id)
+            post.delete()
+            
+        except LocalPost.DoesNotExist:
+            return HttpResponseNotFound()
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseServerError()
+
+        return HttpResponse(200)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostLikesView(View):
