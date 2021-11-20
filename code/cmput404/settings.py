@@ -144,16 +144,18 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuring Logging - https://docs.djangoproject.com/en/3.2/topics/logging/#configuring-logging
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'WARNING', # Set to INFO or DEBUG to see more log messages
-    },
-}
+# Uncomment this code for detailed debugging options
+# Disabled for now since it prints messages during tests
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'console': {
+#             'class': 'logging.StreamHandler',
+#         },
+#     },
+#     'root': {
+#         'handlers': ['console'],
+#         'level': 'WARNING', # Set to INFO or DEBUG to see more log messages
+#     },
+# }
