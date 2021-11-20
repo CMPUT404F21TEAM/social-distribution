@@ -89,7 +89,6 @@ class PostForm(forms.Form):
                 self.fields['post_type'].initial = self.TEXT
                 self.fields['content_text'].initial = post.decoded_content
             
-            # self.fields['image'].initial = post.image
             self.fields['unlisted'].initial = post.unlisted
             self.fields['visibility'].initial = post.visibility
         
