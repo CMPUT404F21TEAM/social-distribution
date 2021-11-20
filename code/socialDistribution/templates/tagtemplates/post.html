@@ -92,7 +92,7 @@
 
     {% load modal %}
     {% load utility %}
-    <form method="POST" action="{% url 'socialDistribution:edit-post' post.id %}">
+    <form method="POST" action="{% url 'socialDistribution:edit-post' post.id post_host %}">
         {% csrf_token %}
         {% modal id="edit_post_modal"|addstr:post.id type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
     </form>

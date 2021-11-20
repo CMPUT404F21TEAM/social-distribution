@@ -399,17 +399,26 @@ def share_post(request, id):
     return redirect('socialDistribution:home')
 
 
-def edit_post(request, id):
+def edit_post(request, id, post_host):
     """
         Edits an existing post
     """
-    author = LocalAuthor.objects.get(user=request.user)
-    post = LocalPost.objects.get(id=id)
+    if post_host == 'remote':
+        post = get_object_or_404(InboxPost, id=id)
+        request_url = post.author.strip('/') + f'/posts/{id}'
+    else:
+        post = get_object_or_404(LocalPost, id=id)
+        host = request.get_host()
+        request_url = f'http://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
+        
     if not post.is_public():
         return HttpResponseBadRequest("Only public posts are editable")
-
+    
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES, user_id=author.id)
+        # get post data
+        edited_post = post.as_json()
+        
+        form = PostForm(request.POST, request.FILES, user_id=post.author.id)
         if form.is_valid():
             bin_content = form.cleaned_data.get('content_media')
             if bin_content is not None:
@@ -418,46 +427,33 @@ def edit_post(request, id):
                 content_media = post.content_media
 
             try:
-                post.title = form.cleaned_data.get('title')
-                post.description = form.cleaned_data.get('description')
-                post.content = form.cleaned_data.get('content_text')
-                post.visibility = form.cleaned_data.get('visibility')
-                post.unlisted = form.cleaned_data.get('unlisted')
-                post.content_media = content_media
+                edited_post['title'] = form.cleaned_data.get('title')
+                edited_post['description'] = form.cleaned_data.get('description')
+                edited_post['content'] = form.cleaned_data.get('content_text')
+                edited_post['visibility'] = form.cleaned_data.get('visibility')
+                edited_post['unlisted'] = form.cleaned_data.get('unlisted')
+                #edited_post['content_media'] = content_media
 
                 categories = form.cleaned_data.get('categories')
 
-                if categories is not None:
-                    categories = categories.split()
-                    categories_to_remove = [ cat.category for cat in post.categories.all()]
-
-                    """
-                    This implementation makes category names case-insensitive.
-                    This makes handling Category objects cleaner, albeit slightly more
-                    involved.
-                    """
-                    for category in categories:
-                        category_obj, created = Category.objects.get_or_create(
-                            category__iexact=category,
-                            defaults={'category': category}
-                        )
-                        post.categories.add(category_obj)
-                        
-                        while category_obj.category in categories_to_remove:
-                            categories_to_remove.remove(category_obj.category)     # don't remove this category
-
-                    for category in categories_to_remove:
-                        category_obj = Category.objects.get(category=category)
-                        post.categories.remove(category_obj)
-
-                post.save()
-
+                edited_post['categories'] = categories.split()
+                
             except ValidationError:
                 messages.info(request, 'Unable to edit post.')
+                
+        # redirect request to remote/local api
+        response = make_request('PUT', request_url, json.dumps(edited_post))
+        if response.status_code >= 400:
+            messages.error(request, 'An error occurred while editing post')
+            
+    prev_page = request.META['HTTP_REFERER']
 
-    # if using view name, app_name: must prefix the view name
-    # In this case, app_name is socialDistribution
-    return redirect('socialDistribution:home')
+    if prev_page is None:
+        return redirect('socialDistribution:home')
+    else:
+        # prev_page -> url to inbox at the moment
+        # will have to edit this if other endpoints require args
+        return redirect(prev_page)
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
 

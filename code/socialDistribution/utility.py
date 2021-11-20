@@ -14,6 +14,8 @@ def make_request(method='GET', url='http://127.0.0.1:8000/', body=''):
         r = requests.post(url, data=body)
     elif method == 'DELETE':
         r = requests.delete(url)
+    elif method == 'PUT':
+        r = requests.put(url, data=body)
     
     return r
 

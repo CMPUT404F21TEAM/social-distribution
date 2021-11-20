@@ -1,4 +1,7 @@
+import base64
+from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.http.response import *
 from django.http import HttpResponse, JsonResponse
 from django.http.response import HttpResponseBadRequest
@@ -13,10 +16,12 @@ import json
 import logging
 
 from cmput404.constants import HOST, API_PREFIX
+from socialDistribution.forms import PostForm
 from socialDistribution.models import *
 from .decorators import authenticate_request
 from .parsers import url_parser
 from .utility import getPaginated, makePost
+from socialDistribution.dispatchers import dispatch_post
 
 # References for entire file:
 # Django Software Foundation, "Introduction to class-based views", 2021-10-13
@@ -259,6 +264,49 @@ class PostView(View):
             return HttpResponseServerError()
 
         return HttpResponse(200)
+    
+    #TODO: authenticate
+    def put(self, request, author_id, post_id):
+        """ PUT - Update post {post_id} """
+        data = json.loads(request.body)
+        post = LocalPost.objects.get(id=post_id)
+
+        try:
+            post.title = data['title']
+            post.description = data['description']
+            post.content = data['content']
+            post.visibility = data['visibility']
+            post.unlisted = data['unlisted']
+
+            categories = data['categories']
+
+            if categories is not None:
+                categories_to_remove = [ cat.category for cat in post.categories.all()]
+
+                """
+                This implementation makes category names case-insensitive.
+                This makes handling Category objects cleaner, albeit slightly more
+                involved.
+                """
+                for category in categories:
+                    category_obj, created = Category.objects.get_or_create(
+                        category__iexact=category,
+                        defaults={'category': category}
+                    )
+                    post.categories.add(category_obj)
+                    
+                    while category_obj.category in categories_to_remove:
+                        categories_to_remove.remove(category_obj.category)     # don't remove this category
+
+                for category in categories_to_remove:
+                    category_obj = Category.objects.get(category=category)
+                    post.categories.remove(category_obj)
+
+            post.save()
+            return JsonResponse(status=201, data=post.as_json())
+            
+        except ValidationError:
+            messages.info(request, 'Unable to edit post.')
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostLikesView(View):

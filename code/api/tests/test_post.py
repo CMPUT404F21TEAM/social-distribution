@@ -58,6 +58,17 @@ class PostViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(response.content, expected)
         
+    def test_put_post(self):
+        self.maxDiff = None
+        author = mixer.blend(LocalAuthor)
+        post = create_post("first", author)
+        newJson = get_post_json(post)
+        newJson['title'] = 'newPost'
+
+        response = self.client.put(reverse('api:post', args=(post.author.id,post.id)), data=json.dumps(newJson))
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(newJson['title'], LocalPost.objects.filter(id=post.id).first().title)
+        
     def test_delete_post(self):
         self.maxDiff = None
         author = mixer.blend(LocalAuthor)
