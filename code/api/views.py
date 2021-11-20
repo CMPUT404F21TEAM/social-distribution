@@ -10,7 +10,7 @@ from django.utils.decorators import method_decorator
 
 from datetime import datetime, timezone
 import json
-import logging
+import logging, base64
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
@@ -237,7 +237,7 @@ class PostView(View):
         post = get_object_or_404(LocalPost, pk=int(post_id))
         accepted_types = request.headers['Accept']
 
-        if 'image' in accepted_types and post.image is not None and post.unlisted:
+        if 'image' in accepted_types and post.is_image_post() and post.unlisted:
             accepted_types = accepted_types.split(',')
             for mime_type in accepted_types:
                 format = mime_type.split('/')[-1]
@@ -246,7 +246,7 @@ class PostView(View):
                 # Save post image as webp into a byte stream (BytesIO)
                 # The markdown parser uses webp to display embedded images
                 if format.lower() == 'webp':
-                    image_binary = post.image.image.read()
+                    image_binary = base64.b64decode(post.decoded_content)
                     img = Image.open(BytesIO(image_binary))
                     webp_bytes_arr = BytesIO()
                     img.save(webp_bytes_arr, 'webp')

@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from jsonfield import JSONField
 import datetime as dt
-import timeago
+import timeago, base64
 
 from cmput404.constants import HOST, API_PREFIX
 from .comment import Comment
@@ -79,29 +79,11 @@ class Post(models.Model):
         default=ContentType.PLAIN
     )
 
-    # content = models.BinaryField(
-    #     max_length=CONTENT_MAXLEN,
-    #     null=True,
-    #     blank=True,
-    # )
-
-    image = models.ForeignKey('Image',
-        blank=True,
-        null=True,
-        on_delete=models.CASCADE
-    )
-
-    # temporarily a charfield
-    content = models.CharField(
+    content = models.BinaryField(
         max_length=CONTENT_MAXLEN,
         null=True,
         blank=True,
     )
-
-    # temporariy a charfield
-    # categories = models.CharField(
-    #     max_length=2000
-    # )
 
     published = models.DateTimeField(
         default=timezone.now
@@ -128,6 +110,25 @@ class Post(models.Model):
         """ Gets the comments of the post in JSON format. """
 
         raise NotImplementedError("Submodel does not implement this getter")
+
+    @property
+    def decoded_content(self):
+        """ Gets the decoded post content. Images are only
+            utf-8 decoded and while text content is both
+            base64 decoded and utf-8 decoded.
+        """
+        if self.is_image_post():
+            return self.content.decode('utf-8')
+        else:
+            return base64.b64decode(self.content).decode('utf-8')
+
+    def is_image_post(self):
+        """ Check if the post is an image-only post """
+        return self.content_type in [
+            self.ContentType.PNG,
+            self.ContentType.JPEG,
+            self.ContentType.BASE64
+        ]
 
     def total_likes():
         """ Gets the total number of likes on the post. """
@@ -191,13 +192,6 @@ class LocalPost(Post):
     # reference to LocalAuthor that created this post
     author = models.ForeignKey('LocalAuthor', on_delete=models.CASCADE, related_name="posts")
 
-    # temp field for content_media, need to eventually get rid of this
-    content_media = models.BinaryField(
-        max_length=Post.CONTENT_MAXLEN,
-        null=True,
-        blank=True,
-    )
-
     @property
     def author_as_json(self):
         """ Gets the author of the post in JSON format. """
@@ -217,7 +211,7 @@ class LocalPost(Post):
             "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}/comments",
             "comments": self.comments_json_as_list()
         }
-        
+
     def comments_json_as_list(self):
         """ Gets the comments of the post format. """
         comments_set = self.comments()
@@ -233,16 +227,6 @@ class LocalPost(Post):
 
         return self.likes.count()
 
-    def has_media(self):
-        '''
-        Check if post has an attached image
-        '''
-        return self.content_type in [
-            self.ContentType.PNG,
-            self.ContentType.JPEG,
-            self.ContentType.BASE64
-        ]
-        
     def get_id(self):
         return f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}"
 

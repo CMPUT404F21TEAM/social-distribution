@@ -328,34 +328,10 @@ def posts(request, author_id):
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES, user_id=user_id)
         if form.is_valid():
-            media = form.cleaned_data.get('content_media')
-            content = form.cleaned_data.get('content_text')
-            if media is not None:
-                uploaded_img = Image.objects.create(
-                    caption=form.cleaned_data.get('description'),
-                    image=media
-                )
-            else:
-                uploaded_img = None
-
-            # determine post's content type
-            if content is not None:
-                content_type = LocalPost.ContentType.PLAIN  # temp, will have to enforce md type in ui
-
-            elif uploaded_img is not None:
-                jpeg_mime = LocalPost.ContentType.get_JPEG_display().strip(';base64')
-                png_mime = LocalPost.ContentType.get_PNG_display().strip(';base64')
-
-                # check image type
-                if uploaded_img.content_type == jpeg_mime:
-                    content_type = LocalPost.ContentType.JPEG
-
-                elif uploaded_img.content_type == png_mime:
-                    content_type = LocalPost.ContentType.PNG
-
-            else:
-                content_type = LocalPost.ContentType.BASE64
+            content, content_type = form.get_content_and_type()
                 
+            # Will do some more refactoring to remove code duplication soon
+            
             try:
                 # create the post
                 new_post = LocalPost(
@@ -366,7 +342,6 @@ def posts(request, author_id):
                     content=content,
                     visibility=form.cleaned_data.get('visibility'),
                     unlisted=form.cleaned_data.get('unlisted'),
-                    image=uploaded_img,
                 )
                 new_post.save()
 
@@ -442,39 +417,9 @@ def edit_post(request, id):
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES, user_id=author.id)
         if form.is_valid():
-            media = form.cleaned_data.get('content_media')
-            content = form.cleaned_data.get('content_text')
+            content, content_type = form.get_content_and_type()
 
-            if media is not None:
-                if media:
-                    uploaded_img = Image.objects.create(
-                        caption=form.cleaned_data.get('description'),
-                        image=media
-                    )
-                else:
-                    Image.objects.get(pk=post.image.id).delete()
-                    post.image = None
-                    uploaded_img = None
-            else:
-                uploaded_img = None
-
-            # determine post's content type
-            if content is not None:
-                content_type = LocalPost.ContentType.PLAIN  # temp, will have to enforce md type in ui
-
-            elif uploaded_img:
-                jpeg_mime = LocalPost.ContentType.get_JPEG_display().strip(';base64')
-                png_mime = LocalPost.ContentType.get_PNG_display().strip(';base64')
-
-                # check image type
-                if uploaded_img.content_type == jpeg_mime:
-                    content_type = LocalPost.ContentType.JPEG
-
-                elif uploaded_img.content_type == png_mime:
-                    content_type = LocalPost.ContentType.PNG
-
-            else:
-                content_type = LocalPost.ContentType.BASE64
+            # Will do some more refactoring to remove code duplication soon
 
             try:
                 post.title = form.cleaned_data.get('title')
@@ -483,13 +428,6 @@ def edit_post(request, id):
                 post.unlisted = form.cleaned_data.get('unlisted')
                 post.content_type = content_type
                 post.content = content
-
-                if uploaded_img is not None:
-                    if post.image is not None:
-                        Image.objects.get(pk=post.image.id).delete()
-                    post.image = uploaded_img
-
-                # Will be fixed when merging with a PR waiting to be approved
 
                 categories = form.cleaned_data.get('categories')
 

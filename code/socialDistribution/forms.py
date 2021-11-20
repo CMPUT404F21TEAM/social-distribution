@@ -1,10 +1,10 @@
 from django import forms
-from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django import forms
-from .models import LocalPost, LocalAuthor, Category
+from .models import LocalPost, LocalAuthor, Image
+import base64
 
 class CreateUserForm(UserCreationForm):
     """
@@ -32,13 +32,26 @@ class PostForm(forms.Form):
     title = forms.CharField(max_length=LocalPost.TITLE_MAXLEN, required=True)
     categories = forms.CharField(required=False)
     description = forms.CharField(max_length=LocalPost.DESCRIPTION_MAXLEN, required=True)
+
+    TEXT = 'TEXT'
+    IMAGE = 'IMAGE'
+    forms_post_types = (
+        (TEXT, 'Text or Markdown'),
+        (IMAGE, 'Upload an Image')
+    )
+
+    post_type = forms.ChoiceField(
+        choices=forms_post_types,
+        required=True,
+    )
+
     content_text = forms.CharField(
         max_length=LocalPost.CONTENT_MAXLEN, 
         required=False,
         widget=forms.Textarea
     )
     
-    content_media = forms.FileField(required=False)
+    image = forms.FileField(required=False)
     unlisted = forms.BooleanField(required=False)
     visibility = forms.ChoiceField(
         choices=LocalPost.Visibility.choices, 
@@ -69,15 +82,50 @@ class PostForm(forms.Form):
             previousCategoriesNames = " ".join([cat.category for cat in previousCategories])
             self.fields['categories'].initial = previousCategoriesNames
             
-            if post.image is not None:
-                self.fields['content_media'].initial = post.image.image
-                
-            self.fields['content_text'].initial = post.content
+            if post.is_image_post():
+                self.fields['post_type'].initial = self.IMAGE
+
+            else:
+                self.fields['post_type'].initial = self.TEXT
+                self.fields['content_text'].initial = post.decoded_content
             
-            # self.fields['content_media'].initial = post.content_media
+            # self.fields['image'].initial = post.image
             self.fields['unlisted'].initial = post.unlisted
             self.fields['visibility'].initial = post.visibility
         
+    # "Django - Get uploaded file type / mimetype", Last accessed on November 19, 2021
+    # Authors: Hanpan, moskrc, Nathan Osman
+    # https://stackoverflow.com/questions/4853581/django-get-uploaded-file-type-mimetype, CC BY-SA 2021
+    def clean_image(self):
+        """ Validates the file input """
+        image = self.cleaned_data.get('image')
+        content_type = None
+        image_binary = b''
+
+        if image:
+            mime_type, subtype = image.content_type.split('/')
+            if mime_type not in ['image', 'application']:
+                raise forms.ValidationError('File type is not supported')
+            
+            subtype = subtype.upper()
+            PNG = LocalPost.ContentType.PNG
+            JPEG = LocalPost.ContentType.JPEG
+            if subtype not in [PNG, JPEG]:
+                raise forms.ValidationError('File format is not supported')
+
+            content_type = subtype
+            image_binary = image.read()
+
+        return image, image_binary, content_type
+
+    def clean_content_text(self):
+        """ Validates the content text input and returns the value in binary """
+        content_text = self.cleaned_data.get('content_text')
+        if content_text:
+            return content_text.encode('utf-8')
+        else:
+            return b''
+
     def clean_visibility(self):
         """
             Ensure post's visilibity is valid
@@ -87,3 +135,26 @@ class PostForm(forms.Form):
             return data
         else:
             raise ValidationError('Invalid visibility')
+
+    def get_content_and_type(self):
+        """
+            Gets the content type and the content of the submitted data
+        """
+        post_type = self.cleaned_data.get('post_type')
+        image, image_binary, content_type = self.cleaned_data.get('image')
+        
+        # Upload image to media folder and base64-
+        # encode the data to store in database
+        if post_type == PostForm.IMAGE and image:
+            Image.objects.create(
+                caption=self.cleaned_data.get('description'),
+                image=image
+            )
+
+            content = base64.b64encode(image_binary)
+
+        else:
+            content_type = LocalPost.ContentType.PLAIN
+            content = base64.b64encode(self.cleaned_data.get('content_text'))
+
+        return content, content_type
