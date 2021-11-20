@@ -117,6 +117,9 @@ class Post(models.Model):
             utf-8 decoded and while text content is both
             base64 decoded and utf-8 decoded.
         """
+        if not self.content:
+            return ''
+
         if self.is_image_post():
             return self.content.decode('utf-8')
         else:
@@ -254,7 +257,7 @@ class LocalPost(Post):
             # image/jpeg;base64 # this is an embedded jpeg
             # for HTML you will want to strip tags before displaying
             "contentType": self.get_content_type_display(),
-            "content": self.content,
+            "content": self.decoded_content,
             # the author has an ID where by authors can be disambiguated
             "author": self.author.as_json(),
             # categories this post fits into (a list of strings

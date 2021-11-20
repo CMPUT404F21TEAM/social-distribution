@@ -6,8 +6,9 @@ from django.urls import reverse
 from mixer.backend.django import mixer
 from datetime import datetime, timezone
 
-from socialDistribution.models import LocalAuthor, LocalPost, Comment
+from socialDistribution.models import LocalAuthor, LocalPost, InboxPost, Comment
 from cmput404.constants import *
+import base64 as b64
 
 # Documentation and code samples taken from the following references:
 # Django Software Foundation, https://docs.djangoproject.com/en/3.2/intro/tutorial05/
@@ -93,7 +94,12 @@ class InboxViewTests(TestCase):
         )
 
         # Create a post from author1
-        dummy_post = mixer.blend(LocalPost, id=1, author=author1)
+        dummy_post = mixer.blend(
+            LocalPost, 
+            id=1, 
+            author=author1,
+            content=b64.b64encode("testcontent".encode("utf-8"))
+        )
 
         body = dummy_post.as_json()
 
@@ -113,7 +119,7 @@ class InboxViewTests(TestCase):
         inbox_post = author2.inbox_posts.first()
         self.assertEqual(inbox_post.title, dummy_post.title)
         self.assertEqual(inbox_post.description, dummy_post.description)
-        self.assertEqual(inbox_post.content, dummy_post.content)
+        self.assertEqual(inbox_post.decoded_content, dummy_post.decoded_content)
     
     def test_post_comment_local_like(self):
         '''

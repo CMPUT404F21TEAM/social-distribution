@@ -401,7 +401,7 @@ class InboxView(View):
                         "origin": data["origin"],
                         "description": data["description"],
                         "content_type": data["contentType"],
-                        "content": data["content"],
+                        "content": base64.b64encode(data["content"].encode("utf-8")),
                         # "categories": data["categories"],
                         "author": data["author"]["id"],
                         "_author_json": data["author"],
