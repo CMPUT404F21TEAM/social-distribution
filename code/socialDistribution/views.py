@@ -15,11 +15,13 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 from django.urls import reverse
+from .requests import get, post
 import base64
 import json
 
 from .forms import CreateUserForm, PostForm
 from .decorators import allowedUsers, unauthenticated_user
+from api.models import Node
 from .models import *
 from .utility import make_request
 
@@ -237,7 +239,8 @@ def befriend(request, author_id):
             # send follow request
             dispatch_follow_request(actor, object)
 
-    return redirect('socialDistribution:author', author_id)
+
+    return redirect('socialDistribution:authors')
 
 
 def un_befriend(request, author_id):
@@ -278,7 +281,37 @@ def authors(request):
         "type": "Local"
     } for author in authors]
 
-    args["authors"] = local_authors
+    remote_authors = []
+
+    # get remote authors
+    for node in Node.objects.all():
+        # ignore current host
+        if node.host == request.META['HTTP_HOST']:
+            continue 
+
+        # get request for authors
+        try:
+            res = get(f'http://{node.host}/api/authors/')
+
+            # prepare remote data
+            for remote_author in res['items']:
+                author, created = Author.objects.get_or_create(
+                        url=remote_author['id']
+                    )
+
+                # add Local database id to remote author
+                remote_author['local_id'] = author.id
+                print(f'created: {created}', remote_author )
+                
+                remote_authors.append({
+                    "data": remote_author,
+                    'type': "Remote"
+                })
+
+        except Exception as error:
+            print(error)
+
+    args["authors"] = local_authors + remote_authors
     return render(request, 'author/index.html', args)
 
 
