@@ -154,6 +154,6 @@ class PostForm(forms.Form):
 
         else:
             content_type = LocalPost.ContentType.PLAIN
-            content = base64.b64encode(self.cleaned_data.get('content_text'))
+            content = self.cleaned_data.get('content_text')
 
         return content, content_type
