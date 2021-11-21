@@ -19,7 +19,6 @@ from cmput404.constants import API_PREFIX
 from .forms import CreateUserForm, PostForm
 from .decorators import unauthenticated_user
 from .models import *
-from .utility import make_request
 from .dispatchers import dispatch_post, dispatch_follow_request
 from .github_activity.github_activity import pull_github_events
 

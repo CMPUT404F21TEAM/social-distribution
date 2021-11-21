@@ -19,7 +19,7 @@ def get_post_like_info(post, author):
         request_url = post.public_id.strip('/') + '/likes'
         status_code, response_body = api_requests.get(request_url)
 
-        if status_code == 200:
+        if status_code == 200 and response_body is not None:
             likes_list = response_body["items"]
 
             is_liked = False
