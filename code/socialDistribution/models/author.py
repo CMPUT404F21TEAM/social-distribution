@@ -30,8 +30,11 @@ class Author(models.Model):
         # Makes a GET request to URL to get the Author data
         # The LocalAuthor method will override this, making it more efficient by fetching data
         # straight from the database instead of an HTTP request
-        json_data = api_requests.get(self.url)
-        return json_data
+        try:
+            json_data = api_requests.get(self.url)
+            return json_data
+        except Exception as e:
+            return {}
 
 
 class LocalAuthor(Author):
@@ -62,6 +65,12 @@ class LocalAuthor(Author):
 
     follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')
+
+    def get_url_id(self):
+        """
+        Returns the id of the author in url form
+        """
+        return f'http://{HOST}/{API_PREFIX}/{self.id}'
 
     def has_follower(self, author: Author):
         """ Returns true if author is a follower of self, false otherwise. """

@@ -36,21 +36,21 @@
 
                 <!-- Like Unlike Buttons -->
                 <div class="mt-2 d-flex">
-                {% if isLiked %}
-                    <form method="post" action="{% url 'socialDistribution:likeComment' comment.id %}" class="d-flex">
+                {% if is_liked %}
+                    <form method="post" action="{% url 'socialDistribution:like-comment' comment.id %}" class="d-flex">
                         {% csrf_token %}
                         <button class="btn btn-secondary mx-2"><i class="fas fa-thumbs-up"></i></button>
                     </form>
 
                 {% else %}
-                    <form method="post" action="{% url 'socialDistribution:likeComment' comment.id %}" class="d-flex">
+                    <form method="post" action="{% url 'socialDistribution:like-comment' comment.id %}" class="d-flex">
                         {% csrf_token %}
                         <button class="btn btn-primary mx-2"><i class="fas fa-thumbs-up"></i></button>
                     </form>
                 {% endif %}
 
-                {% if likeText %}
-                    <div class="align-self-center">{{likeText}}</div>
+                {% if like_text %}
+                    <div class="align-self-center">{{like_text}}</div>
                 {% endif %}
 
                 </div>

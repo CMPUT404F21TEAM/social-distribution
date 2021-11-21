@@ -1,6 +1,8 @@
 from django import template
 import base64
 from socialDistribution.forms import PostForm
+from socialDistribution.models.post import LocalPost, InboxPost
+from socialDistribution.utility import get_post_like_info, get_like_text
 
 register = template.Library()
 
@@ -13,27 +15,17 @@ def post_card(post, author):
     """
 
     # Delete/Edit
-    isAuthor = post.author == author
-    isPublic = post.is_public()
-    isFriends = post.is_friends()
+    is_author = post.author == author
+    is_public = post.is_public()
+    is_friends = post.is_friends()
 
-    # Likes
-    isLiked = False # temp post.likes.filter(author=author).exists()
-    likeText = ''
-    likes = 0 #temp post.total_likes()
-    if isLiked:
-        likes -= 1
-        if likes >= 2:
-            likeText = f'Liked by you and {likes} others'
-        elif likes == 1:
-            likeText = f'Liked by you and 1 other'
-        else:
-            likeText = f'Liked by you'
+    if type(post) is InboxPost:
+        post_host = 'remote'
     else:
-        if likes > 1:
-            likeText = f'Liked by {likes} others'
-        elif likes == 1:
-            likeText = f'Liked by 1 other'
+        post_host = 'local'
+    
+    is_liked, likes = get_post_like_info(post, author)
+    like_text = get_like_text(is_liked, likes)
 
     content_media = None
     # if post.content_media is not None:
@@ -41,10 +33,11 @@ def post_card(post, author):
 
     return {
         'post': post, 
-        'content_media': content_media, 
-        'isAuthor': isAuthor, 
-        'isLiked': isLiked, 
-        'likeText': likeText,        
-        'isPublic': isPublic,
-        'isFriends': isFriends,
+        'content_media': content_media,
+        'post_host': post_host,
+        'is_author': is_author, 
+        'is_liked': is_liked, 
+        'like_text': like_text,        
+        'is_public': is_public,
+        'is_friends': is_friends
         }

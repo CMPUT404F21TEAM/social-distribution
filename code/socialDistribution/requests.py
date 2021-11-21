@@ -4,10 +4,14 @@
 """
 
 import requests
+import logging
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 from api.node_manager import node_manager
 import base64
 from api.parsers import url_parser
 
+logger = logging.getLogger(__name__)
 
 def get(url, params=None):
     """ Makes a GET request at the given URL and returns the JSON body of the HTTP response. 
@@ -19,12 +23,22 @@ def get(url, params=None):
         Returns:
          - (dict): JSON response data if status code of request is 200 OK. Otherwise, return None
     """
-
+    requests.adapters.HTTPAdapter
     headers = {
         "Accept": "application/json"
     }
 
-    response = requests.get(url, headers=headers, params=params)
+    # ref: https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request - datashaman
+    # 'Can I set max_retries for requests.request?'
+    session = requests.Session()
+
+    retries = Retry(total=2,
+                    backoff_factor=0.1,
+                    status_forcelist=[ 500, 502, 503, 504 ])
+    
+    session.mount(url, HTTPAdapter(max_retries=retries))
+
+    response = session.get(url, headers=headers, params=params)
 
     # TODO Fine tune response handling, do error handling / status code checks
     if response.status_code == 200:
@@ -67,7 +81,7 @@ def post(url, params=None, body={}, sendBasicAuthHeader=False):
         return None
     
     except Exception as error:
-        print(error) 
+        logger.error(error, exc_info=True)
     
     # TODO Fine tune response handling, do error handling / status code checks
     # caller should wrap in try and catch show error message to user
