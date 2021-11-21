@@ -98,7 +98,7 @@ class InboxViewTests(TestCase):
             LocalPost, 
             id=1, 
             author=author1,
-            content=b64.b64encode("testcontent".encode("utf-8"))
+            content="testcontent".encode("utf-8")
         )
 
         body = dummy_post.as_json()

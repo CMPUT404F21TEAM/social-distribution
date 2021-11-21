@@ -18,7 +18,7 @@ def create_post(title, author):
             title=title,
             description="testDesc",
             content_type=LocalPost.ContentType.PLAIN,
-            content=b64.b64encode("testContexxt".encode("utf-8")),
+            content="testContexxt".encode("utf-8"),
             visibility=LocalPost.Visibility.PUBLIC,
             unlisted=False,
         )
