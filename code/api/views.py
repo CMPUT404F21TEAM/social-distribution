@@ -277,7 +277,7 @@ class PostView(View):
             post.content = data['content']
             post.visibility = data['visibility']
             post.unlisted = data['unlisted']
-            if 'content_media' in data.keys():
+            if 'content_media' in data.keys() and data['content_media'] != None:
                 post.content_media = base64.b64decode(data['content_media'])
 
             categories = data['categories']

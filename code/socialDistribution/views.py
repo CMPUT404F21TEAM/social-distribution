@@ -421,8 +421,9 @@ def edit_post(request, id, post_host):
         form = PostForm(request.POST, request.FILES, user_id=post.author.id)
         if form.is_valid():
             bin_content = form.cleaned_data.get('content_media')
+            content_media = None
             if bin_content is not None:
-                content_media = base64.b64encode(bin_content.read())
+                content_media = base64.b64encode(bin_content.read()).decode('ascii')
             else:
                 content_media = post.content_media
 
@@ -432,7 +433,7 @@ def edit_post(request, id, post_host):
                 edited_post['content'] = form.cleaned_data.get('content_text')
                 edited_post['visibility'] = form.cleaned_data.get('visibility')
                 edited_post['unlisted'] = form.cleaned_data.get('unlisted')
-                edited_post['content_media'] = content_media.decode('ascii')
+                edited_post['content_media'] = content_media
 
                 categories = form.cleaned_data.get('categories')
 
