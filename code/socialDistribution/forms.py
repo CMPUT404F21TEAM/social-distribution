@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django import forms
-from .models import LocalPost, LocalAuthor, Image
+from .models import LocalPost, LocalAuthor
 import base64
 
 class CreateUserForm(UserCreationForm):
@@ -145,11 +145,6 @@ class PostForm(forms.Form):
         # Upload image to media folder and base64-
         # encode the data to store in database
         if post_type == PostForm.IMAGE and image:
-            Image.objects.create(
-                caption=self.cleaned_data.get('description'),
-                image=image
-            )
-
             content = base64.b64encode(image_binary)
 
         else:
