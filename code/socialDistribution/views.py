@@ -524,7 +524,7 @@ def like_post(request, id, post_host):
         }
 
         # redirect request to remote/local api
-        status_code, response_data = api_requests.post(url=request_url, data=like)
+        status_code, response_data = api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
 
         if status_code >= 400:
             messages.error(request, 'An error occurred while liking post')
@@ -585,7 +585,7 @@ def like_comment(request, id):
 
     # redirect request to remote/local api
     request_url = f'http://{host}/api/author/{comment.author.id}/inbox/'
-    api_requests.post(url=request_url, data=like)
+    api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
 
     if prev_page is None:
         return redirect('socialDistribution:home')

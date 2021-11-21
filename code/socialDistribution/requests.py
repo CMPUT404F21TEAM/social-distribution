@@ -57,6 +57,7 @@ def get(url, params=None):
 
     logger.info(f"API GET request to {url} and received {response.status_code}")
 
+    # caller should check status codes show error message to user (if needed)
     return response.status_code, response_data
 
 
@@ -93,7 +94,7 @@ def post(url, params=None, data={}, sendBasicAuthHeader=False):
         if response.status_code == 200:
             response_data = response.json()
         else:
-            data = None
+            response_data = None
     except json.decoder.JSONDecodeError:
         response_data = None
 
