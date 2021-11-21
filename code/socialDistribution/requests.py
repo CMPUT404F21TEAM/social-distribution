@@ -10,6 +10,7 @@ from requests.adapters import HTTPAdapter
 from api.node_manager import node_manager
 import base64
 from api.parsers import url_parser
+from cmput404.constants import *
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,8 @@ def post(url, params=None, body={}, sendBasicAuthHeader=False):
 
     headers = {
         "Content-Type": "application/json",
-        "Accept": "application/json"
+        "Accept": "application/json",
+        "REFERER": HOST
     }
 
     

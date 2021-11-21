@@ -72,7 +72,7 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 2}),
             content_type="application/json",
-            HTTP_HOST=HOST,
+            HTTP_REFERER=HOST,
             **self.basicAuthHeaders,
             data=body
         )
@@ -111,7 +111,7 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 2}),
             content_type="application/json",
-            HTTP_HOST=HOST,
+            HTTP_REFERER=HOST,
             **self.basicAuthHeaders,
             data=body
         )
@@ -152,7 +152,7 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 1}),
             content_type="application/json",
-            HTTP_HOST=HOST,
+            HTTP_REFERER=HOST,
             **self.basicAuthHeaders,
             data=body
         )
@@ -191,7 +191,7 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 1}),
             content_type="application/json",
-            HTTP_HOST=HOST,
+            HTTP_REFERER=HOST,
             **self.basicAuthHeaders,
             data=body
         )

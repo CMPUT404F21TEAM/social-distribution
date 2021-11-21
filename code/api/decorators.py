@@ -33,11 +33,12 @@ def validate_node(view_func):
     def wrapper_func(request, *args, **kwargs):
 
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+        referer = request.META.get('HTTP_REFERER', '')
         token_type, _, receivedCredentials = auth_header.partition(' ')
 
         expectedCredentials = base64.b64encode(b'remotegroup:topsecret!').decode()
 
-        if not node_manager.get_host_credentials(request.META['HTTP_HOST']) or token_type != 'Basic' or receivedCredentials != expectedCredentials:
+        if not node_manager.get_host_credentials(referer) or token_type != 'Basic' or receivedCredentials != expectedCredentials:
             return HttpResponse(status=401)
 
         return view_func(request, *args, **kwargs)

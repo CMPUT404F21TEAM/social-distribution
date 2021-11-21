@@ -289,7 +289,12 @@ def authors(request):
 
         # get request for authors
         try:
-            res = get(f'http://{node.host}/api/authors/')
+            try:
+                res = get(f'http://{node.host}/api/authors/')
+
+            except Exception as error:
+                # if remote server unavailable continue
+                continue
 
             # prepare remote data
             for remote_author in res['items']:
