@@ -103,7 +103,12 @@ class InboxViewTests(TestCase):
         )
 
         # Create a post from author1
-        dummy_post = mixer.blend(LocalPost, id=1, author=author1)
+        dummy_post = mixer.blend(
+            LocalPost, 
+            id=1, 
+            author=author1,
+            content="testcontent".encode("utf-8")
+        )
 
         body = dummy_post.as_json()
 
@@ -125,7 +130,7 @@ class InboxViewTests(TestCase):
         inbox_post = author2.inbox_posts.first()
         self.assertEqual(inbox_post.title, dummy_post.title)
         self.assertEqual(inbox_post.description, dummy_post.description)
-        self.assertEqual(inbox_post.content, dummy_post.content)
+        self.assertEqual(inbox_post.decoded_content, dummy_post.decoded_content)
     
     def test_post_comment_local_like(self):
         '''
