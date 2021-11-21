@@ -405,7 +405,7 @@ class PostCommentsView(View):
         except Exception:
             return HttpResponse('Internal Server Error')
 
-        return redirect('socialDistribution:commentPost', id=post_id)
+        return redirect('socialDistribution:comment-post', id=post_id)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
