@@ -1,17 +1,23 @@
+import requests, base64
 from .models import LocalPost
 from json import JSONDecodeError
-import requests
+from cmput404.constants import *
 
 # make an http requests and handle status codes
-def make_request(method='GET', url='http://127.0.0.1:8000/', body=''):
+def make_request(method='GET', url='http://127.0.0.1:8000/', body='', headers=None):
     """
     Makes an HTTP request
     """
     r = None
+    authToken = base64.b64encode(b"remotegroup:topsecret!").decode("ascii")
+    if headers:
+        headers['Authorization'] = 'Basic %s' %  authToken
+        headers['REFERER'] = HOST
+
     if method == 'GET':
         r = requests.get(url)
     elif method == 'POST':
-        r = requests.post(url, data=body)
+        r = requests.post(url, data=body, headers=headers)
     elif method == 'DELETE':
         r = requests.delete(url)
     elif method == 'PUT':

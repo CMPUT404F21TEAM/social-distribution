@@ -30,8 +30,11 @@ class Author(models.Model):
         # Makes a GET request to URL to get the Author data
         # The LocalAuthor method will override this, making it more efficient by fetching data
         # straight from the database instead of an HTTP request
-        json_data = api_requests.get(self.url)
-        return json_data
+        try:
+            json_data = api_requests.get(self.url)
+            return json_data
+        except Exception as e:
+            return {}
 
 
 class LocalAuthor(Author):
