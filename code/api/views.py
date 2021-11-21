@@ -230,32 +230,55 @@ class PostsView(View):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
+class PostImageView(View):
+
+    def get(self, request, author_id, post_id):
+        post = get_object_or_404(LocalPost, pk=int(post_id))
+        author = get_object_or_404(LocalAuthor, pk=int(author_id))
+
+        # post author id and author id in url must match
+        if int(author_id) != post.author.id:
+            return HttpResponseNotFound()
+
+        # post must be visible
+        if not post.is_public():
+            return HttpResponseForbidden()
+
+        accepted_types = request.headers['Accept']
+
+        if 'image' in accepted_types:
+            if post.is_image_post() and post.unlisted:
+                accepted_types = accepted_types.split(',')
+                for mime_type in accepted_types:
+                    format = mime_type.split('/')[-1]
+                    format = format.split(';')[0]
+
+                    # Save post image as webp into a byte stream (BytesIO)
+                    # The markdown parser uses webp to display embedded images
+                    if format.lower() == 'webp':
+                        image_binary = base64.b64decode(post.decoded_content)
+                        img = Image.open(BytesIO(image_binary))
+                        webp_bytes_arr = BytesIO()
+                        img.save(webp_bytes_arr, 'webp')
+                        webp_img = webp_bytes_arr.getvalue()
+                        
+                        response = HttpResponse()
+                        response.write(webp_img)
+                        response['Content-Type'] = 'image/webp'
+                        return response
+
+                return HttpResponse(status_code=415)    # unsupported media type
+
+            else:
+                return HttpResponseNotFound('Post image not found')
+        else:
+            return HttpResponse(status_code=415)    # unsupported media type
+
+
+@method_decorator(csrf_exempt, name='dispatch')
 class PostView(View):
 
     def get(self, request, author_id, post_id):
-        author = get_object_or_404(LocalAuthor, pk=int(author_id))
-        post = get_object_or_404(LocalPost, pk=int(post_id))
-        accepted_types = request.headers['Accept']
-
-        if 'image' in accepted_types and post.is_image_post() and post.unlisted:
-            accepted_types = accepted_types.split(',')
-            for mime_type in accepted_types:
-                format = mime_type.split('/')[-1]
-                format = format.split(';')[0]
-
-                # Save post image as webp into a byte stream (BytesIO)
-                # The markdown parser uses webp to display embedded images
-                if format.lower() == 'webp':
-                    image_binary = base64.b64decode(post.decoded_content)
-                    img = Image.open(BytesIO(image_binary))
-                    webp_bytes_arr = BytesIO()
-                    img.save(webp_bytes_arr, 'webp')
-                    webp_img = webp_bytes_arr.getvalue()
-                    
-                    response = HttpResponse()
-                    response.write(webp_img)
-                    response['Content-Type'] = 'image/webp'
-                    return response
 
         return HttpResponse("This is the authors/aid/posts/pid/ endpoint")
 
