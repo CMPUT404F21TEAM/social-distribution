@@ -432,7 +432,7 @@ def edit_post(request, id, post_host):
                 edited_post['content'] = form.cleaned_data.get('content_text')
                 edited_post['visibility'] = form.cleaned_data.get('visibility')
                 edited_post['unlisted'] = form.cleaned_data.get('unlisted')
-                #edited_post['content_media'] = content_media
+                edited_post['content_media'] = content_media.decode('ascii')
 
                 categories = form.cleaned_data.get('categories')
 

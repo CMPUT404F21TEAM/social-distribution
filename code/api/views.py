@@ -277,6 +277,8 @@ class PostView(View):
             post.content = data['content']
             post.visibility = data['visibility']
             post.unlisted = data['unlisted']
+            if 'content_media' in data.keys():
+                post.content_media = base64.b64decode(data['content_media'])
 
             categories = data['categories']
 
@@ -434,7 +436,6 @@ class InboxView(View):
             - if the type is “like” then add that like to the author’s inbox    
         """
         data = json.loads(request.body)
-        # pprint.pprint(data)
         try:
             if data["type"] == "post":
                 makePost(author_id, data)
