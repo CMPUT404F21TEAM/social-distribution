@@ -572,12 +572,7 @@ def delete_post(request, id, post_host):
         if response.status_code >= 400:
             messages.error(request, 'An error occurred while deleting post')
 
-    if prev_page is None:
-        return redirect('socialDistribution:home')
-    else:
-        # prev_page -> url to inbox at the moment
-        # will have to edit this if other endpoints require args
-        return redirect(prev_page)
+    return redirect('socialDistribution:home')
 
 
 def profile(request):
