@@ -30,6 +30,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
+    "corsheaders",
     'socialDistribution.apps.SocialdistributionConfig',
     'api.apps.ApiConfig',
     'django.contrib.admin',
@@ -41,6 +42,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -58,6 +60,12 @@ LOGIN_URL = 'app/login'
 LOGIN_EXEMPT_URLS = ( 
     r'^app/register/$',
 )
+
+# Add remote groups origin hosts here
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:8011",
+    "https://example.com",
+]
 
 TEMPLATES = [
     {

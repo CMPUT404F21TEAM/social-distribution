@@ -20,7 +20,10 @@ class Follow(models.Model):
         actor_url = self.actor.url.strip('/')
         object_url = self.object.url.strip('/')
         endpoint = actor_url + '/followers/' + object_url
-        response_body = api_requests.get(endpoint)
+        try:
+            response_body = api_requests.get(endpoint)
+        except Exception as e:
+            return False
 
         # check if GET request came back with author object
         if response_body and response_body.get("id") == object_url:
