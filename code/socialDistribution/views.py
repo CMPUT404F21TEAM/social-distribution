@@ -22,6 +22,8 @@ from .decorators import unauthenticated_user
 from .models import *
 from .utility import make_request
 from cmput404.constants import API_PREFIX
+from PIL import Image
+from io import BytesIO
 
 from .dispatchers import dispatch_post, dispatch_follow_request
 
@@ -145,6 +147,51 @@ def logoutUser(request):
     """
     logout(request)
     return redirect('socialDistribution:login')
+
+def unlisted_post_image(request, post_id):
+    """
+        Return the embedded image (if any) of the unlisted post
+    """
+    
+    if request.method == 'GET':
+        post = get_object_or_404(LocalPost, pk=int(post_id))
+        user_author = get_object_or_404(LocalAuthor, user=request.user)
+
+        # post must be visible
+        if not post.is_public() or post.author.id != user_author.id:
+            return HttpResponseForbidden()
+
+        accepted_types = request.headers['Accept']
+
+        if 'image' in accepted_types:
+            if post.is_image_post() and post.unlisted:
+                accepted_types = accepted_types.split(',')
+                for mime_type in accepted_types:
+                    format = mime_type.split('/')[-1]
+                    format = format.split(';')[0]
+
+                    # Save post image as webp into a byte stream (BytesIO)
+                    # The markdown parser uses webp to display embedded images
+                    if format.lower() == 'webp':
+                        image_binary = base64.b64decode(post.decoded_content)
+                        img = Image.open(BytesIO(image_binary))
+                        webp_bytes_arr = BytesIO()
+                        img.save(webp_bytes_arr, 'webp')
+                        webp_img = webp_bytes_arr.getvalue()
+                        
+                        response = HttpResponse()
+                        response.write(webp_img)
+                        response['Content-Type'] = 'image/webp'
+                        return response
+
+                return HttpResponse(status_code=415)    # unsupported media type
+
+            else:
+                return HttpResponseNotFound('Post image not found')
+        else:
+            return HttpResponse(status_code=415)    # unsupported media type
+
+    return HttpResponseBadRequest()
 
 
 def home(request):
@@ -345,34 +392,30 @@ def author(request, author_id):
 def create(request):
     return render(request, 'create/index.html')
 
-
 def posts(request, author_id):
     """ Handles POST request to publish a post.
 
         Allows user to create a post. The newly created post will also be rendered. 
     """
-    author = get_object_or_404(LocalAuthor, pk=author_id)
     user_id = LocalAuthor.objects.get(user=request.user).id
 
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES, user_id=user_id)
         if form.is_valid():
-            bin_content = form.cleaned_data.get('content_media')
-            if bin_content is not None:
-                content_media = base64.b64encode(bin_content.read())
-            else:
-                content_media = None
-
+            content, content_type = form.get_content_and_type()
+                
+            # Will do some more refactoring to remove code duplication soon
+            
             try:
                 # create the post
                 new_post = LocalPost(
                     author_id=author_id,  # temporary
                     title=form.cleaned_data.get('title'),
                     description=form.cleaned_data.get('description'),
-                    content=form.cleaned_data.get('content_text'),
+                    content_type=content_type,
+                    content=content,
                     visibility=form.cleaned_data.get('visibility'),
                     unlisted=form.cleaned_data.get('unlisted'),
-                    content_media=content_media,
                 )
                 new_post.save()
 
@@ -448,19 +491,17 @@ def edit_post(request, id):
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES, user_id=author.id)
         if form.is_valid():
-            bin_content = form.cleaned_data.get('content_media')
-            if bin_content is not None:
-                content_media = base64.b64encode(bin_content.read())
-            else:
-                content_media = post.content_media
+            content, content_type = form.get_content_and_type()
+
+            # Will do some more refactoring to remove code duplication soon
 
             try:
                 post.title = form.cleaned_data.get('title')
                 post.description = form.cleaned_data.get('description')
-                post.content = form.cleaned_data.get('content_text')
                 post.visibility = form.cleaned_data.get('visibility')
                 post.unlisted = form.cleaned_data.get('unlisted')
-                post.content_media = content_media
+                post.content_type = content_type
+                post.content = content
 
                 categories = form.cleaned_data.get('categories')
 

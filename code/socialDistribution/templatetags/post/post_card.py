@@ -1,7 +1,6 @@
 from django import template
 import base64
-from socialDistribution.forms import PostForm
-from socialDistribution.models.post import LocalPost, InboxPost
+from socialDistribution.models.post import Post, InboxPost
 from socialDistribution.utility import get_post_like_info, get_like_text
 
 register = template.Library()
@@ -26,14 +25,9 @@ def post_card(post, author):
     
     is_liked, likes = get_post_like_info(post, author)
     like_text = get_like_text(is_liked, likes)
-
-    content_media = None
-    # if post.content_media is not None:
-    #     content_media = post.content_media.decode('utf-8')
-
+    
     return {
-        'post': post, 
-        'content_media': content_media,
+        'post': post,
         'post_host': post_host,
         'is_author': is_author, 
         'is_liked': is_liked, 

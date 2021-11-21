@@ -10,7 +10,7 @@ from django.utils.decorators import method_decorator
 
 from datetime import datetime, timezone
 import json
-import logging
+import logging, base64
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
@@ -231,6 +231,7 @@ class PostsView(View):
 class PostView(View):
 
     def get(self, request, author_id, post_id):
+
         return HttpResponse("This is the authors/aid/posts/pid/ endpoint")
 
 
@@ -376,7 +377,7 @@ class InboxView(View):
                         "origin": data["origin"],
                         "description": data["description"],
                         "content_type": data["contentType"],
-                        "content": data["content"],
+                        "content": data["content"].encode("utf-8"),
                         # "categories": data["categories"],
                         "author": data["author"]["id"],
                         "_author_json": data["author"],
