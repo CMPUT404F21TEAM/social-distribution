@@ -5,27 +5,25 @@ from django.http import HttpResponse, HttpResponseNotFound
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.utils import timezone
-
-from .forms import CreateUserForm, PostForm
-from .github_activity.github_activity import pull_github_events
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 from django.urls import reverse
-from .requests import get, post
-import base64
-import json
-
 from .forms import CreateUserForm, PostForm
-from api.models import Node
-from .decorators import unauthenticated_user
-from .models import *
-from .utility import make_request
+
+import base64
+
+import socialDistribution.requests as api_requests
 from cmput404.constants import API_PREFIX
+from api.models import Node
+from .models import *
+from .forms import CreateUserForm, PostForm
+from .decorators import unauthenticated_user
 from PIL import Image
 from io import BytesIO
 
 from .dispatchers import dispatch_post, dispatch_follow_request
+from .github_activity.github_activity import pull_github_events
 
 REQUIRE_SIGNUP_APPROVAL = False
 ''' 
@@ -337,7 +335,7 @@ def authors(request):
         # get request for authors
         try:
             try:
-                res = get(f'http://{node.host}/api/authors/')
+                res = api_requests.get(f'http://{node.host}/api/authors/')
 
             except Exception as error:
                 # if remote server unavailable continue
@@ -568,9 +566,9 @@ def like_post(request, id, post_host):
         }
 
         # redirect request to remote/local api
-        response = make_request('POST', request_url, json.dumps(like), {"Content-Type": "application/json"})
+        status_code, response_data = api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
 
-        if response.status_code >= 400:
+        if status_code >= 400:
             messages.error(request, 'An error occurred while liking post')
 
     prev_page = request.META['HTTP_REFERER']
@@ -628,14 +626,8 @@ def like_comment(request, id):
         }
 
     # redirect request to remote/local api
-    make_request(
-        'POST', 
-        f'http://{host}/api/author/{comment.author.id}/inbox/', 
-        json.dumps(like),
-        {
-            "Content-Type": "application/json"
-        }
-    )
+    request_url = f'http://{host}/api/author/{comment.author.id}/inbox/'
+    api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
 
     if prev_page is None:
         return redirect('socialDistribution:home')
