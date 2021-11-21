@@ -442,7 +442,7 @@ def edit_post(request, id, post_host):
                 messages.info(request, 'Unable to edit post.')
                 
         # redirect request to remote/local api
-        response = make_request('PUT', request_url, json.dumps(edited_post))
+        response = make_request('POST', request_url, json.dumps(edited_post))
         if response.status_code >= 400:
             messages.error(request, 'An error occurred while editing post')
             

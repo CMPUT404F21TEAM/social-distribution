@@ -266,8 +266,8 @@ class PostView(View):
         return HttpResponse(200)
     
     #TODO: authenticate
-    def put(self, request, author_id, post_id):
-        """ PUT - Update post {post_id} """
+    def post(self, request, author_id, post_id):
+        """ POST - Update post {post_id} """
         data = json.loads(request.body)
         post = LocalPost.objects.get(id=post_id)
 
