@@ -19,9 +19,9 @@ python manage.py runserver
 
 #  General Web Service API Information
 ```
-Service address: http://127.0.0.1:8000/api/
-Port: 8000
-Hostname: http://127.0.0.1
+Service address: https://social-distribution-fall2021.herokuapp.com/api/
+Port: N/A
+Hostname: social-distribution-fall2021.herokuapp.com
 Prefix: api/
 Username/Password for Basic Auth: remotegroup:topsecret!
 ```
