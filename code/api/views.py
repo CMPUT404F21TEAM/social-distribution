@@ -13,7 +13,7 @@ import logging
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.models import *
-from .decorators import authenticate_request
+from .decorators import authenticate_request, validate_node
 from .parsers import url_parser
 from .utility import getPaginated
 
@@ -352,6 +352,7 @@ class InboxView(View):
         })
 
     # TODO: authenticate user
+    @method_decorator(validate_node)
     def post(self, request, author_id):
         """ POST - Send a post to {author_id}
             - if the type is “post” then add that post to the author’s inbox

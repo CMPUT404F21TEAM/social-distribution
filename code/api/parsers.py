@@ -4,12 +4,17 @@ from cmput404.constants import HOST, API_PREFIX
 
 class UrlParser():
 
+    def get_host(self, url):
+        """ Extract host from url
+        """
+        o = urlsplit(url)
+        host = o.netloc
+        return host
+
     def is_local_url(self, url):
         """ Returns true if url is hosted on the local server. Otherwise, returns false.
         """
-
-        o = urlsplit(url)
-        host = o.netloc
+        host = self.get_host(url)
         return host == HOST
 
     def get_object_type(self, url):

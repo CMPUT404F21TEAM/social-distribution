@@ -1,9 +1,8 @@
 from typing import List
-import requests
-import json
 
-from .models import LocalPost, Author, LocalAuthor
+
 import socialDistribution.requests as api_requests
+from .models import LocalPost, Author, LocalAuthor
 
 
 def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None):
@@ -37,7 +36,7 @@ def send_post(post: LocalPost, url: str):
     """ Sends a post to the given URL via a POST request. """
 
     data = post.as_json()
-    api_requests.post(url=url, data=data)
+    api_requests.post(url=url, data=data, sendBasicAuthHeader=True)
 
 
 def dispatch_follow_request(actor: LocalAuthor, object: Author):
@@ -60,4 +59,4 @@ def dispatch_follow_request(actor: LocalAuthor, object: Author):
         "object": object_json
     }
 
-    api_requests.post(url=object_inbox, data=data)
+    api_requests.post(url=object_inbox, data=data, sendBasicAuthHeader=True)

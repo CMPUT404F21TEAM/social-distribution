@@ -19,11 +19,11 @@ python manage.py runserver
 
 #  General Web Service API Information
 ```
-Service address: http://127.0.0.1:8000/api/
-Port: 8000
-Hostname: http://127.0.0.1
+Service address: https://social-distribution-fall2021.herokuapp.com/api/
+Port: N/A
+Hostname: social-distribution-fall2021.herokuapp.com
 Prefix: api/
-Username/Password for Basic Auth: N/A
+Username/Password for Basic Auth: remotegroup:topsecret!
 ```
 
 Check out the [wiki page](https://github.com/CMPUT404F21TEAM/social-distribution/wiki) for [Detailed API Documentaion](https://github.com/CMPUT404F21TEAM/social-distribution/wiki/Web-Service-API-Documentation), [UI Design Mockups](https://www.figma.com/file/4V0nM5Zv7Zb3c8Mt4BMW3P/SocialDistributionMockUps?node-id=0%3A1), Completed User Stories,  etc.

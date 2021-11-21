@@ -27,7 +27,7 @@ class Follow(models.Model):
         status_code, response_body = api_requests.get(endpoint)
 
         # check if GET request came back with author object
-        if status_code == 200 and response_body and response_body.get("id") == object_url:
+        if status_code == 200 and response_body is not None and response_body.get("id") == object_url:
             return True
         else:
             return False

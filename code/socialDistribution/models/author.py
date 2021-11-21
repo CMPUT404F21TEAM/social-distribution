@@ -26,11 +26,11 @@ class Author(models.Model):
         return self.url.strip("/") + "/inbox"
 
     def as_json(self):
-        # This method is an example, not yet implemented
         # Makes a GET request to URL to get the Author data
-        # The LocalAuthor method will override this, making it more efficient by fetching data
-        # straight from the database instead of an HTTP request
         status_code, json_data = api_requests.get(self.url)
+
+        # could return None if something goes wrong
+        # caller should handle this
         return json_data
 
 

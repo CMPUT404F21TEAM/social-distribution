@@ -12,13 +12,13 @@ from django.urls import reverse
 from .forms import CreateUserForm, PostForm
 
 import base64
-import json
 
 import socialDistribution.requests as api_requests
 from cmput404.constants import API_PREFIX
+from api.models import Node
+from .models import *
 from .forms import CreateUserForm, PostForm
 from .decorators import unauthenticated_user
-from .models import *
 from .dispatchers import dispatch_post, dispatch_follow_request
 from .github_activity.github_activity import pull_github_events
 
@@ -234,7 +234,8 @@ def befriend(request, author_id):
             # send follow request
             dispatch_follow_request(actor, object)
 
-    return redirect('socialDistribution:author', author_id)
+
+    return redirect('socialDistribution:authors')
 
 
 def un_befriend(request, author_id):
@@ -253,7 +254,7 @@ def un_befriend(request, author_id):
         curr_user = LocalAuthor.objects.get(user=request.user)
 
         if author.has_follower(curr_user):
-            author.followers.remove(curr_user)
+            author.follows.filter(actor=curr_user).delete()
         else:
             messages.info(request, f'Couldn\'t un-befriend {author.displayName}')
 
@@ -275,7 +276,41 @@ def authors(request):
         "type": "Local"
     } for author in authors]
 
-    args["authors"] = local_authors
+    remote_authors = []
+
+    # get remote authors
+    for node in Node.objects.all():
+        # ignore current host
+        if node.host == request.META['HTTP_HOST']:
+            continue 
+
+        # get request for authors
+        try:
+            try:
+                res = api_requests.get(f'http://{node.host}/api/authors/')
+
+            except Exception as error:
+                # if remote server unavailable continue
+                continue
+
+            # prepare remote data
+            for remote_author in res['items']:
+                author, created = Author.objects.get_or_create(
+                        url=remote_author['id']
+                    )
+
+                # add Local database id to remote author
+                remote_author['local_id'] = author.id
+                
+                remote_authors.append({
+                    "data": remote_author,
+                    'type': "Remote"
+                })
+
+        except Exception as error:
+            print(error)
+
+    args["authors"] = local_authors + remote_authors
     return render(request, 'author/index.html', args)
 
 
@@ -493,6 +528,8 @@ def like_post(request, id, post_host):
 
         if status_code >= 400:
             messages.error(request, 'An error occurred while liking post')
+
+    prev_page = request.META['HTTP_REFERER']
 
     if prev_page is None:
         return redirect('socialDistribution:home')
