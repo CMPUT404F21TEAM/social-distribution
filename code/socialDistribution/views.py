@@ -11,7 +11,6 @@ from .github_activity.github_activity import pull_github_events
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
-from django.urls import reverse
 from .requests import get, post
 import base64
 import json

@@ -21,7 +21,6 @@ from socialDistribution.models import *
 from .decorators import authenticate_request, validate_node
 from .parsers import url_parser
 from .utility import getPaginated, makePost
-from socialDistribution.dispatchers import dispatch_post
 
 # References for entire file:
 # Django Software Foundation, "Introduction to class-based views", 2021-10-13
