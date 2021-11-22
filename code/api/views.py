@@ -150,7 +150,7 @@ class FollowersSingleView(View):
 
         try:
             # try to find and return follower author object
-            follower = Author.objects.get(url=parse.unquote(foreign_author_id))
+            follower = Author.objects.get(url=foreign_author_id)
             follow = author.follows.get(actor=follower)
             return JsonResponse(follow.actor.as_json())
         except (Author.DoesNotExist, Follow.DoesNotExist):
