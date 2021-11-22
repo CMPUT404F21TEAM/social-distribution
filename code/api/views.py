@@ -163,7 +163,7 @@ class FollowersSingleView(View):
             follower = Author.objects.get(url=foreign_author_id)
             follow = author.follows.get(actor=follower)
             follow.delete()
-            return HttpResponse(204)  # no content
+            return HttpResponse(status=204)  # no content
         except (Author.DoesNotExist, Follow.DoesNotExist):
             # return 404 if author not found
             return HttpResponseNotFound()
