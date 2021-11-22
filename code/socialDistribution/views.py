@@ -5,24 +5,24 @@ from django.http import HttpResponse, HttpResponseNotFound
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.utils import timezone
-
-from .forms import CreateUserForm, PostForm
-from .github_activity.github_activity import pull_github_events
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
-from .requests import get, post
-import base64
-import json
-
 from .forms import CreateUserForm, PostForm
-from api.models import Node
-from .decorators import unauthenticated_user
-from .models import *
-from .utility import make_request
+
+import base64
+
+import socialDistribution.requests as api_requests
 from cmput404.constants import API_PREFIX
+from api.models import Node
+from .models import *
+from .forms import CreateUserForm, PostForm
+from .decorators import unauthenticated_user
+from PIL import Image
+from io import BytesIO
 
 from .dispatchers import dispatch_post, dispatch_follow_request
+from .github_activity.github_activity import pull_github_events
 
 REQUIRE_SIGNUP_APPROVAL = False
 ''' 
@@ -144,6 +144,51 @@ def logoutUser(request):
     """
     logout(request)
     return redirect('socialDistribution:login')
+
+def unlisted_post_image(request, post_id):
+    """
+        Return the embedded image (if any) of the unlisted post
+    """
+    
+    if request.method == 'GET':
+        post = get_object_or_404(LocalPost, pk=int(post_id))
+        user_author = get_object_or_404(LocalAuthor, user=request.user)
+
+        # post must be visible
+        if not post.is_public() or post.author.id != user_author.id:
+            return HttpResponseForbidden()
+
+        accepted_types = request.headers['Accept']
+
+        if 'image' in accepted_types:
+            if post.is_image_post() and post.unlisted:
+                accepted_types = accepted_types.split(',')
+                for mime_type in accepted_types:
+                    format = mime_type.split('/')[-1]
+                    format = format.split(';')[0]
+
+                    # Save post image as webp into a byte stream (BytesIO)
+                    # The markdown parser uses webp to display embedded images
+                    if format.lower() == 'webp':
+                        image_binary = base64.b64decode(post.decoded_content)
+                        img = Image.open(BytesIO(image_binary))
+                        webp_bytes_arr = BytesIO()
+                        img.save(webp_bytes_arr, 'webp')
+                        webp_img = webp_bytes_arr.getvalue()
+                        
+                        response = HttpResponse()
+                        response.write(webp_img)
+                        response['Content-Type'] = 'image/webp'
+                        return response
+
+                return HttpResponse(status_code=415)    # unsupported media type
+
+            else:
+                return HttpResponseNotFound('Post image not found')
+        else:
+            return HttpResponse(status_code=415)    # unsupported media type
+
+    return HttpResponseBadRequest()
 
 
 def home(request):
@@ -289,7 +334,7 @@ def authors(request):
         # get request for authors
         try:
             try:
-                res = get(f'http://{node.host}/api/authors/')
+                res = api_requests.get(f'http://{node.host}/api/authors/')
 
             except Exception as error:
                 # if remote server unavailable continue
@@ -344,34 +389,30 @@ def author(request, author_id):
 def create(request):
     return render(request, 'create/index.html')
 
-
 def posts(request, author_id):
     """ Handles POST request to publish a post.
 
         Allows user to create a post. The newly created post will also be rendered. 
     """
-    author = get_object_or_404(LocalAuthor, pk=author_id)
     user_id = LocalAuthor.objects.get(user=request.user).id
 
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES, user_id=user_id)
         if form.is_valid():
-            bin_content = form.cleaned_data.get('content_media')
-            if bin_content is not None:
-                content_media = base64.b64encode(bin_content.read())
-            else:
-                content_media = None
-
+            content, content_type = form.get_content_and_type()
+                
+            # Will do some more refactoring to remove code duplication soon
+            
             try:
                 # create the post
                 new_post = LocalPost(
                     author_id=author_id,  # temporary
                     title=form.cleaned_data.get('title'),
                     description=form.cleaned_data.get('description'),
-                    content=form.cleaned_data.get('content_text'),
+                    content_type=content_type,
+                    content=content,
                     visibility=form.cleaned_data.get('visibility'),
                     unlisted=form.cleaned_data.get('unlisted'),
-                    content_media=content_media,
                 )
                 new_post.save()
 
@@ -456,33 +497,26 @@ def edit_post(request, id, post_host):
         
         form = PostForm(request.POST, request.FILES, user_id=post.author.id)
         if form.is_valid():
-            bin_content = form.cleaned_data.get('content_media')
-            content_media = None
-            if bin_content is not None:
-                content_media = base64.b64encode(bin_content.read()).decode('ascii')
-            else:
-                content_media = post.content_media
+            content, content_type = form.get_content_and_type()
+
+            # Will do some more refactoring to remove code duplication soon
 
             try:
-                edited_post['title'] = form.cleaned_data.get('title')
-                edited_post['description'] = form.cleaned_data.get('description')
-                edited_post['content'] = form.cleaned_data.get('content_text')
-                edited_post['visibility'] = form.cleaned_data.get('visibility')
-                edited_post['unlisted'] = form.cleaned_data.get('unlisted')
-                edited_post['content_media'] = content_media
+                post.title = form.cleaned_data.get('title')
+                post.description = form.cleaned_data.get('description')
+                post.visibility = form.cleaned_data.get('visibility')
+                post.unlisted = form.cleaned_data.get('unlisted')
+                post.content_type = content_type
+                post.content = content
 
                 categories = form.cleaned_data.get('categories')
 
                 edited_post['categories'] = categories.split()
+                post.save()
                 
             except ValidationError:
                 messages.info(request, 'Unable to edit post.')
                 
-        # redirect request to remote/local api
-        response = make_request('POST', request_url, json.dumps(edited_post))
-        if response.status_code >= 400:
-            messages.error(request, 'An error occurred while editing post')
-            
     prev_page = request.META['HTTP_REFERER']
 
     if prev_page is None:
@@ -523,9 +557,9 @@ def like_post(request, id, post_host):
         }
 
         # redirect request to remote/local api
-        response = make_request('POST', request_url, json.dumps(like), {"Content-Type": "application/json"})
+        status_code, response_data = api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
 
-        if response.status_code >= 400:
+        if status_code >= 400:
             messages.error(request, 'An error occurred while liking post')
 
     prev_page = request.META['HTTP_REFERER']
@@ -583,14 +617,8 @@ def like_comment(request, id):
         }
 
     # redirect request to remote/local api
-    make_request(
-        'POST', 
-        f'http://{host}/api/author/{comment.author.id}/inbox/', 
-        json.dumps(like),
-        {
-            "Content-Type": "application/json"
-        }
-    )
+    request_url = f'http://{host}/api/author/{comment.author.id}/inbox/'
+    api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
 
     if prev_page is None:
         return redirect('socialDistribution:home')

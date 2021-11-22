@@ -6,14 +6,13 @@ from django.http.response import *
 from django.http import HttpResponse, JsonResponse
 from django.http.response import HttpResponseBadRequest
 from django.shortcuts import redirect, get_object_or_404
-from django.core import serializers
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 
 from datetime import datetime, timezone
 import json
-import logging
+import logging, base64
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.forms import PostForm
@@ -316,7 +315,7 @@ class PostLikesView(View):
         """ GET - Get a list of authors who like {post_id} """
         try:
             post = LocalPost.objects.get(id=post_id)
-            authors = [author.as_json() for author in post.likes.all()]
+            authors = [like.author.as_json() for like in post.likes.all()]
 
             response = {
                 "type:": "likes",

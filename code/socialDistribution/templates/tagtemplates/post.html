@@ -11,14 +11,15 @@
         <h4 class="card-title mx-auto">{{ post.title }}</h4>
         <p class="card-text text-center">
             <span class="mx-auto">{{ post.description }}<span><br>
-                    <span class="p-1 content-markdown">{{ post.content | safe}}</span>
+                {% if not post.is_image_post %}
+                    <span class="p-1 content-markdown">{{ post.decoded_content | safe}}</span>
+                {% endif %}
         </p>
         <p>
             {{is_remote}}
         </p>
-        {% if content_media %}
-        <img src="data:image/png;charset=utf-8;base64,{{ content_media }}" alt="Post content media"
-            class="rounded w-100 mx-auto" style="object-fit: contain; border-radius:16px;">
+        {% if post.is_image_post %}
+            <img src="data:{{ post.get_content_type_display }},{{ post.decoded_content }}" alt="Post Content">
         {% endif %}
     </div>
     <div class="card-footer bg-white">
@@ -90,18 +91,20 @@
         </div>
     </div>
 
-    {% load modal %}
-    {% load utility %}
-    <form method="POST" action="{% url 'socialDistribution:edit-post' post.id post_host %}">
-        {% csrf_token %}
-        {% modal id="edit_post_modal"|addstr:post.id type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
-    </form>
-    <form method="POST" action="{% url 'socialDistribution:delete-post' post.id post_host %}">
-        {% csrf_token %}
-        {% modal id="delete_post_modal"|addstr:post.id type="delete" label="Delete Post" title="Delete Post" btn="Delete" postid=post.id%}
-    </form>
-    <form method="POST" action="{% url 'socialDistribution:share-post' post.id %}">
-        {% csrf_token %}
-        {% modal id="share_post_modal"|addstr:post.id type="share" label="Share Post" title="Share Post" btn="Share" postid=post.id%}
-    </form>
+    {% if post_host == 'local' %}
+        {% load modal %}
+        {% load utility %}
+        <form method="POST" enctype="multipart/form-data" action="{% url 'socialDistribution:edit-post' post.id %}">
+            {% csrf_token %}
+            {% modal id="edit_post_modal"|addstr:post.id type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
+        </form>
+        <form method="POST" action="{% url 'socialDistribution:delete-post' post.id %}">
+            {% csrf_token %}
+            {% modal id="delete_post_modal"|addstr:post.id type="delete" label="Delete Post" title="Delete Post" btn="Delete" postid=post.id%}
+        </form>
+        <form method="POST" action="{% url 'socialDistribution:share-post' post.id %}">
+            {% csrf_token %}
+            {% modal id="share_post_modal"|addstr:post.id type="share" label="Share Post" title="Share Post" btn="Share" postid=post.id%}
+        </form>
+    {% endif %}
 </div>

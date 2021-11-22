@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from mixer.backend.django import mixer
-import json
+import base64 as b64
 
 from socialDistribution.models import LocalPost, Category, LocalAuthor
 from .test_authors import create_author
@@ -18,7 +18,7 @@ def create_post(title, author):
             title=title,
             description="testDesc",
             content_type=LocalPost.ContentType.PLAIN,
-            content="testContexxt",
+            content="testContexxt".encode("utf-8"),
             visibility=LocalPost.Visibility.PUBLIC,
             unlisted=False,
         )
@@ -35,7 +35,7 @@ def get_post_json(post):
             "origin":"blah",
             "description":post.description,
             "contentType":post.get_content_type_display(),
-            "content":post.content, # 
+            "content":post.decoded_content, # 
             "author":post.author.as_json(),
             "categories":previousCategoriesNames,
             "count": 0,
