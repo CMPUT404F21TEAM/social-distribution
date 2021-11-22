@@ -8,7 +8,6 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
-from django.urls import reverse
 from .forms import CreateUserForm, PostForm
 
 import base64
@@ -338,14 +337,14 @@ def authors(request):
         # get request for authors
         try:
             try:
-                res = api_requests.get(f'http://{node.host}/api/authors/')
+                res_code, res_body = api_requests.get(f'http://{node.host}/api/authors/')
 
             except Exception as error:
                 # if remote server unavailable continue
                 continue
 
             # prepare remote data
-            for remote_author in res['items']:
+            for remote_author in res_body['items']:
                 author, created = Author.objects.get_or_create(
                     url=remote_author['id']
                 )
@@ -487,13 +486,19 @@ def edit_post(request, id):
     """
         Edits an existing post
     """
-    author = LocalAuthor.objects.get(user=request.user)
-    post = LocalPost.objects.get(id=id)
+    post = get_object_or_404(LocalPost, id=id)
+    author = get_object_or_404(LocalAuthor, user=request.user)
+    if (author.id != post.author.id):
+        return HttpResponseForbidden()
+        
     if not post.is_public():
         return HttpResponseBadRequest("Only public posts are editable")
-
+    
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES, user_id=author.id)
+        # get post data
+        edited_post = post.as_json()
+        
+        form = PostForm(request.POST, request.FILES, user_id=post.author.id)
         if form.is_valid():
             content, content_type = form.get_content_and_type()
 
@@ -508,7 +513,6 @@ def edit_post(request, id):
                 post.content = content
 
                 categories = form.cleaned_data.get('categories')
-
                 if categories is not None:
                     categories = categories.split()
                     categories_to_remove = [cat.category for cat in post.categories.all()]
@@ -531,15 +535,26 @@ def edit_post(request, id):
                     for category in categories_to_remove:
                         category_obj = Category.objects.get(category=category)
                         post.categories.remove(category_obj)
-
+                        
                 post.save()
 
+                # get recipients for a private post
+                if form.cleaned_data.get('visibility') == LocalPost.Visibility.PRIVATE:
+                    recipients = form.cleaned_data.get('post_recipients')
+                else:
+                    recipients = None
+                
             except ValidationError:
                 messages.info(request, 'Unable to edit post.')
+                
+    prev_page = request.META['HTTP_REFERER']
 
-    # if using view name, app_name: must prefix the view name
-    # In this case, app_name is socialDistribution
-    return redirect('socialDistribution:home')
+    if prev_page is None:
+        return redirect('socialDistribution:home')
+    else:
+        # prev_page -> url to inbox at the moment
+        # will have to edit this if other endpoints require args
+        return redirect(prev_page)
 
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
 
@@ -645,11 +660,13 @@ def delete_post(request, id):
     """
         Deletes a post
     """
-    # move functionality to API
+    author = get_object_or_404(LocalAuthor, user=request.user)
     post = get_object_or_404(LocalPost, id=id)
-    author = LocalAuthor.objects.get(user=request.user)
-    if post.author == author:
-        post.delete()
+    
+    if (author.id != post.author.id):
+        return HttpResponseForbidden()
+    
+    post.delete()
     return redirect('socialDistribution:home')
 
 
