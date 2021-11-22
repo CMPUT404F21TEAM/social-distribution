@@ -10,7 +10,13 @@ def friend_card(sender):
         Handle people who send you friend requests
     """
     action_link = 'socialDistribution:friend-request'
-    displayName = sender.as_json()["displayName"]
+
+    sender_json = sender.as_json()
+    
+    displayName = "'Name Unavailable'"
+    if sender_json and "displayName" in sender_json:
+        displayName = sender_json["displayName"]
+
     return {
         'header': f'{displayName} wants to follow you',
         'sender': sender,

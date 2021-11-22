@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from mixer.backend.django import mixer
-import base64 as b64
+import json
 
 from socialDistribution.models import LocalPost, Category, LocalAuthor
 from .test_authors import create_author
@@ -35,7 +35,7 @@ def get_post_json(post):
             "origin":"blah",
             "description":post.description,
             "contentType":post.get_content_type_display(),
-            "content":post.decoded_content, # 
+            "content":post.content,
             "author":post.author.as_json(),
             "categories":previousCategoriesNames,
             "count": 0,
@@ -46,58 +46,37 @@ def get_post_json(post):
             "unlisted":post.unlisted
         }
 
-class PostsViewTest(TestCase):
+class PostViewTest(TestCase):
 
-    def test_get_posts_basic(self):
+    def test_get_post_basic(self):
         self.maxDiff = None
         author = mixer.blend(LocalAuthor)
         post = create_post("first", author)
-        expected = {
-            "type":"posts",
-            "page": None,
-            "size": None,
-            "items": [get_post_json(post)]
-            }
+        expected = get_post_json(post)
+        expected['content'] = expected['content'].decode('utf-8')
 
-        response = self.client.get(reverse('api:posts', args=(post.author.id,)))
+        response = self.client.get(reverse('api:post', args=(post.author.id,post.id)))
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(response.content, expected)
         
-    def test_get_posts_paginated(self):
+    def test_post_post(self):
         self.maxDiff = None
-        page = 1
-        size = 2
         author = mixer.blend(LocalAuthor)
-        post1 = create_post("first", author)
-        post2 = create_post("second", author)
+        post = create_post("first", author)
+        newJson = get_post_json(post)
+        newJson['title'] = 'newPost'
+        newJson['content'] = newJson['content'].decode('utf-8')
 
-        expected = {
-                "type": "posts",
-                "page": page,
-                "size": size,
-                "items": [get_post_json(post1), get_post_json(post2)]
-            }
+        response = self.client.post(reverse('api:post', args=(post.author.id,post.id)), content_type="application/json", data=json.dumps(newJson))
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(newJson['title'], LocalPost.objects.filter(id=post.id).first().title)
         
-        response = self.client.get(reverse('api:posts', args=(post1.author.id,)) + f'?page={page}&size={size}')
-        self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(response.content, expected)
-        
-    def test_get_posts_paginated_page_2(self):
+    def test_delete_post(self):
         self.maxDiff = None
-        page = 2
-        size = 2
         author = mixer.blend(LocalAuthor)
-        post1 = create_post("first", author)
-        post2 = create_post("second", author)
-        post3 = create_post("third", author)
+        post = create_post("first", author)
 
-        expected = {
-                "type": "posts",
-                "page": page,
-                "size": size,
-                "items": [get_post_json(post3)]
-            }
-        
-        response = self.client.get(reverse('api:posts', args=(post1.author.id,)) + f'?page={page}&size={size}')
+        response = self.client.delete(reverse('api:post', args=(post.author.id,post.id)))
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(response.content, expected)
+        self.assertFalse(LocalPost.objects.filter(id=post.id).exists())
+        

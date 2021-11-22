@@ -2,6 +2,7 @@ from mixer.backend.django import mixer
 # from datetime import datetime, timezone
 
 from .models import *
+import base64 as b64
 
 
 class PostBuilder:
@@ -16,7 +17,7 @@ class PostBuilder:
             title="testPost",
             description="testDesc",
             content_type=LocalPost.ContentType.PLAIN,
-            content="testContexxt",
+            content=b64.b64encode("testContexxt".encode('utf-8')),
             visibility=LocalPost.Visibility.PUBLIC,
             unlisted=False,
             # content_media=None,

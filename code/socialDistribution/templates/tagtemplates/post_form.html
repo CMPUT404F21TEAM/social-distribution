@@ -17,14 +17,19 @@
         {{ form.categories }}
     </div>
     <div class="post_field">
+        {{ form.post_type.errors }}
+        {{ form.post_type.label_tag }}
+        {{ form.post_type }}
+    </div>
+    <div class="post_field" id="content_text_div">
         {{ form.content_text.errors }}
         {{ form.content_text.label_tag }}
         {{ form.content_text }}
     </div>
-    <div class="post_field">
-        {{ form.content_media.errors }}
-        {{ form.content_media.label_tag }}
-        {{ form.content_media }}
+    <div class="post_field" id="image_upload_div">
+        {{ form.image.errors }}
+        {{ form.image.label_tag }}<br>
+        {{ form.image }}
     </div>
     <div class="post_field">
         {{ form.unlisted.errors }}
@@ -43,17 +48,5 @@
     </div>
 </div>
 
-<script type="text/javascript">
-    // form.visibility expands to an input tag with "id_visibility" as id
-    var visibility_check = document.getElementById('id_visibility');
-    var post_recipients_div = document.getElementById('post_recipients_div');
-    function toggleRecipientsHandler (ev) {
-        if (this.value == "PR")
-            post_recipients_div.style.display = "block";
-        else
-            post_recipients_div.style.display = "none";
-    }
-
-    visibility_check.addEventListener('change', toggleRecipientsHandler.bind(visibility_check));
-    toggleRecipientsHandler.call(visibility_check);
-</script>
+{% load static %}
+<script src="{% static 'js/post_form.js' %}"></script>

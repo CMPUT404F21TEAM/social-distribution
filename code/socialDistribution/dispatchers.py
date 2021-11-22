@@ -1,12 +1,16 @@
 from typing import List
-import requests
-import json
 
-from .models import LocalPost, Author, LocalAuthor
+
 import socialDistribution.requests as api_requests
+from .models import LocalPost, Author, LocalAuthor
 
+def send_post(post: LocalPost, url: str):
+    """ Sends a post to the given URL via a POST request. """
 
-def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None):
+    data = post.as_json()
+    api_requests.post(url=url, data=data, sendBasicAuthHeader=True)
+
+def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None,):
     """ Sends a post to the inbox of all followers who have permission to view the post.
 
     Parameters:
@@ -17,28 +21,20 @@ def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None):
     if post.visibility == LocalPost.Visibility.PUBLIC:
         # send posts to all followers
         for follower in post.author.get_followers():
-            inbox = follower.get_inbox()
-            send_post(post, inbox)
+            url = follower.get_inbox()
+            send_post(post, url)
 
     elif post.visibility == LocalPost.Visibility.FRIENDS:
         # send posts to friends
         for friend in post.author.get_friends():
-            inbox = friend.get_inbox()
-            send_post(post, inbox)
+            url = friend.get_inbox()
+            send_post(post, url)
 
     elif post.visibility == LocalPost.Visibility.PRIVATE:
         # send posts to private recipients
         for follower in recipients:
-            inbox = follower.get_inbox()
-            send_post(post, inbox)
-
-
-def send_post(post: LocalPost, url: str):
-    """ Sends a post to the given URL via a POST request. """
-
-    data = post.as_json()
-    api_requests.post(url=url, body=data)
-
+            url = follower.get_inbox()
+            send_post(post, url)
 
 def dispatch_follow_request(actor: LocalAuthor, object: Author):
     """ Sends a follow request to the inbox of another author.
@@ -60,4 +56,4 @@ def dispatch_follow_request(actor: LocalAuthor, object: Author):
         "object": object_json
     }
 
-    api_requests.post(url=object_inbox, body=data)
+    api_requests.post(url=object_inbox, data=data, sendBasicAuthHeader=True)

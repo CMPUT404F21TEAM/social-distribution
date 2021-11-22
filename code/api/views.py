@@ -1,22 +1,25 @@
+import base64
+from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.http.response import *
 from django.http import HttpResponse, JsonResponse
 from django.http.response import HttpResponseBadRequest
 from django.shortcuts import redirect, get_object_or_404
-from django.core import serializers
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 
 from datetime import datetime, timezone
 import json
-import logging
+import logging, base64
 
 from cmput404.constants import HOST, API_PREFIX
+from socialDistribution.forms import PostForm
 from socialDistribution.models import *
-from .decorators import authenticate_request
+from .decorators import authenticate_request, validate_node
 from .parsers import url_parser
-from .utility import getPaginated
+from .utility import getPaginated, makePost
 
 # References for entire file:
 # Django Software Foundation, "Introduction to class-based views", 2021-10-13
@@ -229,10 +232,80 @@ class PostsView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostView(View):
-
     def get(self, request, author_id, post_id):
-        return HttpResponse("This is the authors/aid/posts/pid/ endpoint")
+        """ GET - Get json for post {post_id} """
+        try:
+            post = LocalPost.objects.get(id=post_id)
+            response = post.as_json()
+            
+        except LocalPost.DoesNotExist:
+            return HttpResponseNotFound()
 
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseServerError()
+
+        return JsonResponse(response)
+    
+    #TODO: authenticate
+    def delete(self, request, author_id, post_id):
+        """ GET - Delete post {post_id} """
+        try:
+            post = LocalPost.objects.get(id=post_id)
+            post.delete()
+            
+        except LocalPost.DoesNotExist:
+            return HttpResponseNotFound()
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseServerError()
+
+        return HttpResponse(200)
+    
+    #TODO: authenticate
+    def post(self, request, author_id, post_id):
+        """ POST - Update post {post_id} """
+        data = json.loads(request.body)
+        post = LocalPost.objects.get(id=post_id)
+
+        try:
+            post.title = data['title']
+            post.description = data['description']
+            post.content_type = data['contentType']
+            post.content = data['content'].encode('utf-8')
+            post.visibility = data['visibility']
+            post.unlisted = data['unlisted']
+
+            categories = data['categories']
+
+            if categories is not None:
+                categories_to_remove = [ cat.category for cat in post.categories.all()]
+
+                """
+                This implementation makes category names case-insensitive.
+                This makes handling Category objects cleaner, albeit slightly more
+                involved.
+                """
+                for category in categories:
+                    category_obj, created = Category.objects.get_or_create(
+                        category__iexact=category,
+                        defaults={'category': category}
+                    )
+                    post.categories.add(category_obj)
+                    
+                    while category_obj.category in categories_to_remove:
+                        categories_to_remove.remove(category_obj.category)     # don't remove this category
+
+                for category in categories_to_remove:
+                    category_obj = Category.objects.get(category=category)
+                    post.categories.remove(category_obj)
+
+            post.save()
+            return JsonResponse(status=201, data=post.as_json())
+            
+        except ValidationError:
+            messages.info(request, 'Unable to edit post.')
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostLikesView(View):
@@ -241,7 +314,7 @@ class PostLikesView(View):
         """ GET - Get a list of authors who like {post_id} """
         try:
             post = LocalPost.objects.get(id=post_id)
-            authors = [author.as_json() for author in post.likes.all()]
+            authors = [like.author.as_json() for like in post.likes.all()]
 
             response = {
                 "type:": "likes",
@@ -329,7 +402,7 @@ class PostCommentsView(View):
         except Exception:
             return HttpResponse('Internal Server Error')
 
-        return redirect('socialDistribution:commentPost', id=post_id)
+        return redirect('socialDistribution:comment-post', id=post_id)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -353,6 +426,7 @@ class InboxView(View):
         })
 
     # TODO: authenticate user
+    @method_decorator(validate_node)
     def post(self, request, author_id):
         """ POST - Send a post to {author_id}
             - if the type is “post” then add that post to the author’s inbox
@@ -360,58 +434,9 @@ class InboxView(View):
             - if the type is “like” then add that like to the author’s inbox    
         """
         data = json.loads(request.body)
-        # pprint.pprint(data)
         try:
             if data["type"] == "post":
-                # get owner of inbox
-                receiving_author = get_object_or_404(LocalAuthor, id=author_id)
-
-                # save the received post as an InboxPost
-                received_post, post_created = InboxPost.objects.get_or_create(
-                    public_id=data["id"],
-                    defaults={
-                        "title": data["title"],
-                        "source": data["source"],
-                        "origin": data["origin"],
-                        "description": data["description"],
-                        "content_type": data["contentType"],
-                        "content": data["content"],
-                        # "categories": data["categories"],
-                        "author": data["author"]["id"],
-                        "_author_json": data["author"],
-                        "published": data["published"],
-                        "visibility": data["visibility"],
-                        "unlisted": data["unlisted"],
-                    }
-                )
-
-                if not post_created:
-                    categories_to_remove = [category_obj.category 
-                        for category_obj in received_post.categories.all()]
-                else:
-                    categories_to_remove = []
-
-                for category in data["categories"]:
-                    if category != "":
-                        category_obj, cat_created = Category.objects.get_or_create(
-                            category__iexact=category,
-                            defaults={"category": category}
-                        )
-                        received_post.categories.add(category_obj)
-
-                        # loop condition is always false if post was created
-                        # because categories_to_remove is an empty list then
-                        while category_obj.category in categories_to_remove:
-                            categories_to_remove.remove(category_obj.category)      # don't remove this category
-
-                # won't execute if post was created
-                for category in categories_to_remove:
-                    category_obj = Category.objects.get(category=category)
-                    received_post.categories.remove(category_obj)
-
-                # add post to inbox of author
-                receiving_author.inbox_posts.add(received_post)
-
+                makePost(author_id, data)
                 return HttpResponse(status=200)
 
             elif data["type"] == "follow":

@@ -7,7 +7,9 @@ from mixer.backend.django import mixer
 from datetime import datetime, timezone
 
 from socialDistribution.models import LocalAuthor, LocalPost, Comment
+from api.models import Node
 from cmput404.constants import *
+import base64
 
 # Documentation and code samples taken from the following references:
 # Django Software Foundation, https://docs.djangoproject.com/en/3.2/intro/tutorial05/
@@ -23,6 +25,12 @@ def create_author(id, username, displayName, githubUrl):
 
 
 class InboxViewTests(TestCase):
+
+    def setUp(self):
+        Node.objects.create(host=HOST, username='testclient', password='testpassword!')
+        self.basicAuthHeaders = {
+            'HTTP_AUTHORIZATION': 'Basic %s' % base64.b64encode(b'testclient:testpassword!').decode("ascii"),
+        }
 
     def test_post_local_follow(self):
         author1 = create_author(
@@ -64,6 +72,7 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 2}),
             content_type="application/json",
+            **self.basicAuthHeaders,
             data=body
         )
 
@@ -93,7 +102,12 @@ class InboxViewTests(TestCase):
         )
 
         # Create a post from author1
-        dummy_post = mixer.blend(LocalPost, id=1, author=author1)
+        dummy_post = mixer.blend(
+            LocalPost, 
+            id=1, 
+            author=author1,
+            content="testcontent".encode("utf-8")
+        )
 
         body = dummy_post.as_json()
 
@@ -101,6 +115,7 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 2}),
             content_type="application/json",
+            **self.basicAuthHeaders,
             data=body
         )
 
@@ -113,7 +128,7 @@ class InboxViewTests(TestCase):
         inbox_post = author2.inbox_posts.first()
         self.assertEqual(inbox_post.title, dummy_post.title)
         self.assertEqual(inbox_post.description, dummy_post.description)
-        self.assertEqual(inbox_post.content, dummy_post.content)
+        self.assertEqual(inbox_post.decoded_content, dummy_post.decoded_content)
     
     def test_post_comment_local_like(self):
         '''
@@ -140,6 +155,7 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 1}),
             content_type="application/json",
+            **self.basicAuthHeaders,
             data=body
         )
 
@@ -177,6 +193,7 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 1}),
             content_type="application/json",
+            **self.basicAuthHeaders,
             data=body
         )
 
