@@ -12,8 +12,9 @@ def friend_card(sender):
     action_link = 'socialDistribution:friend-request'
 
     sender_json = sender.as_json()
+    
     displayName = "'Name Unavailable'"
-    if "displayName" in sender_json:
+    if sender_json and "displayName" in sender_json:
         displayName = sender_json["displayName"]
 
     return {

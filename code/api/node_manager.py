@@ -30,18 +30,29 @@
 '''
 
 from .models import Node
+import logging
+
+logger = logging.getLogger(__name__)
 
 class NodeManager:
 
-    def get_host_credentials(self, host):
+    def get_credentials(self, host=None, username=None):
         '''
             Retrieve basic auth credentials from database.
         '''
 
         try:
-            node = Node.objects.get(host=host)
-            return str.encode(node.basic_auth_credentials)
-        except Exception as error:
+            if(host):
+                node = Node.objects.get(host=host)
+            elif (username):
+                node = Node.objects.get(username=username)
+            else:
+                raise AttributeError('host or  username must be sent!')
+
+            return str.encode(f'{node.username}:{node.password}')
+        except Exception as e:
+            logger.error(str(e))
             return ''
+
 
 node_manager = NodeManager()

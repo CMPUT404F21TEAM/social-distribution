@@ -25,12 +25,12 @@ def create_author(id, username, displayName, githubUrl):
 
 
 class InboxViewTests(TestCase):
-    basicAuthHeaders = {
-        'HTTP_AUTHORIZATION': 'Basic %s' % base64.b64encode(b'remotegroup:topsecret!').decode("ascii"),
-    }
 
     def setUp(self):
-        Node.objects.create(host=HOST, basic_auth_credentials='remotegroup:topsecret!')
+        Node.objects.create(host=HOST, username='testclient', password='testpassword!')
+        self.basicAuthHeaders = {
+            'HTTP_AUTHORIZATION': 'Basic %s' % base64.b64encode(b'testclient:testpassword!').decode("ascii"),
+        }
 
     def test_post_local_follow(self):
         author1 = create_author(
@@ -72,7 +72,6 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 2}),
             content_type="application/json",
-            HTTP_REFERER=HOST,
             **self.basicAuthHeaders,
             data=body
         )
@@ -116,7 +115,6 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 2}),
             content_type="application/json",
-            HTTP_REFERER=HOST,
             **self.basicAuthHeaders,
             data=body
         )
@@ -157,7 +155,6 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 1}),
             content_type="application/json",
-            HTTP_REFERER=HOST,
             **self.basicAuthHeaders,
             data=body
         )
@@ -196,7 +193,6 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 1}),
             content_type="application/json",
-            HTTP_REFERER=HOST,
             **self.basicAuthHeaders,
             data=body
         )
