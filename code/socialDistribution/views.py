@@ -335,14 +335,14 @@ def authors(request):
         # get request for authors
         try:
             try:
-                res = api_requests.get(f'http://{node.host}/api/authors/')
+                res_code, res_body = api_requests.get(f'http://{node.host}/api/authors/')
 
             except Exception as error:
                 # if remote server unavailable continue
                 continue
 
             # prepare remote data
-            for remote_author in res['items']:
+            for remote_author in res_body['items']:
                 author, created = Author.objects.get_or_create(
                         url=remote_author['id']
                     )
