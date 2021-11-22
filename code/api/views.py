@@ -229,10 +229,18 @@ class PostsView(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class PostView(View):
 
+    # @method_decorator(authenticate_request)   Can we have this too?
+    @method_decorator(validate_node)
     def get(self, request, author_id, post_id):
+        author = get_object_or_404(LocalAuthor, id=int(author_id))
+        post = get_object_or_404(
+            LocalPost, 
+            id=int(post_id),
+            author=author,
+            visibility=LocalPost.Visibility.PUBLIC
+        )
 
-        return HttpResponse("This is the authors/aid/posts/pid/ endpoint")
-
+        return JsonResponse(post.as_json())
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostLikesView(View):

@@ -240,9 +240,9 @@ class LocalPost(Post):
             # id of the post
             "id": self.get_id(),
             # where did you get this post from?
-            "source": "blah",
+            "source": f"{self.author.get_url_id()}/posts/{self.id}",
             # where is it actually from
-            "origin": "blah",
+            "origin": f"{self.author.get_url_id()}/posts/{self.id}",
             # a brief description of the post
             "description": self.description,
             # The content type of the post
