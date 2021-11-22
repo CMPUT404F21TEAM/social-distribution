@@ -509,6 +509,7 @@ def edit_post(request, id):
                 categories = form.cleaned_data.get('categories')
                 if categories is not None:
                     categories = categories.split()
+                    categories_to_remove = [ cat.category for cat in post.categories.all()]
 
                     """
                     This implementation makes category names case-insensitive.
@@ -517,10 +518,17 @@ def edit_post(request, id):
                     """
                     for category in categories:
                         category_obj, created = Category.objects.get_or_create(
-                            category__iexact=category, 
+                            category__iexact=category,
                             defaults={'category': category}
                         )
                         post.categories.add(category_obj)
+                        
+                        while category_obj.category in categories_to_remove:
+                            categories_to_remove.remove(category_obj.category)     # don't remove this category
+
+                    for category in categories_to_remove:
+                        category_obj = Category.objects.get(category=category)
+                        post.categories.remove(category_obj)
                         
                 post.save()
 
