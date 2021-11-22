@@ -1,7 +1,7 @@
 from django.db import models
 
 import socialDistribution.requests as api_requests
-
+from urllib import parse
 
 class Follow(models.Model):
     object = models.ForeignKey('LocalAuthor', on_delete=models.CASCADE, related_name="follows")
@@ -23,7 +23,7 @@ class Follow(models.Model):
         # make api request
         actor_url = self.actor.url.strip('/')
         object_url = self.object.url.strip('/')
-        endpoint = actor_url + '/followers/' + object_url
+        endpoint = actor_url + '/followers/' + parse.quote(object_url)
         status_code, response_body = api_requests.get(endpoint)
 
         # check if GET request came back with author object
