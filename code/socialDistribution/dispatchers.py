@@ -30,6 +30,8 @@ def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None):
         for follower in recipients:
             inbox = follower.get_inbox()
             send_post(post, inbox)
+            
+    
 
 
 def send_post(post: LocalPost, url: str):

@@ -481,6 +481,9 @@ def edit_post(request, id):
         Edits an existing post
     """
     post = get_object_or_404(LocalPost, id=id)
+    author = get_object_or_404(LocalAuthor, user=request.user)
+    if (author.id != post.author.id):
+        return HttpResponseForbidden()
         
     if not post.is_public():
         return HttpResponseBadRequest("Only public posts are editable")
@@ -625,11 +628,17 @@ def delete_post(request, id):
     """
         Deletes a post
     """
+    author = get_object_or_404(LocalAuthor, user=request.user)
     post = get_object_or_404(LocalPost, id=id)
+    
+    if (author.id != post.author.id):
+        return HttpResponseForbidden()
+    
+    post.delete()
+
         
     prev_page = request.META['HTTP_REFERER']
     
-    post.delete()
     #TODO: notify inboxposts
     return redirect('socialDistribution:home')
 
