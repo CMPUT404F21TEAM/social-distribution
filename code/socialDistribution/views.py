@@ -146,11 +146,12 @@ def logoutUser(request):
     logout(request)
     return redirect('socialDistribution:login')
 
+
 def unlisted_post_image(request, post_id):
     """
         Return the embedded image (if any) of the unlisted post
     """
-    
+
     if request.method == 'GET':
         post = get_object_or_404(LocalPost, pk=int(post_id))
         user_author = get_object_or_404(LocalAuthor, user=request.user)
@@ -176,7 +177,7 @@ def unlisted_post_image(request, post_id):
                         webp_bytes_arr = BytesIO()
                         img.save(webp_bytes_arr, 'webp')
                         webp_img = webp_bytes_arr.getvalue()
-                        
+
                         response = HttpResponse()
                         response.write(webp_img)
                         response['Content-Type'] = 'image/webp'
@@ -262,7 +263,6 @@ def friend_request(request, author_id, action):
             is_accept = action == 'accept'
             curr_user.handle_follow_request(requestee, is_accept)
 
-
     return redirect('socialDistribution:inbox')
 
 
@@ -282,7 +282,6 @@ def befriend(request, author_id):
             # send follow request
             dispatch_follow_request(actor, object)
 
-
     return redirect('socialDistribution:authors')
 
 
@@ -294,17 +293,23 @@ def un_befriend(request, author_id):
         - author_id (string): the ID of the Author to follow
     """
 
-    # THIS DOES NOT RIGHT NOW
-    # STILL BASED ON OLD LOCALAUTHOR METHOD
-
     if request.method == 'POST':
-        author = get_object_or_404(Author, pk=author_id)
-        curr_user = LocalAuthor.objects.get(user=request.user)
+        # current user follows author
+        # send delete request to author to leave me alone
 
-        if author.has_follower(curr_user):
-            author.follows.filter(actor=curr_user).delete()
-        else:
-            messages.info(request, f'Couldn\'t un-befriend {author.displayName}')
+        object = get_object_or_404(Author, id=author_id)
+        actor = LocalAuthor.objects.get(user=request.user)
+
+        if object.id != actor.id:
+            # tell them to delete me as a follower
+
+            actor_url = actor.url.strip('/')
+            object_url = object.url.strip('/')
+            url = object_url + '/followers/' + actor_url
+            status_code, response_body = api_requests.delete(url)
+
+            if status_code >= 400:
+                messages.info(request, f'Couldn\'t un-befriend {author.displayName}')
 
     return redirect('socialDistribution:author', author_id)
 
@@ -330,7 +335,7 @@ def authors(request):
     for node in Node.objects.all():
         # ignore current host
         if node.host == request.META['HTTP_HOST']:
-            continue 
+            continue
 
         # get request for authors
         try:
@@ -344,12 +349,12 @@ def authors(request):
             # prepare remote data
             for remote_author in res['items']:
                 author, created = Author.objects.get_or_create(
-                        url=remote_author['id']
-                    )
+                    url=remote_author['id']
+                )
 
                 # add Local database id to remote author
                 remote_author['local_id'] = author.id
-                
+
                 remote_authors.append({
                     "data": remote_author,
                     'type': "Remote"
@@ -390,6 +395,7 @@ def author(request, author_id):
 def create(request):
     return render(request, 'create/index.html')
 
+
 def posts(request, author_id):
     """ Handles POST request to publish a post.
 
@@ -401,9 +407,9 @@ def posts(request, author_id):
         form = PostForm(request.POST, request.FILES, user_id=user_id)
         if form.is_valid():
             content, content_type = form.get_content_and_type()
-                
+
             # Will do some more refactoring to remove code duplication soon
-            
+
             try:
                 # create the post
                 new_post = LocalPost(
@@ -428,7 +434,7 @@ def posts(request, author_id):
                     """
                     for category in categories:
                         category_obj, created = Category.objects.get_or_create(
-                            category__iexact=category, 
+                            category__iexact=category,
                             defaults={'category': category}
                         )
                         new_post.categories.add(category_obj)
@@ -451,6 +457,8 @@ def posts(request, author_id):
     return redirect('socialDistribution:home')
 
 # https://books.agiliq.com/projects/django-orm-cookbook/en/latest/copy.html - How to copy or clone an existing model object
+
+
 def share_post(request, id):
     """
         Allows user to share a post.
@@ -460,20 +468,20 @@ def share_post(request, id):
     """
     author = LocalAuthor.objects.get(user=request.user)
     post = LocalPost.objects.get(id=id)
-    
+
     if not post.is_public() and not post.is_friends():
         return redirect('socialDistribution:home')
-    
+
     oldSource = post.get_id()
-    
-    post.pk = None # duplicate the post
+
+    post.pk = None  # duplicate the post
     post.author = author
     post.published = timezone.now()
     post.source = oldSource
     post.save()
-    
+
     dispatch_post(post, [])
-    
+
     return redirect('socialDistribution:home')
 
 
@@ -505,7 +513,7 @@ def edit_post(request, id):
 
                 if categories is not None:
                     categories = categories.split()
-                    categories_to_remove = [ cat.category for cat in post.categories.all()]
+                    categories_to_remove = [cat.category for cat in post.categories.all()]
 
                     """
                     This implementation makes category names case-insensitive.
@@ -518,7 +526,7 @@ def edit_post(request, id):
                             defaults={'category': category}
                         )
                         post.categories.add(category_obj)
-                        
+
                         while category_obj.category in categories_to_remove:
                             categories_to_remove.remove(category_obj.category)     # don't remove this category
 
@@ -554,7 +562,7 @@ def like_post(request, id, post_host):
 
     author = LocalAuthor.objects.get(user=request.user)
     prev_page = request.META['HTTP_REFERER']
-    
+
     if request.method == 'POST':
         # create like object
         like = {

@@ -1,7 +1,6 @@
 # python manage.py test api.tests.test_followers
 
-from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, LiveServerTestCase
 from django.urls import reverse
 from mixer.backend.django import mixer
 import json
@@ -12,6 +11,33 @@ from socialDistribution.models import LocalAuthor, Author, Follow
 # Django Software Foundation, https://docs.djangoproject.com/en/3.2/intro/tutorial05/
 # Django Software Foundation, https://docs.djangoproject.com/en/3.2/topics/testing/overview/
 # Python Software Foundation, https://docs.python.org/3/library/unittest.html
+
+
+class FollowersSingleViewTests(LiveServerTestCase):
+
+    port = 8000
+
+    def test_get(self):
+        object = mixer.blend(LocalAuthor)
+        object = LocalAuthor.objects.get(id=object.id) # refetch to get the proper url
+        actor = mixer.blend(LocalAuthor)
+        actor = LocalAuthor.objects.get(id=actor.id) # refetch to get the proper url
+
+        object.follows.create(actor=actor)
+
+
+        kwargs = {"author_id": object.id, "foreign_author_id": actor.url}
+        request_url = reverse("api:followers-single", kwargs=kwargs)
+        response = self.client.get(request_url)
+
+        expected = actor.as_json()
+        actual = json.loads(response.content)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(expected, actual)
+
+    def test_delete(self):
+        pass
 
 
 class FollowersViewTests(TestCase):
