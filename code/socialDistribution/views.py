@@ -507,6 +507,7 @@ def edit_post(request, id):
 
                 edited_post['categories'] = categories.split()
                 post.save()
+                #TODO: notify inboxposts
                 
             except ValidationError:
                 messages.info(request, 'Unable to edit post.')
@@ -620,26 +621,16 @@ def like_comment(request, id):
         return redirect(prev_page)
 
 
-def delete_post(request, id, post_host):
+def delete_post(request, id):
     """
         Deletes a post
     """
-    if post_host == 'remote':
-        post = get_object_or_404(InboxPost, id=id)
-        request_url = post.author.strip('/') + f'/posts/{id}'
-    else:
-        post = get_object_or_404(LocalPost, id=id)
-        host = request.get_host()
-        request_url = f'http://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
+    post = get_object_or_404(LocalPost, id=id)
         
     prev_page = request.META['HTTP_REFERER']
     
-    if request.method == 'POST':
-        # redirect request to remote/local api
-        response = make_request('DELETE', request_url)
-        if response.status_code >= 400:
-            messages.error(request, 'An error occurred while deleting post')
-
+    post.delete()
+    #TODO: notify inboxposts
     return redirect('socialDistribution:home')
 
 
