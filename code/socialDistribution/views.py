@@ -12,6 +12,7 @@ from django.urls import reverse
 from .forms import CreateUserForm, PostForm
 
 import base64
+import pyperclip
 
 import socialDistribution.requests as api_requests
 from cmput404.constants import API_PREFIX
@@ -393,9 +394,7 @@ def unlisted_posts(request, author_id):
     curr_user = LocalAuthor.objects.get(user=request.user)
     author = get_object_or_404(LocalAuthor, pk=author_id)
 
-    # TODO: 
-    # Should become an API request (same as /author/<author-id>) since won't know if author is local/remote
-    # "Copy post link" button (ex. Clipboard API) (may need new HTML page as well)
+    # TODO: Should become an API request (same as /author/<author-id>) since won't know if author is local/remote
 
     posts = author.posts.unlisted()
 
@@ -487,7 +486,6 @@ def share_post(request, id):
         return redirect('socialDistribution:home')
     
     oldSource = post.get_id()
-    
     post.pk = None # duplicate the post
     post.author = author
     post.published = timezone.now()
@@ -497,6 +495,23 @@ def share_post(request, id):
     dispatch_post(post, [])
     
     return redirect('socialDistribution:home')
+
+def copy_link(request, id):
+    """
+        Allows user to copy a post's link
+    """
+
+    # TODO:
+    #     * make copy notification prettier 
+    #     * redirect to the same page after copying link to unlisted post 
+    #     * add pyperclip to requirements.txt
+
+    post = LocalPost.objects.get(id=id)
+    link = post.get_shareable_link()
+    pyperclip.copy(link)
+
+    return redirect('socialDistribution:home')
+    return render(request, 'author/copy_link.html', {'post': post})
 
 
 def edit_post(request, id):

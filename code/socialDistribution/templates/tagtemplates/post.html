@@ -62,7 +62,15 @@
                     </button>
                     {% endif %}
 
-                    
+                    <!-- Copy Post Link -->
+                    <button 
+                        type="button" 
+                        class="btn btn-secondary mx-1" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#copy_link_modal{{ post.id }}">
+                            <i class="far fa-copy"></i>
+                    </button>
+
 
                 </div>
 
@@ -105,6 +113,10 @@
         <form method="POST" action="{% url 'socialDistribution:share-post' post.id %}">
             {% csrf_token %}
             {% modal id="share_post_modal"|addstr:post.id type="share" label="Share Post" title="Share Post" btn="Share" postid=post.id%}
+        </form>
+        <form method="POST" action="{% url 'socialDistribution:copy-link' post.id %}">
+            {% csrf_token %}
+            {% modal id="copy_link_modal"|addstr:post.id type="copy" label="Copy Link" title="Copy Post Link" btn="Copy" postid=post.id%}
         </form>
     {% endif %}
 </div>

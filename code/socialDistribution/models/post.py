@@ -7,7 +7,7 @@ from jsonfield import JSONField
 import datetime as dt
 import timeago, base64
 
-from cmput404.constants import HOST, API_PREFIX
+from cmput404.constants import HOST, API_PREFIX, CLIENT_PREFIX
 from .comment import Comment
 from .category import Category
 
@@ -234,6 +234,11 @@ class LocalPost(Post):
 
     def get_id(self):
         return f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}"
+    
+    def get_shareable_link(self):
+        """ Gets the shareable (comments) link to a post """
+        
+        return f"http://{HOST}/{CLIENT_PREFIX}/comment-post/{self.id}"
 
     def as_json(self):
         previousCategories = self.categories.all()
