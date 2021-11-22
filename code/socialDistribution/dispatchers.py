@@ -4,38 +4,11 @@ from typing import List
 import socialDistribution.requests as api_requests
 from .models import LocalPost, Author, LocalAuthor
 
-def update_post(post: LocalPost, url: str):
-    """ Sends a post to the given URL via a POST request. """
-
-    data = post.as_json()
-    api_requests.post(url=url, data=data, sendBasicAuthHeader=True)
-    
-def delete_post(post: LocalPost, url: str):
-    """ Sends a post to the given URL via a POST request. """
-    api_requests.delete(url=url, sendBasicAuthHeader=True)        
-
-
 def send_post(post: LocalPost, url: str):
     """ Sends a post to the given URL via a POST request. """
 
     data = post.as_json()
     api_requests.post(url=url, data=data, sendBasicAuthHeader=True)
-
-actions = {
-           'update': update_post,
-           'delete': delete_post
-        }
-
-def dispatch_post_update(post: LocalPost, method):
-    """ Sends a post to the inbox of all followers who have permission to view the post.
-
-    Parameters:
-        post (LocalPost): the post to be sent out
-        recipients (QuerySet of LocalAuthor): the list of authors to receive the post if the post is private
-    """
-    print(post.id)
-    actions[method](post, post.get_id())
-
 
 def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None,):
     """ Sends a post to the inbox of all followers who have permission to view the post.
