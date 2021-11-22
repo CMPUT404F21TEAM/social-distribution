@@ -148,9 +148,8 @@ class FollowersSingleView(View):
         author = get_object_or_404(LocalAuthor, pk=author_id)
 
         try:
-            from urllib import parse
             # try to find and return follower author object
-            follower = Author.objects.get(url=parse.unquote(foreign_author_id))
+            follower = Author.objects.get(url=foreign_author_id)
             follow = author.follows.get(actor=follower)
             return JsonResponse(follow.actor.as_json())
         except (Author.DoesNotExist, Follow.DoesNotExist):
