@@ -18,7 +18,7 @@ def create_post(title, author):
             title=title,
             description="testDesc",
             content_type=LocalPost.ContentType.PLAIN,
-            content="testContexxt",
+            content="testContexxt".encode("utf-8"),
             visibility=LocalPost.Visibility.PUBLIC,
             unlisted=False,
         )
@@ -35,7 +35,7 @@ def get_post_json(post):
             "origin":"blah",
             "description":post.description,
             "contentType":post.get_content_type_display(),
-            "content":post.content, # 
+            "content":post.content,
             "author":post.author.as_json(),
             "categories":previousCategoriesNames,
             "count": 0,
@@ -53,6 +53,7 @@ class PostViewTest(TestCase):
         author = mixer.blend(LocalAuthor)
         post = create_post("first", author)
         expected = get_post_json(post)
+        expected['content'] = expected['content'].decode('utf-8')
 
         response = self.client.get(reverse('api:post', args=(post.author.id,post.id)))
         self.assertEqual(response.status_code, 200)
@@ -64,6 +65,7 @@ class PostViewTest(TestCase):
         post = create_post("first", author)
         newJson = get_post_json(post)
         newJson['title'] = 'newPost'
+        newJson['content'] = newJson['content'].decode('utf-8')
 
         response = self.client.post(reverse('api:post', args=(post.author.id,post.id)), content_type="application/json", data=json.dumps(newJson))
         self.assertEqual(response.status_code, 201)

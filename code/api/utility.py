@@ -25,7 +25,7 @@ def makePost(author_id, data):
             "origin": data["origin"],
             "description": data["description"],
             "content_type": data["contentType"],
-            "content": data["content"],
+            "content": data["content"].encode('utf-8'),
             # "categories": data["categories"],
             "author": data["author"]["id"],
             "_author_json": data["author"],

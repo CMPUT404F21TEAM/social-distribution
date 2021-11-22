@@ -476,17 +476,11 @@ def share_post(request, id):
     return redirect('socialDistribution:home')
 
 
-def edit_post(request, id, post_host):
+def edit_post(request, id):
     """
         Edits an existing post
     """
-    if post_host == 'remote':
-        post = get_object_or_404(InboxPost, id=id)
-        request_url = post.author.strip('/') + f'/posts/{id}'
-    else:
-        post = get_object_or_404(LocalPost, id=id)
-        host = request.get_host()
-        request_url = f'http://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
+    post = get_object_or_404(LocalPost, id=id)
         
     if not post.is_public():
         return HttpResponseBadRequest("Only public posts are editable")
