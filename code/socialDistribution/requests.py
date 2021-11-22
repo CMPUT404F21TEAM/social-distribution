@@ -102,3 +102,45 @@ def post(url, params=None, data={}, sendBasicAuthHeader=False):
 
     # caller should check status codes show error message to user (if needed)
     return response.status_code, response_data
+
+def delete(url, params=None):
+    """ Makes a DELETE request at the given URL and returns the JSON body of the HTTP response.
+
+        Parameters:
+         - url (string): The URL endpoint for the HTTP request
+         - params (dict): The query string parameters (default is None)
+
+        Returns:
+         - (int): Status code of the HTTP response
+         - (dict): JSON response data if status code of request is 200 OK and JSON parsing was successful. Otherwise, return None
+    """
+
+    headers = {
+        "Accept": "application/json"
+    }
+
+    # ref: https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request - datashaman
+    # 'Can I set max_retries for requests.request?'
+    session = requests.Session()
+
+    retries = Retry(total=2,
+                    backoff_factor=0.1,
+                    status_forcelist=[500, 502, 503, 504])
+
+    session.mount(url, HTTPAdapter(max_retries=retries))
+
+    response = session.delete(url, headers=headers, params=params)
+
+    # parse JSON response if OK
+    try:
+        if response.status_code == 200:
+            response_data = response.json()
+        else:
+            response_data = None
+    except json.decoder.JSONDecodeError:
+        response_data = None
+
+    logger.info(f"API DELETE request to {url} and received {response.status_code}")
+
+    # caller should check status codes show error message to user (if needed)
+    return response.status_code, response_data

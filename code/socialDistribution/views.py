@@ -298,7 +298,7 @@ def un_befriend(request, author_id):
     # STILL BASED ON OLD LOCALAUTHOR METHOD
 
     if request.method == 'POST':
-        author = get_object_or_404(LocalAuthor, pk=author_id)
+        author = get_object_or_404(Author, pk=author_id)
         curr_user = LocalAuthor.objects.get(user=request.user)
 
         if author.has_follower(curr_user):
