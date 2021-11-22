@@ -1,5 +1,5 @@
 from django.db import models
-from datetime import *
+from datetime import datetime, timezone
 import timeago
 
 from cmput404.constants import HOST, API_PREFIX
@@ -50,7 +50,7 @@ class PostLike(Like):
             models.UniqueConstraint(fields=['author', 'object'], name='unique_post_like'),
         ]
 
-    object = models.ForeignKey('Post', on_delete=models.CASCADE, related_name="likes")
+    object = models.ForeignKey('LocalPost', on_delete=models.CASCADE, related_name="likes")
 
 
 class CommentLike(Like):

@@ -6,8 +6,10 @@ from django.urls import reverse
 from mixer.backend.django import mixer
 from datetime import datetime, timezone
 
-from socialDistribution.models import LocalAuthor, Inbox, Post, Comment
+from socialDistribution.models import LocalAuthor, LocalPost, Comment
+from api.models import Node
 from cmput404.constants import *
+import base64
 
 # Documentation and code samples taken from the following references:
 # Django Software Foundation, https://docs.djangoproject.com/en/3.2/intro/tutorial05/
@@ -19,20 +21,25 @@ def create_author(id, username, displayName, githubUrl):
     user = mixer.blend(User, username=username)
     author = LocalAuthor.objects.create(
         id=id, username=username, displayName=displayName, githubUrl=githubUrl, user=user)
-    inbox = Inbox.objects.create(author=author)
-    return author, inbox
+    return author
 
 
 class InboxViewTests(TestCase):
 
+    def setUp(self):
+        Node.objects.create(host=HOST, username='testclient', password='testpassword!')
+        self.basicAuthHeaders = {
+            'HTTP_AUTHORIZATION': 'Basic %s' % base64.b64encode(b'testclient:testpassword!').decode("ascii"),
+        }
+
     def test_post_local_follow(self):
-        author1, inbox1 = create_author(
+        author1 = create_author(
             1,
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
         )
-        author2, inbox2 = create_author(
+        author2 = create_author(
             2,
             "user2",
             "Lara Croft",
@@ -65,25 +72,29 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 2}),
             content_type="application/json",
+            **self.basicAuthHeaders,
             data=body
         )
 
         self.assertEqual(response.status_code, 200)
 
-        query_set = author2.inbox.follow_requests.all()
+        query_set = author2.follow_requests.all()
         self.assertEqual(query_set.count(), 1)
-        self.assertEqual(query_set[0], author1)
+
+        follow_request_author = author2.follow_requests.first()
+        follow_request_author = LocalAuthor.objects.get(id=follow_request_author.id)
+        self.assertEqual(follow_request_author, author1)
 
     def test_post_local_post(self):
         # NOTE: This test is very basic. More work needed on this endpoint.
 
-        author1, inbox1 = create_author(
+        author1 = create_author(
             1,
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
         )
-        author2, inbox2 = create_author(
+        author2 = create_author(
             2,
             "user2",
             "Lara Croft",
@@ -91,59 +102,46 @@ class InboxViewTests(TestCase):
         )
 
         # Create a post from author1
-        dummy_post = mixer.blend(Post, id=1, author=author1)
+        dummy_post = mixer.blend(
+            LocalPost, 
+            id=1, 
+            author=author1,
+            content="testcontent".encode("utf-8")
+        )
 
-        body = {
-            "type": "post",
-            "title": "A Friendly post title about a post about web dev",
-            "id": "http://127.0.0.1:8000/api/author/1/posts/1",  # this is the only line being parsed right now!
-            "source": "http://lastplaceigotthisfrom.com/posts/yyyyy",
-            "origin": "http://whereitcamefrom.com/posts/zzzzz",
-            "description": "This post discusses stuff -- brief",
-            "contentType": "text/plain",
-            "content": "Þā wæs on burgum Bēowulf Scyldinga, lēof lēod-cyning, longe þrāge folcum gefrǣge (fæder ellor hwearf, aldor of earde), oð þæt him eft onwōc hēah Healfdene; hēold þenden lifde, gamol and gūð-rēow, glæde Scyldingas. Þǣm fēower bearn forð-gerīmed in worold wōcun, weoroda rǣswan, Heorogār and Hrōðgār and Hālga til; hȳrde ic, þat Elan cwēn Ongenþēowes wæs Heaðoscilfinges heals-gebedde. Þā wæs Hrōðgāre here-spēd gyfen, wīges weorð-mynd, þæt him his wine-māgas georne hȳrdon, oð þæt sēo geogoð gewēox, mago-driht micel. Him on mōd bearn, þæt heal-reced hātan wolde, medo-ærn micel men gewyrcean, þone yldo bearn ǣfre gefrūnon, and þǣr on innan eall gedǣlan geongum and ealdum, swylc him god sealde, būton folc-scare and feorum gumena. Þā ic wīde gefrægn weorc gebannan manigre mǣgðe geond þisne middan-geard, folc-stede frætwan. Him on fyrste gelomp ǣdre mid yldum, þæt hit wearð eal gearo, heal-ærna mǣst; scōp him Heort naman, sē þe his wordes geweald wīde hæfde. Hē bēot ne ālēh, bēagas dǣlde, sinc æt symle. Sele hlīfade hēah and horn-gēap: heaðo-wylma bād, lāðan līges; ne wæs hit lenge þā gēn þæt se ecg-hete āðum-swerian 85 æfter wæl-nīðe wæcnan scolde. Þā se ellen-gǣst earfoðlīce þrāge geþolode, sē þe in þȳstrum bād, þæt hē dōgora gehwām drēam gehȳrde hlūdne in healle; þǣr wæs hearpan swēg, swutol sang scopes. Sægde sē þe cūðe frum-sceaft fīra feorran reccan",
-            "author": {
-                "type": "author",
-                "id": "http://127.0.0.1:8000/author/4",
-                "host": "http://127.0.0.1:8000/",
-                "displayName": "Lara Croft",
-                "url": "http://127.0.0.1:5454/author/9de17f29c12e8f97bcbbd34cc908f1baba40658e",
-                "github": "http://github.com/laracroft",
-                "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
-            },
-            "categories": ["web", "tutorial"],
-            "comments": "http://127.0.0.1:8000/author/9de17f29c12e8f97bcbbd34cc908f1baba40658e/posts/de305d54-75b4-431b-adb2-eb6b9e546013/comments",
-            "published": "2015-03-09T13:07:04+00:00",
-            "visibility": "FRIENDS",
-            "unlisted": False
-        }
+        body = dummy_post.as_json()
 
         # Send the post to author 2
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 2}),
             content_type="application/json",
+            **self.basicAuthHeaders,
             data=body
         )
 
         self.assertEqual(response.status_code, 200)
 
         # Check the received posts of author2
-        query_set = author2.inbox.posts.all()
+        query_set = author2.inbox_posts.all()
         self.assertEqual(query_set.count(), 1)
-        self.assertEqual(query_set[0], dummy_post)
+
+        inbox_post = author2.inbox_posts.first()
+        self.assertEqual(inbox_post.title, dummy_post.title)
+        self.assertEqual(inbox_post.description, dummy_post.description)
+        self.assertEqual(inbox_post.decoded_content, dummy_post.decoded_content)
     
     def test_post_comment_local_like(self):
         '''
             Test liking a comment from a local author
         '''
-        author1, inbox1 = create_author(
+        author1 = create_author(
             1,
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
         ) 
 
-        post = mixer.blend(Post, author = author1)
+        post = mixer.blend(LocalPost, author = author1)
         comment = mixer.blend(Comment, author=author1, post=post, pub_date = datetime.now(timezone.utc) )
 
         body = {
@@ -157,6 +155,7 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 1}),
             content_type="application/json",
+            **self.basicAuthHeaders,
             data=body
         )
 
@@ -166,13 +165,13 @@ class InboxViewTests(TestCase):
         self.assertEqual(liker.id, author1.id)
 
     def test_post_like(self):
-        author, inbox = create_author(
+        author = create_author(
             1,
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
         )
-        post = mixer.blend(Post, id=1, author=author)
+        post = mixer.blend(LocalPost, id=1, author=author)
 
         body = {
             "@context": "https://www.w3.org/ns/activitystreams",
@@ -194,13 +193,14 @@ class InboxViewTests(TestCase):
         response = self.client.post(
             reverse("api:inbox", kwargs={"author_id": 1}),
             content_type="application/json",
+            **self.basicAuthHeaders,
             data=body
         )
 
         self.assertEqual(response.status_code, 200)
         
         # Check that the post received a like
-        post = Post.objects.get(id=1)
+        post = LocalPost.objects.get(id=1)
         self.assertEqual(1, post.likes.count())
 
         # Check that the like was from the right author

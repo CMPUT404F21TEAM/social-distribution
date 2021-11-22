@@ -1,7 +1,8 @@
 from mixer.backend.django import mixer
-from datetime import datetime, timezone
+# from datetime import datetime, timezone
 
 from .models import *
+import base64 as b64
 
 
 class PostBuilder:
@@ -11,19 +12,16 @@ class PostBuilder:
 
     def __init__(self):
         author = mixer.blend(LocalAuthor)
-        self.__post = Post.objects.create(
+        self.__post = LocalPost.objects.create(
             author_id=author.id,
             title="testPost",
-            source="",
-            origin="",
             description="testDesc",
-            content_type=Post.PostContentType.PLAIN,
-            content_text="testContexxt",
-            visibility=Post.PUBLIC,
+            content_type=LocalPost.ContentType.PLAIN,
+            content=b64.b64encode("testContexxt".encode('utf-8')),
+            visibility=LocalPost.Visibility.PUBLIC,
             unlisted=False,
-            content_media=None,
-            pub_date=datetime.now(timezone.utc),
-            count=0
+            # content_media=None,
+            # count=0
         )
 
     def build(self):

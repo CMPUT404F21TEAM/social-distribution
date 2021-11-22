@@ -1,7 +1,7 @@
 <div class="card shadow border-light bg-white" id="post" height="100%">
     <div class="card-header bg-white">
         <div class="fs-5" style="line-height: 20px;">
-            {{ post.author.displayName }}
+            {{ post.author_as_json.displayName }}
         </div>
         <small class="text-muted">
             {{ post.when }}
@@ -11,28 +11,36 @@
         <h4 class="card-title mx-auto">{{ post.title }}</h4>
         <p class="card-text text-center">
             <span class="mx-auto">{{ post.description }}<span><br>
-                    <span class="p-1 content-markdown">{{ post.content_text | safe}}</span>
+                {% if not post.is_image_post %}
+                    <span class="p-1 content-markdown">{{ post.decoded_content | safe}}</span>
+                {% endif %}
         </p>
-        {% if content_media %}
-        <img src="data:image/png;charset=utf-8;base64,{{ content_media }}" alt="Post content media"
-            class="rounded w-100 mx-auto" style="object-fit: contain; border-radius:16px;">
+        <p>
+            {{is_remote}}
+        </p>
+        {% if post.is_image_post %}
+            <img src="data:{{ post.get_content_type_display }},{{ post.decoded_content }}" alt="Post Content">
         {% endif %}
     </div>
     <div class="card-footer bg-white">
         <div class="d-flex flex-column">
             <p class="px-2">
-                {{ likeText }}
+                {% if is_liked is None %}
+                    An error occurred while fetching likes
+                {% else %}
+                    {{ like_text }}
+                {% endif %}
             </p>
             <div class="d-flex justify-content-between">
                 <div class="d-flex flex-row">
-                    {% if isLiked %}
-                    <form method="post" action="{% url 'socialDistribution:likePost' post.id %}" class="d-flex">
+                    {% if is_liked %}
+                    <form method="post" action="{% url 'socialDistribution:like-post' post.id post_host %}" class="d-flex">
                         {% csrf_token %}
                         <button class="btn btn-secondary mx-2"><i class="fas fa-thumbs-up"></i></button>
                     </form>
 
                     {% else %}
-                    <form method="post" action="{% url 'socialDistribution:likePost' post.id %}" class="d-flex">
+                    <form method="post" action="{% url 'socialDistribution:like-post' post.id post_host %}" class="d-flex">
                         {% csrf_token %}
                         <button class="btn btn-primary mx-2"><i class="fas fa-thumbs-up"></i></button>
                     </form>
@@ -40,12 +48,25 @@
                     {% endif %}
 
                     <!-- Comment Icon -->
-                    <a href="{% url 'socialDistribution:commentPost' post.id %}"> <button class="btn btn-secondary"><i
+                    <a href="{% url 'socialDistribution:comment-post' post.id %}"> <button class="btn btn-secondary"><i
                                 class="fas fa-comment"></i></button></a>
+
+                    <!-- Launch Share Modal -->
+                    {% if is_public or is_friends %}
+                    <button 
+                        type="button" 
+                        class="btn btn btn-secondary mx-2" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#share_post_modal{{ post.id }}">
+                            <i class="fas fa-share-square"></i>
+                    </button>
+                    {% endif %}
+
+                    
 
                 </div>
 
-                {% if isAuthor and isPublic%}
+                {% if is_author and is_public%}
                 <span>
                     <!-- Launch Edit Modal -->
                     <button 
@@ -70,14 +91,20 @@
         </div>
     </div>
 
-    {% load modal %}
-    {% load utility %}
-    <form method="POST" action="{% url 'socialDistribution:editPost' post.id %}">
-        {% csrf_token %}
-        {% modal id="edit_post_modal"|addstr:post.id type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
-    </form>
-    <form method="POST" action="{% url 'socialDistribution:deletePost' post.id %}">
-        {% csrf_token %}
-        {% modal id="delete_post_modal"|addstr:post.id type="delete" label="Delete Post" title="Delete Post" btn="Delete" postid=post.id%}
-    </form>
+    {% if post_host == 'local' %}
+        {% load modal %}
+        {% load utility %}
+        <form method="POST" enctype="multipart/form-data" action="{% url 'socialDistribution:edit-post' post.id %}">
+            {% csrf_token %}
+            {% modal id="edit_post_modal"|addstr:post.id type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
+        </form>
+        <form method="POST" action="{% url 'socialDistribution:delete-post' post.id %}">
+            {% csrf_token %}
+            {% modal id="delete_post_modal"|addstr:post.id type="delete" label="Delete Post" title="Delete Post" btn="Delete" postid=post.id%}
+        </form>
+        <form method="POST" action="{% url 'socialDistribution:share-post' post.id %}">
+            {% csrf_token %}
+            {% modal id="share_post_modal"|addstr:post.id type="share" label="Share Post" title="Share Post" btn="Share" postid=post.id%}
+        </form>
+    {% endif %}
 </div>

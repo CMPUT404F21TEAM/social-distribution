@@ -14,6 +14,7 @@ urlpatterns = [
   path('author/<int:author_id>/', views.author, name='author'),
   path('home/', views.home, name='home'),
   path('author/<int:author_id>/posts/', views.posts, name='posts'),
+  path('unlisted/<int:post_id>', views.unlisted_post_image, name='unlisted-post-image'),
   path('author/<int:author_id>/befriend/', views.befriend, name='befriend'),
   path('author/<int:author_id>/un-befriend/', views.un_befriend, name='un-befriend'),
   path('author/<int:author_id>/friend-request/<str:action>', views.friend_request, name='friend-request'),
@@ -21,9 +22,10 @@ urlpatterns = [
   path('profile/', views.profile, name='profile'),
   path('user/', views.user, name='user'),
 
-  path('like-post/<int:id>', views.likePost, name='likePost'),
-  path('comment-post/<int:id>', views.commentPost, name='commentPost'),
-  path('like-comment/<int:id>', views.likeComment, name='likeComment'),
-  path('delete-post/<int:id>', views.deletePost, name='deletePost'),
-  path('edit-post/<int:id>', views.editPost, name='editPost'),
+  path('like-post/<int:id>/<str:post_host>', views.like_post, name='like-post'),
+  path('comment-post/<int:id>', views.comment_post, name='comment-post'),
+  path('like-comment/<int:id>', views.like_comment, name='like-comment'),
+  path('delete-post/<int:id>', views.delete_post, name='delete-post'),
+  path('edit-post/<int:id>', views.edit_post, name='edit-post'),
+  path('share-post/<int:id>', views.share_post, name='share-post')
 ]

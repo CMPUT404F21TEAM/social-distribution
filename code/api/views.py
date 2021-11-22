@@ -1,21 +1,25 @@
+import base64
+from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.http.response import *
 from django.http import HttpResponse, JsonResponse
 from django.http.response import HttpResponseBadRequest
-from django.shortcuts import redirect, render, get_object_or_404
-from django.core import serializers
+from django.shortcuts import redirect, get_object_or_404
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from urllib.parse import urlparse
-import json
-import logging
+
 from datetime import datetime, timezone
+import json
+import logging, base64
 
 from cmput404.constants import HOST, API_PREFIX
+from socialDistribution.forms import PostForm
 from socialDistribution.models import *
-from .decorators import authenticate_request
+from .decorators import authenticate_request, validate_node
 from .parsers import url_parser
+from .utility import getPaginated, makePost
 
 # References for entire file:
 # Django Software Foundation, "Introduction to class-based views", 2021-10-13
@@ -46,13 +50,25 @@ class AuthorsView(View):
 
     @method_decorator(ensure_csrf_cookie)
     def get(self, request):
-        """ GET - Retrieve all user profiles """
-
+        """ GET - Retrieve all user profiles 
+            'page' is indexed from 1, NOT 0.
+            'size' must be greater than 0
+        """
+        authors = LocalAuthor.objects.order_by('pk')
         page = request.GET.get("page")
         size = request.GET.get("size")
+        
+        if page and size:
+            page = int(page)
+            size = int(size)
+            try:
+                if page < 1 or size < 1:
+                    return HttpResponseBadRequest("Malformed query: page and size must be > 0")
+            except Exception as e:
+                return HttpResponseBadRequest(e)
+            authors = getPaginated(authors, page, size)
 
-        authors = [author.as_json() for author in LocalAuthor.objects.all()]
-
+        authors = [author.as_json() for author in authors]
         response = {
             "type": "authors",
             "items": authors
@@ -85,9 +101,9 @@ class AuthorView(View):
         if (not display_name or not email):
             return HttpResponseBadRequest()
 
-        djangoUser = get_object_or_404(get_user_model(), username = request.user)
+        djangoUser = get_object_or_404(get_user_model(), username=request.user)
         author = get_object_or_404(LocalAuthor, user=request.user)
-        
+
         try:
             # update author
             author.displayName = display_name
@@ -106,7 +122,6 @@ class AuthorView(View):
         return redirect('socialDistribution:profile')
 
 
-
 @method_decorator(csrf_exempt, name='dispatch')
 class FollowersView(View):
 
@@ -114,7 +129,7 @@ class FollowersView(View):
         """ GET - Get a list of authors who are the followers of {author_id} """
 
         author = get_object_or_404(LocalAuthor, pk=author_id)
-        followers = [follower.as_json() for follower in author.followers.all()]
+        followers = [follow.actor.as_json() for follow in author.follows.all()]
 
         response = {
             "type": "followers",
@@ -125,13 +140,31 @@ class FollowersView(View):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
+class FollowersSingleView(View):
+
+    def get(self, request, author_id, foreign_author_id):
+        """ GET - Check if {foreign_author_id} is a follower of {author_id} """
+
+        author = get_object_or_404(LocalAuthor, pk=author_id)
+
+        try:
+            # try to find and return follower author object
+            follower = Author.objects.get(url=foreign_author_id)
+            follow = author.follows.get(actor=follower)
+            return JsonResponse(follow.actor.as_json())
+        except (Author.DoesNotExist, Follow.DoesNotExist):
+            # return 404 if author not found
+            return HttpResponseNotFound()
+
+
+@method_decorator(csrf_exempt, name='dispatch')
 class LikedView(View):
 
     def get(self, request, author_id):
         """ GET - Get a list of like objects from {author_id} """
         try:
             author = LocalAuthor.objects.get(id=author_id)
-            authorLikedPosts = Post.objects.filter(likes__exact=author)
+            authorLikedPosts = LocalPost.objects.filter(likes__exact=author)
             host = request.get_host()
             likes = []
             for post in authorLikedPosts:
@@ -154,27 +187,37 @@ class LikedView(View):
 
         return JsonResponse(response)
 
+
 @method_decorator(csrf_exempt, name='dispatch')
 class PostsView(View):
 
     def get(self, request, author_id):
         # Send all PUBLIC posts
         try:
-            #TODO handle pagination
+            # TODO handle pagination
             page = request.GET.get("page")
             size = request.GET.get("size")
             author = get_object_or_404(LocalAuthor, id=author_id)
-            posts = Post.objects.listed().get_public().filter(author=author)
+            posts = LocalPost.objects.listed().get_public().filter(author=author).order_by('pk')
         
-            jsonPosts = []
-            for post in posts:
-                jsonPosts.append(post.as_json())
-
+                
+            if page and size:
+                page = int(page)
+                size = int(size)
+                try:
+                    if page < 1 or size < 1:
+                        return HttpResponseBadRequest("Malformed query: page and size must be > 0")
+                except Exception as e:
+                    return HttpResponseBadRequest(e)
+                posts = getPaginated(posts, page, size)
+                
+            posts = [post.as_json() for post in posts]
+            
             response = {
                 "type": "posts",
                 "page": page,
                 "size": size,
-                "items": jsonPosts
+                "items": posts
             }
 
         except Exception as e:
@@ -182,16 +225,87 @@ class PostsView(View):
             return HttpResponseServerError()
 
         return JsonResponse(response)
-    
+
     def post(self, request, author_id):
         return HttpResponse("This is the authors/aid/posts/ endpoint")
 
+
 @method_decorator(csrf_exempt, name='dispatch')
 class PostView(View):
-
     def get(self, request, author_id, post_id):
-        return HttpResponse("This is the authors/aid/posts/pid/ endpoint")
+        """ GET - Get json for post {post_id} """
+        try:
+            post = LocalPost.objects.get(id=post_id)
+            response = post.as_json()
+            
+        except LocalPost.DoesNotExist:
+            return HttpResponseNotFound()
 
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseServerError()
+
+        return JsonResponse(response)
+    
+    #TODO: authenticate
+    def delete(self, request, author_id, post_id):
+        """ GET - Delete post {post_id} """
+        try:
+            post = LocalPost.objects.get(id=post_id)
+            post.delete()
+            
+        except LocalPost.DoesNotExist:
+            return HttpResponseNotFound()
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseServerError()
+
+        return HttpResponse(200)
+    
+    #TODO: authenticate
+    def post(self, request, author_id, post_id):
+        """ POST - Update post {post_id} """
+        data = json.loads(request.body)
+        post = LocalPost.objects.get(id=post_id)
+
+        try:
+            post.title = data['title']
+            post.description = data['description']
+            post.content_type = data['contentType']
+            post.content = data['content'].encode('utf-8')
+            post.visibility = data['visibility']
+            post.unlisted = data['unlisted']
+
+            categories = data['categories']
+
+            if categories is not None:
+                categories_to_remove = [ cat.category for cat in post.categories.all()]
+
+                """
+                This implementation makes category names case-insensitive.
+                This makes handling Category objects cleaner, albeit slightly more
+                involved.
+                """
+                for category in categories:
+                    category_obj, created = Category.objects.get_or_create(
+                        category__iexact=category,
+                        defaults={'category': category}
+                    )
+                    post.categories.add(category_obj)
+                    
+                    while category_obj.category in categories_to_remove:
+                        categories_to_remove.remove(category_obj.category)     # don't remove this category
+
+                for category in categories_to_remove:
+                    category_obj = Category.objects.get(category=category)
+                    post.categories.remove(category_obj)
+
+            post.save()
+            return JsonResponse(status=201, data=post.as_json())
+            
+        except ValidationError:
+            messages.info(request, 'Unable to edit post.')
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostLikesView(View):
@@ -199,8 +313,8 @@ class PostLikesView(View):
     def get(self, request, author_id, post_id):
         """ GET - Get a list of authors who like {post_id} """
         try:
-            post = Post.objects.get(id=post_id)
-            authors = [author.as_json() for author in post.likes.all()]
+            post = LocalPost.objects.get(id=post_id)
+            authors = [like.author.as_json() for like in post.likes.all()]
 
             response = {
                 "type:": "likes",
@@ -225,13 +339,34 @@ class PostCommentsView(View):
         try:
             page = request.GET.get("page")
             size = request.GET.get("size")
-            post = get_object_or_404(Post, id=post_id)
+            post = get_object_or_404(LocalPost, id=post_id)
             author = get_object_or_404(LocalAuthor, id=author_id)
             # Check if the post author match with author in url
             if post.author.id != author.id:
                 return HttpResponseNotFound()
 
-            response = post.get_comments_as_json()
+            comments = post.comments()
+            
+            if page and size:
+                page = int(page)
+                size = int(size)
+                try:
+                    if page < 1 or size < 1:
+                        return HttpResponseBadRequest("Malformed query: page and size must be > 0")
+                except Exception as e:
+                    return HttpResponseBadRequest(e)
+
+                comments = getPaginated(comments, page, size)
+            
+            comments = [comment.as_json() for comment in comments]
+            response = {
+                    "type": "comments",
+                    "page": page,
+                    "size": size,
+                    "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}",
+                    "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}/comments",
+                    "comments": comments
+                }
 
         except Exception as e:
             logger.error(e, exc_info=True)
@@ -254,7 +389,7 @@ class PostCommentsView(View):
 
         try:
             author = get_object_or_404(LocalAuthor, pk=author_id)
-            post = get_object_or_404(Post, id=post_id)
+            post = get_object_or_404(LocalPost, id=post_id)
 
             comment = Comment.objects.create(
                 author=author,
@@ -267,7 +402,7 @@ class PostCommentsView(View):
         except Exception:
             return HttpResponse('Internal Server Error')
 
-        return redirect('socialDistribution:commentPost', id=post_id)
+        return redirect('socialDistribution:comment-post', id=post_id)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -291,6 +426,7 @@ class InboxView(View):
         })
 
     # TODO: authenticate user
+    @method_decorator(validate_node)
     def post(self, request, author_id):
         """ POST - Send a post to {author_id}
             - if the type is “post” then add that post to the author’s inbox
@@ -300,75 +436,56 @@ class InboxView(View):
         data = json.loads(request.body)
         try:
             if data["type"] == "post":
-                # Post saved to inbox of author_id
-
-                if not url_parser.is_local_url(data["id"]):
-                    raise ValueError() # only works for local posts right now
-
-                post_author_id, post_id = url_parser.parse_post(data["id"])
-                inbox = get_object_or_404(Inbox, author_id=author_id)
-
-                # push post to inbox of author
-                try:
-                    post = Post.objects.get(id=post_id, author_id=post_author_id)
-                    inbox.posts.add(post)
-                except Post.DoesNotExist:
-                    raise ValueError()
-
+                makePost(author_id, data)
                 return HttpResponse(status=200)
 
             elif data["type"] == "follow":
-                # actor requests to follow Object
-
+                # actor requests to follow object
                 actor, obj = data["actor"], data["object"]
-                if not url_parser.is_local_url(actor["id"]) or not url_parser.is_local_url(obj["id"]):
-                    raise ValueError()
+                if not url_parser.is_local_url(obj["id"]):
+                    raise ValueError("Author not hosted on this server")
 
-                follower_id = url_parser.parse_author(actor["id"]) # only works for local followers right now
-                followee_id = url_parser.parse_author(obj["id"])
+                object_id = url_parser.parse_author(obj["id"])
+                actor_url_id = actor["id"]
 
                 # check if this is the correct endpoint
-                if followee_id != author_id:
+                if object_id != author_id:
                     raise ValueError("Object ID does not match inbox ID")
-                
-                inbox = get_object_or_404(Inbox, author_id=followee_id)
 
-                # add follow request to inbox
-                try:
-                    followerAuthor = LocalAuthor.objects.get(id=follower_id)
-                    inbox.follow_requests.add(followerAuthor)
-                except LocalAuthor.DoesNotExist:
-                    raise ValueError()                      
+                object_author = get_object_or_404(LocalAuthor, id=object_id)
+                actor_author, created = Author.objects.get_or_create(
+                    url=actor_url_id
+                )
+
+                # add follow request
+                object_author.follow_requests.add(actor_author)
 
                 return HttpResponse(status=200)
 
             elif data["type"] == "like":
-                # extract data from request body
-                object_url = urlparse(data['object']).path.strip('/')
-                split_url = object_url.split('/')
-                object = split_url[-2]
-                id = split_url[-1]
-                liking_author_url = data["author"]["id"]
-                
                 # retrieve author
+                liking_author_url = data["author"]["id"]
                 liking_author, created = Author.objects.get_or_create(
                     url=liking_author_url
                 )
 
-                # check if liking post or comment
-                if object == 'comments':
+                # retrieve object
+                object_type = url_parser.get_object_type(data['object'])
+                if object_type == "posts":
+                    _, id = url_parser.parse_post(data['object'])
+                    context_object = get_object_or_404(LocalPost, id=id)
+                elif object_type == "comments":
+                    _, __, id = url_parser.parse_comment(data['object'])
                     context_object = get_object_or_404(Comment, id=id)
-                elif (object == 'posts'):
-                    context_object = get_object_or_404(Post, id=id)
                 else:
-                    raise ValueError("Unknown object for like")
-                
+                    raise ValueError("Unknown object type")
+
                 if context_object.likes.filter(author=liking_author).exists():
                     # if like already exists, remove it
                     like = context_object.likes.get(author=liking_author)
                     like.delete()
                 else:
-                    # create a new like from liking_author on object 
+                    # create a new like from liking_author on object
                     context_object.likes.create(author=liking_author, object=context_object)
 
                 return HttpResponse(status=200)
@@ -377,18 +494,20 @@ class InboxView(View):
                 raise ValueError("Unknown object received by inbox")
 
         except KeyError as e:
-            return HttpResponseBadRequest("JSON body could not be parsed")
+            return JsonResponse({
+                "error": "JSON body could not be parsed"
+            })
 
         except ValueError as e:
             return JsonResponse({
-                    "error": e.args[0]
-                }, status=400)
-        
+                "error": e.args[0]
+            }, status=400)
+
         except Exception as e:
             logger.error(e, exc_info=True)
             return JsonResponse({
-                    "error": "Internal Server Error"
-                }, status=500)
+                "error": "Internal Server Error"
+            }, status=500)
 
     def delete(self, request, author_id):
         """ DELETE - Clear the inbox """
