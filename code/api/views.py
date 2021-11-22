@@ -10,6 +10,7 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 
+from urllib import parse
 from datetime import datetime, timezone
 import json
 import logging, base64
@@ -149,7 +150,7 @@ class FollowersSingleView(View):
 
         try:
             # try to find and return follower author object
-            follower = Author.objects.get(url=foreign_author_id)
+            follower = Author.objects.get(url=parse.unquote(foreign_author_id))
             follow = author.follows.get(actor=follower)
             return JsonResponse(follow.actor.as_json())
         except (Author.DoesNotExist, Follow.DoesNotExist):
