@@ -21,7 +21,7 @@ from .decorators import unauthenticated_user
 from PIL import Image
 from io import BytesIO
 
-from .dispatchers import dispatch_post, dispatch_follow_request
+from .dispatchers import dispatch_post, dispatch_follow_request, dispatch_post_update
 from .github_activity.github_activity import pull_github_events
 
 REQUIRE_SIGNUP_APPROVAL = False
@@ -518,7 +518,7 @@ def edit_post(request, id):
                     recipients = None
 
                 # send to other authors
-                dispatch_post(post, recipients, 'update')
+                dispatch_post_update(post, 'update')
                 
             except ValidationError:
                 messages.info(request, 'Unable to edit post.')
@@ -643,11 +643,9 @@ def delete_post(request, id):
         return HttpResponseForbidden()
     
     post.delete()
-
+    dispatch_post_update(post, 'delete')
         
     prev_page = request.META['HTTP_REFERER']
-    
-    #TODO: notify inboxposts
     return redirect('socialDistribution:home')
 
 

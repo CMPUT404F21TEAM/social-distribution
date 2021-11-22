@@ -8,7 +8,11 @@ def update_post(post: LocalPost, url: str):
     """ Sends a post to the given URL via a POST request. """
 
     data = post.as_json()
-    api_requests.post(url=url, data=data, sendBasicAuthHeader=True)    
+    api_requests.post(url=url, data=data, sendBasicAuthHeader=True)
+    
+def delete_post(post: LocalPost, url: str):
+    """ Sends a post to the given URL via a POST request. """
+    api_requests.delete(url=url, sendBasicAuthHeader=True)        
 
 
 def send_post(post: LocalPost, url: str):
@@ -17,18 +21,23 @@ def send_post(post: LocalPost, url: str):
     data = post.as_json()
     api_requests.post(url=url, data=data, sendBasicAuthHeader=True)
 
-actions = {'send': send_post,
-           'update': update_post
+actions = {
+           'update': update_post,
+           'delete': delete_post
         }
 
-def get_url(method, post, follower):
-    if method == 'send':
-        return follower.get_inbox()
-    elif method == 'update':
-        return post.id
+def dispatch_post_update(post: LocalPost, method):
+    """ Sends a post to the inbox of all followers who have permission to view the post.
+
+    Parameters:
+        post (LocalPost): the post to be sent out
+        recipients (QuerySet of LocalAuthor): the list of authors to receive the post if the post is private
+    """
+    print(post.id)
+    actions[method](post, post.get_id())
 
 
-def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None, method='send'):
+def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None,):
     """ Sends a post to the inbox of all followers who have permission to view the post.
 
     Parameters:
@@ -39,20 +48,20 @@ def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None, method=
     if post.visibility == LocalPost.Visibility.PUBLIC:
         # send posts to all followers
         for follower in post.author.get_followers():
-            url = get_url(method, post, follower)
-            actions[method](post, url)
+            url = follower.get_inbox()
+            send_post(post, url)
 
     elif post.visibility == LocalPost.Visibility.FRIENDS:
         # send posts to friends
         for friend in post.author.get_friends():
-            url = get_url(method, post, follower)
-            actions[method](post, url)
+            url = friend.get_inbox()
+            send_post(post, url)
 
     elif post.visibility == LocalPost.Visibility.PRIVATE:
         # send posts to private recipients
         for follower in recipients:
-            url = get_url(method, post, follower)
-            actions[method](post, url)
+            url = follower.get_inbox()
+            send_post(post, url)
 
 def dispatch_follow_request(actor: LocalAuthor, object: Author):
     """ Sends a follow request to the inbox of another author.
