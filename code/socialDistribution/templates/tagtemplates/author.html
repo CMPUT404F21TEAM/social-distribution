@@ -72,10 +72,13 @@
                         {% endif%}
 
                     {% else %}
-                        <div class="author-card-opt d-flex ml-10">
+                        <div class="author-card-opt d-flex ml-10"> 
                             <form method="GET" action="{% url 'socialDistribution:inbox' %}">
                                 {% csrf_token %}
-                                <button class="btn bg-white text-primary px-1">See inbox</button>
+                                <button class="btn bg-blue text-white btn-md btn-primary rounded-pill">See inbox</button>
+                            </form>
+                            <form method="GET" action="unlisted-posts">
+                                <button class="btn bg-blue text-white btn-md btn-primary rounded-pill">See Unlisted Posts</button>
                             </form>
                         </div>                            
                     {% endif %}

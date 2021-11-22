@@ -395,8 +395,7 @@ def unlisted_posts(request, author_id):
 
     # TODO: 
     # Should become an API request (same as /author/<author-id>) since won't know if author is local/remote
-    # after deleting post, should stay on author/<author-id>/unlisted-posts page 
-    # "Copy post link" button (ex. Clipboard API)
+    # "Copy post link" button (ex. Clipboard API) (may need new HTML page as well)
 
     posts = author.posts.unlisted()
 
