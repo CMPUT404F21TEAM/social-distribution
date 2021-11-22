@@ -42,7 +42,7 @@ class NodeManager:
         '''
 
         try:
-            if( host):
+            if(host):
                 node = Node.objects.get(host=host)
             elif (username):
                 node = Node.objects.get(username=username)
