@@ -296,13 +296,11 @@ def un_befriend(request, author_id):
     if request.method == 'POST':
         # current user follows author
         # send delete request to author to leave me alone
-
         object = get_object_or_404(Author, id=author_id)
         actor = LocalAuthor.objects.get(user=request.user)
 
         if object.id != actor.id:
             # tell them to delete me as a follower
-
             actor_url = actor.url.strip('/')
             object_url = object.url.strip('/')
             url = object_url + '/followers/' + actor_url
