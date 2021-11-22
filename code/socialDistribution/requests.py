@@ -36,26 +36,27 @@ def get(url, params=None):
 
     # ref: https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request - datashaman
     # 'Can I set max_retries for requests.request?'
-    session = requests.Session()
-
-    retries = Retry(total=2,
-                    backoff_factor=0.1,
-                    status_forcelist=[500, 502, 503, 504])
-
-    session.mount(url, HTTPAdapter(max_retries=retries))
-
-    response = session.get(url, headers=headers, params=params)
-
-    # parse JSON response if OK
     try:
+        session = requests.Session()
+        retries = Retry(total=2,
+                        backoff_factor=0.1,
+                        status_forcelist=[500, 502, 503, 504])
+        session.mount(url, HTTPAdapter(max_retries=retries))
+  
+        response = session.get(url, headers=headers, params=params)
+
+        # parse JSON response if OK
         if response.status_code == 200:
             response_data = response.json()
         else:
             response_data = None
-    except json.decoder.JSONDecodeError:
-        response_data = None
 
-    logger.info(f"API GET request to {url} and received {response.status_code}")
+        logger.info(f"API GET request to {url} and received {response.status_code}")
+    except Exception as error:
+        logger.error(f'Something went wrong getting {url}. {str(error)}')
+        status_code = 500
+        response_data = None
+        return status_code , response_data
 
     # caller should check status codes show error message to user (if needed)
     return response.status_code, response_data
@@ -77,17 +78,50 @@ def post(url, params=None, data={}, sendBasicAuthHeader=False):
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
-        "REFERER": HOST
     }
 
     # Add Basic Auth Header specific to a node for Inbox api 
     host = url_parser.get_host(url)
-    auth_credentials = node_manager.get_host_credentials(host)
+    auth_credentials = node_manager.get_credentials(host=host)
+    print("auth_credentials", auth_credentials)
     if (sendBasicAuthHeader and auth_credentials):
         authToken = base64.b64encode(auth_credentials).decode("ascii")
         headers['Authorization'] = 'Basic %s' %  authToken
 
     response = requests.post(url, headers=headers, params=params, json=data)
+
+    # parse JSON response if OK
+    try:
+        if response.status_code == 200:
+            response_data = response.json()
+        else:
+            response_data = None
+    except json.decoder.JSONDecodeError:
+        response_data = None
+
+    logger.info(f"API POST request to {url} and received {response.status_code}")
+
+    # caller should check status codes show error message to user (if needed)
+    return response.status_code, response_data
+
+def delete(url, params=None):
+    """ Makes a DELETE request at the given URL and returns the JSON body of the HTTP response.
+
+        Parameters:
+         - url (string): The URL endpoint for the HTTP request
+         - params (dict): The query string parameters (default is None)
+
+        Returns:
+         - (int): Status code of the HTTP response
+         - (dict): JSON response data if status code of request is 200 OK and JSON parsing was successful. Otherwise, return None
+    """
+
+    headers = {
+        "Accept": "application/json",
+        "REFERER": HOST
+    }
+
+    response = requests.delete(url, headers=headers, params=params)
 
     # parse JSON response if OK
     try:
