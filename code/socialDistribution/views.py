@@ -386,6 +386,29 @@ def author(request, author_id):
 
     return render(request, 'author/detail.html', context)
 
+def unlisted_posts(request, author_id):
+    """ Display an author's unlisted posts 
+    """
+
+    curr_user = LocalAuthor.objects.get(user=request.user)
+    author = get_object_or_404(LocalAuthor, pk=author_id)
+
+    # TODO: 
+    # Should become an API request (same as /author/<author-id>) since won't know if author is local/remote
+    # after deleting post, should stay on author/<author-id>/unlisted-posts page 
+    # "Copy post link" button (ex. Clipboard API)
+
+    posts = author.posts.unlisted()
+
+    context = {
+        'author': author,
+        'author_type': 'Local',
+        'curr_user': curr_user,
+        'author_posts': posts.chronological()
+    }
+
+    return render(request, 'author/detail.html', context)
+
 
 def create(request):
     return render(request, 'create/index.html')
@@ -642,8 +665,15 @@ def delete_post(request, id):
     # move functionality to API
     post = get_object_or_404(LocalPost, id=id)
     author = LocalAuthor.objects.get(user=request.user)
+    author_id = author.id
+    
     if post.author == author:
         post.delete()
+    
+    # remain on unlisted page if the deleted post is unlisted 
+    if post.unlisted is True:
+        unlisted_posts(request, author_id)
+
     return redirect('socialDistribution:home')
 
 

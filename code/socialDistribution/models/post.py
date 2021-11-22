@@ -18,6 +18,11 @@ class PostQuerySet(models.QuerySet):
         """ Get all listed posts.
         """
         return self.filter(unlisted=False)
+    
+    def unlisted(self):
+        """ Get all unlisted posts.
+        """
+        return self.filter(unlisted=True)
 
     def get_public(self):
         """ Get all public posts.
