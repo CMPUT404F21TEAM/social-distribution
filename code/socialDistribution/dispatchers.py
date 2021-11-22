@@ -4,8 +4,31 @@ from typing import List
 import socialDistribution.requests as api_requests
 from .models import LocalPost, Author, LocalAuthor
 
+def update_post(post: LocalPost, url: str):
+    """ Sends a post to the given URL via a POST request. """
 
-def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None):
+    data = post.as_json()
+    api_requests.post(url=url, data=data, sendBasicAuthHeader=True)    
+
+
+def send_post(post: LocalPost, url: str):
+    """ Sends a post to the given URL via a POST request. """
+
+    data = post.as_json()
+    api_requests.post(url=url, data=data, sendBasicAuthHeader=True)
+
+actions = {'send': send_post,
+           'update': update_post
+        }
+
+def get_url(method, post, follower):
+    if method == 'send':
+        return follower.get_inbox()
+    elif method == 'update':
+        return post.id
+
+
+def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None, method='send'):
     """ Sends a post to the inbox of all followers who have permission to view the post.
 
     Parameters:
@@ -16,30 +39,20 @@ def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None):
     if post.visibility == LocalPost.Visibility.PUBLIC:
         # send posts to all followers
         for follower in post.author.get_followers():
-            inbox = follower.get_inbox()
-            send_post(post, inbox)
+            url = get_url(method, post, follower)
+            actions[method](post, url)
 
     elif post.visibility == LocalPost.Visibility.FRIENDS:
         # send posts to friends
         for friend in post.author.get_friends():
-            inbox = friend.get_inbox()
-            send_post(post, inbox)
+            url = get_url(method, post, follower)
+            actions[method](post, url)
 
     elif post.visibility == LocalPost.Visibility.PRIVATE:
         # send posts to private recipients
         for follower in recipients:
-            inbox = follower.get_inbox()
-            send_post(post, inbox)
-            
-    
-
-
-def send_post(post: LocalPost, url: str):
-    """ Sends a post to the given URL via a POST request. """
-
-    data = post.as_json()
-    api_requests.post(url=url, data=data, sendBasicAuthHeader=True)
-
+            url = get_url(method, post, follower)
+            actions[method](post, url)
 
 def dispatch_follow_request(actor: LocalAuthor, object: Author):
     """ Sends a follow request to the inbox of another author.

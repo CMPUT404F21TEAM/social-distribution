@@ -511,6 +511,14 @@ def edit_post(request, id):
                 edited_post['categories'] = categories.split()
                 post.save()
                 #TODO: notify inboxposts
+                # get recipients for a private post
+                if form.cleaned_data.get('visibility') == LocalPost.Visibility.PRIVATE:
+                    recipients = form.cleaned_data.get('post_recipients')
+                else:
+                    recipients = None
+
+                # send to other authors
+                dispatch_post(post, recipients, 'update')
                 
             except ValidationError:
                 messages.info(request, 'Unable to edit post.')
