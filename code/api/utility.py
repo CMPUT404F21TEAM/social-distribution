@@ -13,6 +13,10 @@ def getPaginated(data, page, size):
         return []
     
 def makePost(author_id, data):
+    """ 
+    Creates an InboxPost given json data and adds it to the given author_id's inbox
+    """
+    
     # get owner of inbox
     receiving_author = get_object_or_404(LocalAuthor, id=author_id)
 
@@ -26,7 +30,6 @@ def makePost(author_id, data):
             "description": data["description"],
             "content_type": data["contentType"],
             "content": data["content"].encode('utf-8'),
-            # "categories": data["categories"],
             "author": data["author"]["id"],
             "_author_json": data["author"],
             "published": data["published"],

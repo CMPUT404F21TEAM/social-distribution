@@ -507,8 +507,21 @@ def edit_post(request, id):
                 post.content = content
 
                 categories = form.cleaned_data.get('categories')
+                if categories is not None:
+                    categories = categories.split()
 
-                edited_post['categories'] = categories.split()
+                    """
+                    This implementation makes category names case-insensitive.
+                    This makes handling Category objects cleaner, albeit slightly more
+                    involved.
+                    """
+                    for category in categories:
+                        category_obj, created = Category.objects.get_or_create(
+                            category__iexact=category, 
+                            defaults={'category': category}
+                        )
+                        post.categories.add(category_obj)
+                        
                 post.save()
 
                 # get recipients for a private post
@@ -640,8 +653,6 @@ def delete_post(request, id):
         return HttpResponseForbidden()
     
     post.delete()
-        
-    prev_page = request.META['HTTP_REFERER']
     return redirect('socialDistribution:home')
 
 

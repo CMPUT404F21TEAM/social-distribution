@@ -103,7 +103,7 @@ def post(url, params=None, data={}, sendBasicAuthHeader=False):
     # caller should check status codes show error message to user (if needed)
     return response.status_code, response_data
 
-def delete(url, params=None, sendBasicAuthHeader=False):
+def delete(url, params=None):
     """ Makes a DELETE request at the given URL and returns the JSON body of the HTTP response.
 
         Parameters:
@@ -119,13 +119,6 @@ def delete(url, params=None, sendBasicAuthHeader=False):
         "Accept": "application/json",
         "REFERER": HOST
     }
-
-    # Add Basic Auth Header specific to a node for Inbox api 
-    host = url_parser.get_host(url)
-    auth_credentials = node_manager.get_host_credentials(host)
-    if (sendBasicAuthHeader and auth_credentials):
-        authToken = base64.b64encode(auth_credentials).decode("ascii")
-        headers['Authorization'] = 'Basic %s' %  authToken
 
     response = requests.delete(url, headers=headers, params=params)
 
