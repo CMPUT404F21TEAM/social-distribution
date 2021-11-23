@@ -207,8 +207,8 @@ class LocalPost(Post):
             "type": "comments",
             "page": None,
             "size": None,
-            "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}",
-            "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}/comments",
+            "post": f"https://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}",
+            "id": f"https://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}/comments",
             "comments": self.comments_json_as_list()
         }
 
@@ -264,7 +264,7 @@ class LocalPost(Post):
             # total number of comments for this post
             "count": 0,
             # the first page of comments
-            "comments": f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}/comments/",
+            "comments": f"https://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}/comments/",
             # commentsSrc is OPTIONAL and can be missing
             # You should return ~ 5 comments per post.
             # should be sorted newest(first) to oldest(last)

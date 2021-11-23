@@ -337,7 +337,7 @@ def authors(request):
         # get request for authors
         try:
             try:
-                res_code, res_body = api_requests.get(f'http://{node.host}/api/authors/')
+                res_code, res_body = api_requests.get(f'https://{node.host}/api/authors/')
 
             except Exception as error:
                 # if remote server unavailable continue
@@ -570,8 +570,8 @@ def like_post(request, id, post_host):
     else:
         post = get_object_or_404(LocalPost, id=id)
         host = request.get_host()
-        request_url = f'http://{host}/{API_PREFIX}/author/{post.author.id}/inbox'
-        obj = f'http://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
+        request_url = f'https://{host}/{API_PREFIX}/author/{post.author.id}/inbox'
+        obj = f'https://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
 
     author = LocalAuthor.objects.get(user=request.user)
     prev_page = request.META['HTTP_REFERER']
@@ -643,11 +643,11 @@ def like_comment(request, id):
             "summary": f"{author.username} Likes your comment",
             "type": "like",
             "author": author.as_json(),
-            "object": f"http://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
+            "object": f"https://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
         }
 
     # redirect request to remote/local api
-    request_url = f'http://{host}/api/author/{comment.author.id}/inbox/'
+    request_url = f'https://{host}/api/author/{comment.author.id}/inbox/'
     api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
 
     if prev_page is None:

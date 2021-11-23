@@ -189,7 +189,7 @@ class LikedView(View):
                     "summary": f"{author.displayName} Likes your post",
                     "type": "like",
                     "author": author.as_json(),
-                    "object": f"http://{host}/author/{post.author.id}/posts/{post.id}"
+                    "object": f"https://{host}/author/{post.author.id}/posts/{post.id}"
                 }
                 likes.append(like)
 
@@ -378,8 +378,8 @@ class PostCommentsView(View):
                 "type": "comments",
                 "page": page,
                 "size": size,
-                "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}",
-                "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}/comments",
+                "post": f"https://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}",
+                "id": f"https://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}/comments",
                 "comments": comments
             }
 
