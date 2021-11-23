@@ -7,7 +7,7 @@ from jsonfield import JSONField
 import datetime as dt
 import timeago, base64
 
-from cmput404.constants import HOST, API_PREFIX
+from cmput404.constants import SCHEME, HOST, API_PREFIX
 from .comment import Comment
 from .category import Category
 
@@ -211,8 +211,8 @@ class LocalPost(Post):
             "type": "comments",
             "page": None,
             "size": None,
-            "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}",
-            "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}/comments",
+            "post": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}",
+            "id": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}/comments",
             "comments": self.comments_json_as_list()
         }
 
@@ -232,7 +232,7 @@ class LocalPost(Post):
         return self.likes.count()
 
     def get_id(self):
-        return f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}"
+        return f"{SCHEME}://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}"
 
     def as_json(self):
         previousCategories = self.categories.all()
@@ -268,7 +268,7 @@ class LocalPost(Post):
             # total number of comments for this post
             "count": 0,
             # the first page of comments
-            "comments": f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}/comments/",
+            "comments": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}/comments/",
             # commentsSrc is OPTIONAL and can be missing
             # You should return ~ 5 comments per post.
             # should be sorted newest(first) to oldest(last)

@@ -15,7 +15,7 @@ import json
 import logging
 import base64
 
-from cmput404.constants import HOST, API_PREFIX
+from cmput404.constants import SCHEME, HOST, API_PREFIX
 from socialDistribution.forms import PostForm
 from socialDistribution.models import *
 from .decorators import authenticate_request, validate_node
@@ -196,7 +196,7 @@ class LikedView(View):
                     "summary": f"{author.displayName} Likes your post",
                     "type": "like",
                     "author": author.as_json(),
-                    "object": f"http://{host}/author/{post.author.id}/posts/{post.id}"
+                    "object": f"{SCHEME}://{host}/author/{post.author.id}/posts/{post.id}"
                 }
                 likes.append(like)
 
@@ -385,8 +385,8 @@ class PostCommentsView(View):
                 "type": "comments",
                 "page": page,
                 "size": size,
-                "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}",
-                "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}/comments",
+                "post": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}",
+                "id": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}/comments",
                 "comments": comments
             }
 

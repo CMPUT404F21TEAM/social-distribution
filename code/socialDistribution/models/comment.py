@@ -2,7 +2,7 @@ from django.db import models
 from datetime import *
 import timeago
 
-from cmput404.constants import HOST, API_PREFIX
+from cmput404.constants import SCHEME, HOST, API_PREFIX
 
 class Comment(models.Model):
     '''
@@ -43,7 +43,7 @@ class Comment(models.Model):
             "comment": self.comment,
             "contentType": "text/markdown",
             "published": str(self.pub_date),
-            "id": f"http://{HOST}/{API_PREFIX}/author/{self.post.author.id}/posts/{self.post.id}/comments/{self.id}",
+            "id": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{self.post.author.id}/posts/{self.post.id}/comments/{self.id}",
         }
 
     def total_likes(self):
