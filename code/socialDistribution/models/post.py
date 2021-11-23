@@ -120,7 +120,7 @@ class Post(models.Model):
         if not self.content:
             return ''
 
-        return self.content.decode('utf-8')
+        return bytes(self.content).decode('utf-8')
 
     def is_image_post(self):
         """ Check if the post is an image-only post """

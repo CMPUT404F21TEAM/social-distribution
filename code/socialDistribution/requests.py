@@ -37,6 +37,7 @@ def get(url, params=None):
     # ref: https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request - datashaman
     # 'Can I set max_retries for requests.request?'
     try:
+        logger.info(f"Trying to do GET request to {url}") #temp
         session = requests.Session()
         retries = Retry(total=2,
                         backoff_factor=0.1,
