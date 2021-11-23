@@ -43,12 +43,13 @@ def validate_node(view_func):
             splitCredentials = base64.b64decode(receivedCredentials).decode().split(':')
             username = splitCredentials[0]
 
-            expectedCredentials = base64.b64encode(node_manager.get_credentials(username=username)).decode()
+            credentials = node_manager.get_credentials(username=username, remote_credentials=False)
+            expectedCredentials = base64.b64encode(credentials).decode()
         except Exception as e:
             logger.error(str(e))
             return HttpResponseServerError()
 
-        if not node_manager.get_credentials(username=username) or token_type != 'Basic' or receivedCredentials != expectedCredentials:
+        if not credentials or token_type != 'Basic' or receivedCredentials != expectedCredentials:
             return HttpResponse(status=401)
 
         return view_func(request, *args, **kwargs)

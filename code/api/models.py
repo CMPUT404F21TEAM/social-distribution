@@ -2,11 +2,19 @@ from django.db import models
 
 class Node(models.Model):
     '''
-        Node for remote group credentials
+        Node model:
+            id                      Auto-generated id
+            host                    Hostname of server
+            username                Basic Auth Username
+            password                Basic Auth Password
+            remote_credentials      Boolean to indicate if credentials are to connect 
+                                    to remote group or allow remote group to connect.
     '''
-    host = models.CharField(max_length=200, primary_key=True)
-    username = models.CharField(max_length=200)
-    password = models.CharField(max_length=200)
+    host = models.CharField(max_length=200, null=False)
+    api_prefix = models.CharField(max_length=200, default='/api', blank=True)
+    username = models.CharField(max_length=200, null=False)
+    password = models.CharField(max_length=200, null=False)
+    remote_credentials = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.username
+        return f'{self.username} - {self.host} - remote:{self.remote_credentials}'

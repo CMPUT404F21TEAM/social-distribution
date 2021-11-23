@@ -8,6 +8,8 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
+
+from cmput404.constants import HOST
 from .forms import CreateUserForm, PostForm
 
 import base64
@@ -20,10 +22,13 @@ from .forms import CreateUserForm, PostForm
 from .decorators import unauthenticated_user
 from PIL import Image
 from io import BytesIO
+import logging
+
 
 from .dispatchers import dispatch_post, dispatch_follow_request
 from .github_activity.github_activity import pull_github_events
 
+logger = logging.getLogger(__name__)
 REQUIRE_SIGNUP_APPROVAL = False
 ''' 
     sign up approval not required by default, should turn on in prod. 
@@ -329,18 +334,17 @@ def authors(request):
     remote_authors = []
 
     # get remote authors
-    for node in Node.objects.all():
+    for node in Node.objects.filter(remote_credentials=True):
         # ignore current host
-        if node.host == request.META['HTTP_HOST']:
+        if node.host == HOST:
             continue
 
         # get request for authors
         try:
-            try:
-                res_code, res_body = api_requests.get(f'http://{node.host}/api/authors/')
+            res_code, res_body = api_requests.get(f'http://{node.host}{node.api_prefix}/authors/')
 
-            except Exception as error:
-                # if remote server unavailable continue
+            # skip node if unresponsive
+            if res_body == None:
                 continue
 
             # prepare remote data
@@ -358,7 +362,7 @@ def authors(request):
                 })
 
         except Exception as error:
-            print(error)
+            logger.error(str(error))
 
     args["authors"] = local_authors + remote_authors
     return render(request, 'author/index.html', args)
