@@ -8,6 +8,8 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
+
+from cmput404.constants import HOST
 from .forms import CreateUserForm, PostForm
 
 import base64
@@ -329,9 +331,9 @@ def authors(request):
     remote_authors = []
 
     # get remote authors
-    for node in Node.objects.all():
+    for node in Node.objects.filter(remote_credentials=True):
         # ignore current host
-        if node.host == request.META['HTTP_HOST']:
+        if node.host == HOST:
             continue
 
         # get request for authors

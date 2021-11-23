@@ -85,8 +85,7 @@ def post(url, params=None, data={}, sendBasicAuthHeader=False):
 
     # Add Basic Auth Header specific to a node for Inbox api
     host = url_parser.get_host(url)
-    auth_credentials = node_manager.get_credentials(host=host)
-    print("auth_credentials", auth_credentials)
+    auth_credentials = node_manager.get_credentials(host=host, remote_credentials=True)
     if (sendBasicAuthHeader and auth_credentials):
         authToken = base64.b64encode(auth_credentials).decode("ascii")
         headers['Authorization'] = 'Basic %s' % authToken
