@@ -27,7 +27,7 @@ def create_author(id, username, displayName, githubUrl):
 class InboxViewTests(TestCase):
 
     def setUp(self):
-        Node.objects.create(host=HOST, username='testclient', password='testpassword!')
+        Node.objects.create(host=HOST, username='testclient', password='testpassword!', remote_credentials=False)
         self.basicAuthHeaders = {
             'HTTP_AUTHORIZATION': 'Basic %s' % base64.b64encode(b'testclient:testpassword!').decode("ascii"),
         }
