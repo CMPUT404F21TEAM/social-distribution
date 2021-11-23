@@ -22,10 +22,13 @@ from .forms import CreateUserForm, PostForm
 from .decorators import unauthenticated_user
 from PIL import Image
 from io import BytesIO
+import logging
+
 
 from .dispatchers import dispatch_post, dispatch_follow_request
 from .github_activity.github_activity import pull_github_events
 
+logger = logging.getLogger(__name__)
 REQUIRE_SIGNUP_APPROVAL = False
 ''' 
     sign up approval not required by default, should turn on in prod. 
@@ -340,6 +343,10 @@ def authors(request):
         try:
             res_code, res_body = api_requests.get(f'http://{node.host}{node.api_prefix}/authors/')
 
+            # skip node if unresponsive
+            if res_body == None:
+                continue
+
             # prepare remote data
             for remote_author in res_body['items']:
                 author, created = Author.objects.get_or_create(
@@ -355,7 +362,7 @@ def authors(request):
                 })
 
         except Exception as error:
-            print(error)
+            logger.error(str(error))
 
     args["authors"] = local_authors + remote_authors
     return render(request, 'author/index.html', args)
