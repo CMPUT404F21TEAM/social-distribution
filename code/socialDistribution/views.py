@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 
-from cmput404.constants import HOST
+from cmput404.constants import SCHEME, HOST
 from .forms import CreateUserForm, PostForm
 
 import base64
@@ -574,8 +574,8 @@ def like_post(request, id, post_host):
     else:
         post = get_object_or_404(LocalPost, id=id)
         host = request.get_host()
-        request_url = f'http://{host}/{API_PREFIX}/author/{post.author.id}/inbox'
-        obj = f'http://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
+        request_url = f'{SCHEME}://{host}/{API_PREFIX}/author/{post.author.id}/inbox'
+        obj = f'{SCHEME}://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
 
     author = LocalAuthor.objects.get(user=request.user)
     prev_page = request.META['HTTP_REFERER']
@@ -647,11 +647,11 @@ def like_comment(request, id):
             "summary": f"{author.username} Likes your comment",
             "type": "like",
             "author": author.as_json(),
-            "object": f"http://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
+            "object": f"{SCHEME}://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
         }
 
     # redirect request to remote/local api
-    request_url = f'http://{host}/api/author/{comment.author.id}/inbox/'
+    request_url = f'{SCHEME}://{host}/api/author/{comment.author.id}/inbox/'
     api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
 
     if prev_page is None:
