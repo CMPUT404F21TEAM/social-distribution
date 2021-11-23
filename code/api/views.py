@@ -147,6 +147,7 @@ class FollowersSingleView(View):
         """ GET - Check if {foreign_author_id} is a follower of {author_id} """
 
         author = get_object_or_404(LocalAuthor, pk=author_id)
+        logger.info(f"/author/{author_id}/followers/{foreign_author_id} API endpoint invoked")
 
         try:
             # try to find and return follower author object
@@ -154,8 +155,9 @@ class FollowersSingleView(View):
             follow = author.follows.get(actor=follower)
             actor = follow.actor
             if LocalAuthor.objects.filter(url=actor.url).exists():
+                logger.info(f"Skipping extra API call for author")
                 actor = LocalAuthor.objects.get(url=actor.url)
-            response = follow.actor.as_json()
+            response = actor.as_json()
             return JsonResponse(response)
 
         except (Author.DoesNotExist, Follow.DoesNotExist):
