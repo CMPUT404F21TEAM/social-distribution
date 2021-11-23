@@ -12,7 +12,8 @@ from django.utils.decorators import method_decorator
 
 from datetime import datetime, timezone
 import json
-import logging, base64
+import logging
+import base64
 
 from cmput404.constants import HOST, API_PREFIX
 from socialDistribution.forms import PostForm
@@ -57,7 +58,7 @@ class AuthorsView(View):
         authors = LocalAuthor.objects.order_by('pk')
         page = request.GET.get("page")
         size = request.GET.get("size")
-        
+
         if page and size:
             page = int(page)
             size = int(size)
@@ -156,6 +157,21 @@ class FollowersSingleView(View):
             # return 404 if author not found
             return HttpResponseNotFound()
 
+    def delete(self, request, author_id, foreign_author_id):
+        """ DELETE - Remove {foreign_author_id} as a follower of {author_id} """
+
+        author = get_object_or_404(LocalAuthor, pk=author_id)
+
+        try:
+            # try to find and delete follower author object
+            follower = Author.objects.get(url=foreign_author_id)
+            follow = author.follows.get(actor=follower)
+            follow.delete()
+            return HttpResponse(status=204)  # no content
+        except (Author.DoesNotExist, Follow.DoesNotExist):
+            # return 404 if author not found
+            return HttpResponseNotFound()
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LikedView(View):
@@ -199,8 +215,7 @@ class PostsView(View):
             size = request.GET.get("size")
             author = get_object_or_404(LocalAuthor, id=author_id)
             posts = LocalPost.objects.listed().get_public().filter(author=author).order_by('pk')
-        
-                
+
             if page and size:
                 page = int(page)
                 size = int(size)
@@ -210,9 +225,9 @@ class PostsView(View):
                 except Exception as e:
                     return HttpResponseBadRequest(e)
                 posts = getPaginated(posts, page, size)
-                
+
             posts = [post.as_json() for post in posts]
-            
+
             response = {
                 "type": "posts",
                 "page": page,
@@ -346,7 +361,7 @@ class PostCommentsView(View):
                 return HttpResponseNotFound()
 
             comments = post.comments()
-            
+
             if page and size:
                 page = int(page)
                 size = int(size)
@@ -357,16 +372,16 @@ class PostCommentsView(View):
                     return HttpResponseBadRequest(e)
 
                 comments = getPaginated(comments, page, size)
-            
+
             comments = [comment.as_json() for comment in comments]
             response = {
-                    "type": "comments",
-                    "page": page,
-                    "size": size,
-                    "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}",
-                    "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}/comments",
-                    "comments": comments
-                }
+                "type": "comments",
+                "page": page,
+                "size": size,
+                "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}",
+                "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}/comments",
+                "comments": comments
+            }
 
         except Exception as e:
             logger.error(e, exc_info=True)
