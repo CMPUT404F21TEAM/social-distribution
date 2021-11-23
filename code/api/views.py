@@ -152,7 +152,12 @@ class FollowersSingleView(View):
             # try to find and return follower author object
             follower = Author.objects.get(url=foreign_author_id)
             follow = author.follows.get(actor=follower)
-            return JsonResponse(follow.actor.as_json())
+            actor = follow.actor
+            if LocalAuthor.objects.filter(url=actor.url).exists():
+                actor = LocalAuthor.objects.get(url=actor.url)
+            response = follow.actor.as_json()
+            return JsonResponse(response)
+
         except (Author.DoesNotExist, Follow.DoesNotExist):
             # return 404 if author not found
             return HttpResponseNotFound()
