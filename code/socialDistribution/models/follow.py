@@ -2,7 +2,6 @@ from django.db import models
 
 import socialDistribution.requests as api_requests
 
-
 class Follow(models.Model):
     object = models.ForeignKey('LocalAuthor', on_delete=models.CASCADE, related_name="follows")
     actor = models.ForeignKey('Author', on_delete=models.CASCADE, related_name="following")
