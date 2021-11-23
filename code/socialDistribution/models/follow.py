@@ -1,5 +1,6 @@
 from django.db import models
 
+from urllib import parse
 import socialDistribution.requests as api_requests
 
 class Follow(models.Model):
@@ -22,7 +23,7 @@ class Follow(models.Model):
         # make api request
         actor_url = self.actor.url.strip('/')
         object_url = self.object.url.strip('/')
-        endpoint = actor_url + '/followers/' + object_url
+        endpoint = actor_url + '/followers/' + parse.quote(object_url)
         status_code, response_body = api_requests.get(endpoint)
 
         # check if GET request came back with author object
