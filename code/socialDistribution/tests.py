@@ -85,7 +85,24 @@ class SharePostTest(TestCase):
         visibility = LocalPost.Visibility.PUBLIC
         post = PostBuilder().visibility(visibility).build()
         self.client.post('socialDistribution:share-post', id=post.id)
-        self.assertEquals(LocalPost.objects.latest("published").visibility, LocalPost.Visibility.PUBLIC)
+        
+        latestPost = LocalPost.objects.latest("published")
+        self.assertEquals(latestPost.visibility, LocalPost.Visibility.PUBLIC)
+        self.assertEqual(latestPost.origin, post.get_id())
+        self.assertEqual(latestPost.source, post.get_id())
+        
+    def test_share_public_post_twice(self):
+        visibility = LocalPost.Visibility.PUBLIC
+        post = PostBuilder().visibility(visibility).build()
+        
+        self.client.post('socialDistribution:share-post', id=post.id)
+        middlePost = LocalPost.objects.latest("published")
+        self.client.post('socialDistribution:share-post', id=middlePost.id)
+        latestPost = LocalPost.objects.latest("published")
+        
+        self.assertEquals(latestPost.visibility, LocalPost.Visibility.PUBLIC)
+        self.assertEqual(latestPost.origin, post.get_id())
+        self.assertEqual(latestPost.source, middlePost.get_id())
 
     def test_share_private_post(self):
         '''
@@ -94,7 +111,11 @@ class SharePostTest(TestCase):
         visibility = LocalPost.Visibility.PRIVATE
         post = PostBuilder().visibility(visibility).build()
         self.client.post('socialDistribution:share-post', id=post.id)
-        self.assertEquals(LocalPost.objects.latest("published"), post)
+        
+        latestPost = LocalPost.objects.latest("published")
+        self.assertEquals(latestPost, post)
+        self.assertEqual(latestPost.origin, post.get_id())
+        self.assertEqual(latestPost.source, post.get_id())
 
 
 class CommentModelTests(TestCase):

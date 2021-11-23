@@ -472,22 +472,23 @@ def share_post(request, id):
         Public posts are shared to everyone
         Friend posts are shared to friends
     """
-    author = LocalAuthor.objects.get(user=request.user)
-    post = LocalPost.objects.get(id=id)
+    if request.method == 'POST':
+        author = LocalAuthor.objects.get(user=request.user)
+        post = LocalPost.objects.get(id=id)
 
-    if not post.is_public() and not post.is_friends():
-        return redirect('socialDistribution:home')
+        if not post.is_public() and not post.is_friends():
+            return redirect('socialDistribution:home')
 
-    # origin remains unchanged as the original true 'source'
-    oldSource = post.get_id()
+        # origin remains unchanged as the original true 'source'
+        oldSource = post.get_id()
 
-    post.pk = None  # duplicate the post
-    post.author = author
-    post.published = timezone.now()
-    post.source = oldSource
-    post.save()
+        post.pk = None  # duplicate the post
+        post.author = author
+        post.published = timezone.now()
+        post.source = oldSource
+        post.save()
 
-    dispatch_post(post, [])
+        dispatch_post(post, [])
 
     return redirect('socialDistribution:home')
 
