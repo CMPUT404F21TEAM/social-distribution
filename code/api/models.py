@@ -11,6 +11,7 @@ class Node(models.Model):
                                     to remote group or allow remote group to connect.
     '''
     host = models.CharField(max_length=200, null=False)
+    api_prefix = models.CharField(max_length=200, default='/api', blank=True)
     username = models.CharField(max_length=200, null=False)
     password = models.CharField(max_length=200, null=False)
     remote_credentials = models.BooleanField(default=False)
