@@ -13,7 +13,7 @@ from cmput404.constants import HOST, API_PREFIX
 from datetime import datetime
 
 def create_post(title, author):
-    return LocalPost.objects.create(
+    post = LocalPost.objects.create(
             author_id=author.id,
             title=title,
             description="testDesc",
@@ -22,6 +22,11 @@ def create_post(title, author):
             visibility=LocalPost.Visibility.PUBLIC,
             unlisted=False,
         )
+    post.origin = post.get_id()
+    post.source = post.get_id()
+    post.save()
+    
+    return post
 
 
 def get_post_json(post):
@@ -31,8 +36,8 @@ def get_post_json(post):
             "type":"post",
             "title":post.title,
             "id": f"http://{HOST}/{API_PREFIX}/author/{post.author.id}/posts/{post.id}",
-            "source":"blah",
-            "origin":"blah",
+            "source": f"http://{HOST}/{API_PREFIX}/author/{post.author.id}/posts/{post.id}",
+            "origin": f"http://{HOST}/{API_PREFIX}/author/{post.author.id}/posts/{post.id}",
             "description":post.description,
             "contentType":post.get_content_type_display(),
             "content":post.content,

@@ -423,6 +423,11 @@ def posts(request, author_id):
                     unlisted=form.cleaned_data.get('unlisted'),
                 )
                 new_post.save()
+                
+                # set post origin and source to itself for a new post
+                new_post.origin = new_post.get_id()
+                new_post.source = new_post.get_id()
+                new_post.save()
 
                 categories = form.cleaned_data.get('categories')
                 if categories is not None:
@@ -467,21 +472,23 @@ def share_post(request, id):
         Public posts are shared to everyone
         Friend posts are shared to friends
     """
-    author = LocalAuthor.objects.get(user=request.user)
-    post = LocalPost.objects.get(id=id)
+    if request.method == 'POST':
+        author = LocalAuthor.objects.get(user=request.user)
+        post = LocalPost.objects.get(id=id)
 
-    if not post.is_public() and not post.is_friends():
-        return redirect('socialDistribution:home')
+        if not post.is_public() and not post.is_friends():
+            return redirect('socialDistribution:home')
 
-    oldSource = post.get_id()
+        # origin remains unchanged as the original true 'source'
+        oldSource = post.get_id()
 
-    post.pk = None  # duplicate the post
-    post.author = author
-    post.published = timezone.now()
-    post.source = oldSource
-    post.save()
+        post.pk = None  # duplicate the post
+        post.author = author
+        post.published = timezone.now()
+        post.source = oldSource
+        post.save()
 
-    dispatch_post(post, [])
+        dispatch_post(post, [])
 
     return redirect('socialDistribution:home')
 

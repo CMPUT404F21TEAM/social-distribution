@@ -66,6 +66,10 @@ class Post(models.Model):
     objects = PostQuerySet.as_manager()
 
     title = models.CharField(max_length=TITLE_MAXLEN)
+    
+    source = models.URLField(max_length=URL_MAXLEN, default='')
+
+    origin = models.URLField(max_length=URL_MAXLEN, default='')
 
     public_id = models.URLField()
 
@@ -240,9 +244,9 @@ class LocalPost(Post):
             # id of the post
             "id": self.get_id(),
             # where did you get this post from?
-            "source": "blah",
+            "source": self.source,
             # where is it actually from
-            "origin": "blah",
+            "origin": self.origin,
             # a brief description of the post
             "description": self.description,
             # The content type of the post
@@ -306,10 +310,6 @@ class InboxPost(Post):
         unlisted            Boolean indicating whether post is listed or not
 
     '''
-
-    source = models.URLField(max_length=Post.URL_MAXLEN)
-
-    origin = models.URLField(max_length=Post.URL_MAXLEN)
 
     author = models.URLField(max_length=Post.URL_MAXLEN)
 
