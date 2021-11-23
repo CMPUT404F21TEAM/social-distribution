@@ -338,11 +338,7 @@ def authors(request):
 
         # get request for authors
         try:
-            try:
-                res_code, res_body = api_requests.get(f'http://{node.host}{node.api_prefix}/authors/')
-            except Exception as error:
-                # if remote server unavailable continue
-                continue
+            res_code, res_body = api_requests.get(f'http://{node.host}{node.api_prefix}/authors/')
 
             # prepare remote data
             for remote_author in res_body['items']:
