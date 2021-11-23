@@ -125,13 +125,13 @@ class LocalAuthor(Author):
         return {
             "type": "author",
             # ID of the Author
-            "id": f"https://{HOST}/{API_PREFIX}/author/{self.id}",
+            "id": f"http://{HOST}/{API_PREFIX}/author/{self.id}",
             # the home host of the author
-            "host": f'https://{HOST}/{API_PREFIX}/',
+            "host": f'http://{HOST}/{API_PREFIX}/',
             # the display name of the author
             "displayName": self.displayName,
             # url to the authors profile
-            "url": f"https://{HOST}/{API_PREFIX}/author/{self.id}",
+            "url": f"http://{HOST}/{API_PREFIX}/author/{self.id}",
             # HATEOS url for Github API
             "github": self.githubUrl,
             # Image from a public domain
@@ -148,7 +148,7 @@ class LocalAuthor(Author):
         """
         # Clark, https://stackoverflow.com/users/10424244/clark, "Django - How to get self.id when saving a new object?",
         # 2021-02-19, https://stackoverflow.com/a/66271445, CC BY-SA 4.0
-        url = f"https://{HOST}/{API_PREFIX}/author/{self.id}"
+        url = f"http://{HOST}/{API_PREFIX}/author/{self.id}"
         if self.url != url:
             Author.objects.filter(id=self.id).update(url=url)
 
