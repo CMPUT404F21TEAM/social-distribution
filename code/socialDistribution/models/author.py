@@ -22,7 +22,7 @@ class Author(models.Model):
     """
 
     url = models.URLField()
-    displayName = models.CharField(max_length=50)
+    displayName = models.CharField(max_length=50, default="Anonymous User")
     githubUrl = models.CharField(max_length=50, null=True)
     profileImageUrl = models.CharField(max_length=50, null=True)
 
