@@ -466,8 +466,6 @@ class CommentLikesView(View):
             comment_likes_list = []
 
             for like in comment_likes:
-                # THIS WILL CAUSE A 503 REQUEST TIMEOUT ON DEPLOYED APP
-                # Will need a way to get around nested api calls
                 if LocalAuthor.objects.filter(url=like.author.url).exists():
                     like_author = LocalAuthor.objects.get(url=like.author.url)
 
