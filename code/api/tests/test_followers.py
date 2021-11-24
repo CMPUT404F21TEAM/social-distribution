@@ -3,7 +3,9 @@
 from django.test import TestCase, LiveServerTestCase
 from django.urls import reverse
 from mixer.backend.django import mixer
+
 import json
+import logging
 
 from socialDistribution.models import LocalAuthor, Author, Follow
 
@@ -17,6 +19,19 @@ class FollowersSingleViewTests(LiveServerTestCase):
     """ Test the Followers API endpoint. This test suite runs a test server on port 8000,
         which means the dev server cannot also be running on the same port. 
     """
+
+    # the pillow, https://stackoverflow.com/users/2812257/the-pillow, "How can I disable logging while running unit tests in Python Django?"
+    # https://stackoverflow.com/a/54519433, 2019-02-04, CC BY-SA 4.0
+
+    # disable logging before tests
+    @classmethod
+    def setUpClass(cls):
+        logging.disable(logging.CRITICAL)
+
+    # enable logging after tests
+    @classmethod
+    def tearDownClass(cls):
+        logging.disable(logging.NOTSET)
 
     port = 8000
 
