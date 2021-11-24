@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+import django_on_heroku
 from decouple import config
 from pathlib import Path
 import os
@@ -25,7 +26,7 @@ SECRET_KEY = config("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'cmput404.herokuapp.com']
 
 
 # Application definition
@@ -64,7 +65,9 @@ LOGIN_EXEMPT_URLS = (
 # Add remote groups origin hosts here
 CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8011",
-    "https://example.com",
+    "https://cmput404fall21g11.herokuapp.com",
+    "https://cmput404-bettersocial.herokuapp.com",
+    "https://i-connect.herokuapp.com"
 ]
 
 TEMPLATES = [
@@ -153,16 +156,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Configuring Logging - https://docs.djangoproject.com/en/3.2/topics/logging/#configuring-logging
 # Uncomment this code for detailed debugging options
 # Disabled for now since it prints messages during tests
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'handlers': {
-#         'console': {
-#             'class': 'logging.StreamHandler',
-#         },
-#     },
-#     'root': {
-#         'handlers': ['console'],
-#         'level': 'WARNING', # Set to INFO or DEBUG to see more log messages
-#     },
-# }
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO', # Set to INFO or DEBUG to see more log messages
+    },
+}
+
+django_on_heroku.settings(locals(), logging=False)

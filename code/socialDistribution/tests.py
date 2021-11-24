@@ -9,7 +9,7 @@ from mixer.backend.django import mixer
 from datetime import datetime, timedelta, timezone
 from .models import *
 from .builders import *
-
+from cmput404.constants import API_BASE
 
 class AuthorTests(LiveServerTestCase):
     """ Unit tests for Author. """
@@ -50,10 +50,10 @@ class LocalAuthorTests(TestCase):
         self.assertEqual(author.displayName, fetched.displayName)
         self.assertEqual(author.githubUrl, fetched.githubUrl)
         self.assertEqual(author.profileImageUrl, fetched.profileImageUrl)
-        self.assertEqual(f"http://127.0.0.1:8000/api/author/{author.id}", fetched.url)
+        self.assertEqual(f"{API_BASE}/author/{author.id}", fetched.url)
 
         vanilla_author = Author.objects.get(id=author.id)
-        self.assertEqual(f"http://127.0.0.1:8000/api/author/{author.id}", vanilla_author.url)
+        self.assertEqual(f"{API_BASE}/author/{author.id}", vanilla_author.url)
 
 
 class PostTest(TestCase):
@@ -85,7 +85,24 @@ class SharePostTest(TestCase):
         visibility = LocalPost.Visibility.PUBLIC
         post = PostBuilder().visibility(visibility).build()
         self.client.post('socialDistribution:share-post', id=post.id)
-        self.assertEquals(LocalPost.objects.latest("published").visibility, LocalPost.Visibility.PUBLIC)
+        
+        latestPost = LocalPost.objects.latest("published")
+        self.assertEquals(latestPost.visibility, LocalPost.Visibility.PUBLIC)
+        self.assertEqual(latestPost.origin, post.get_id())
+        self.assertEqual(latestPost.source, post.get_id())
+        
+    def test_share_public_post_twice(self):
+        visibility = LocalPost.Visibility.PUBLIC
+        post = PostBuilder().visibility(visibility).build()
+        
+        self.client.post('socialDistribution:share-post', id=post.id)
+        middlePost = LocalPost.objects.latest("published")
+        self.client.post('socialDistribution:share-post', id=middlePost.id)
+        latestPost = LocalPost.objects.latest("published")
+        
+        self.assertEquals(latestPost.visibility, LocalPost.Visibility.PUBLIC)
+        self.assertEqual(latestPost.origin, post.get_id())
+        self.assertEqual(latestPost.source, middlePost.get_id())
 
     def test_share_private_post(self):
         '''
@@ -94,7 +111,11 @@ class SharePostTest(TestCase):
         visibility = LocalPost.Visibility.PRIVATE
         post = PostBuilder().visibility(visibility).build()
         self.client.post('socialDistribution:share-post', id=post.id)
-        self.assertEquals(LocalPost.objects.latest("published"), post)
+        
+        latestPost = LocalPost.objects.latest("published")
+        self.assertEquals(latestPost, post)
+        self.assertEqual(latestPost.origin, post.get_id())
+        self.assertEqual(latestPost.source, post.get_id())
 
 
 class CommentModelTests(TestCase):

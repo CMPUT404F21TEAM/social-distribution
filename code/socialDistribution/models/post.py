@@ -7,7 +7,7 @@ from jsonfield import JSONField
 import datetime as dt
 import timeago, base64
 
-from cmput404.constants import HOST, API_PREFIX, CLIENT_PREFIX
+from cmput404.constants import HOST, API_PREFIX, CLIENT_PREFIX, API_BASE, CLIENT_BASE
 from .comment import Comment
 from .category import Category
 
@@ -71,6 +71,10 @@ class Post(models.Model):
     objects = PostQuerySet.as_manager()
 
     title = models.CharField(max_length=TITLE_MAXLEN)
+    
+    source = models.URLField(max_length=URL_MAXLEN, default='')
+
+    origin = models.URLField(max_length=URL_MAXLEN, default='')
 
     public_id = models.URLField()
 
@@ -125,7 +129,7 @@ class Post(models.Model):
         if not self.content:
             return ''
 
-        return self.content.decode('utf-8')
+        return bytes(self.content).decode('utf-8')
 
     def is_image_post(self):
         """ Check if the post is an image-only post """
@@ -212,8 +216,8 @@ class LocalPost(Post):
             "type": "comments",
             "page": None,
             "size": None,
-            "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}",
-            "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{self.id}/comments",
+            "post": f"{API_BASE}/author/{author_id}/posts/{self.id}",
+            "id": f"{API_BASE}/author/{author_id}/posts/{self.id}/comments",
             "comments": self.comments_json_as_list()
         }
 
@@ -233,12 +237,14 @@ class LocalPost(Post):
         return self.likes.count()
 
     def get_id(self):
-        return f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}"
+        return f"{API_BASE}/author/{self.author.id}/posts/{self.id}"
     
     def get_shareable_link(self):
         """ Gets the shareable (comments) link to a post """
         
-        return f"http://{HOST}/{CLIENT_PREFIX}/comment-post/{self.id}"
+        return f"{CLIENT_BASE}/comment-post/{self.author.id}/posts/{self.id}"
+        # use this if above link fails:
+        # return f"http://{HOST}/{CLIENT_PREFIX}/comment-post/{self.id}"
 
     def as_json(self):
         previousCategories = self.categories.all()
@@ -250,9 +256,9 @@ class LocalPost(Post):
             # id of the post
             "id": self.get_id(),
             # where did you get this post from?
-            "source": "blah",
+            "source": self.source,
             # where is it actually from
-            "origin": "blah",
+            "origin": self.origin,
             # a brief description of the post
             "description": self.description,
             # The content type of the post
@@ -274,7 +280,7 @@ class LocalPost(Post):
             # total number of comments for this post
             "count": 0,
             # the first page of comments
-            "comments": f"http://{HOST}/{API_PREFIX}/author/{self.author.id}/posts/{self.id}/comments/",
+            "comments": f"{API_BASE}/author/{self.author.id}/posts/{self.id}/comments/",
             # commentsSrc is OPTIONAL and can be missing
             # You should return ~ 5 comments per post.
             # should be sorted newest(first) to oldest(last)
@@ -316,10 +322,6 @@ class InboxPost(Post):
         unlisted            Boolean indicating whether post is listed or not
 
     '''
-
-    source = models.URLField(max_length=Post.URL_MAXLEN)
-
-    origin = models.URLField(max_length=Post.URL_MAXLEN)
 
     author = models.URLField(max_length=Post.URL_MAXLEN)
 

@@ -25,6 +25,9 @@ class PostBuilder:
         )
 
     def build(self):
+        self.__post.origin = self.__post.get_id()
+        self.__post.source = self.__post.get_id()
+        self.__post.save()
         return self.__post
 
     def authorId(self, id):

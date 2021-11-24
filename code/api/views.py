@@ -12,9 +12,10 @@ from django.utils.decorators import method_decorator
 
 from datetime import datetime, timezone
 import json
-import logging, base64
+import logging
+import base64
 
-from cmput404.constants import HOST, API_PREFIX
+from cmput404.constants import API_BASE
 from socialDistribution.forms import PostForm
 from socialDistribution.models import *
 from .decorators import authenticate_request, validate_node
@@ -57,7 +58,7 @@ class AuthorsView(View):
         authors = LocalAuthor.objects.order_by('pk')
         page = request.GET.get("page")
         size = request.GET.get("size")
-        
+
         if page and size:
             page = int(page)
             size = int(size)
@@ -146,12 +147,34 @@ class FollowersSingleView(View):
         """ GET - Check if {foreign_author_id} is a follower of {author_id} """
 
         author = get_object_or_404(LocalAuthor, pk=author_id)
+        logger.info(f"/author/{author_id}/followers/{foreign_author_id} API endpoint invoked")
 
         try:
             # try to find and return follower author object
             follower = Author.objects.get(url=foreign_author_id)
             follow = author.follows.get(actor=follower)
-            return JsonResponse(follow.actor.as_json())
+            actor = follow.actor
+            if LocalAuthor.objects.filter(url=actor.url).exists():
+                logger.info(f"Skipping extra API call for author")
+                actor = LocalAuthor.objects.get(url=actor.url)
+            response = actor.as_json()
+            return JsonResponse(response)
+
+        except (Author.DoesNotExist, Follow.DoesNotExist):
+            # return 404 if author not found
+            return HttpResponseNotFound()
+
+    def delete(self, request, author_id, foreign_author_id):
+        """ DELETE - Remove {foreign_author_id} as a follower of {author_id} """
+
+        author = get_object_or_404(LocalAuthor, pk=author_id)
+
+        try:
+            # try to find and delete follower author object
+            follower = Author.objects.get(url=foreign_author_id)
+            follow = author.follows.get(actor=follower)
+            follow.delete()
+            return HttpResponse(status=204)  # no content
         except (Author.DoesNotExist, Follow.DoesNotExist):
             # return 404 if author not found
             return HttpResponseNotFound()
@@ -163,23 +186,41 @@ class LikedView(View):
     def get(self, request, author_id):
         """ GET - Get a list of like objects from {author_id} """
         try:
+            page = request.GET.get("page")
+            size = request.GET.get("size")
+
             author = LocalAuthor.objects.get(id=author_id)
-            authorLikedPosts = LocalPost.objects.filter(likes__exact=author)
-            host = request.get_host()
+            author_liked_posts = LocalPost.objects.filter(
+                likes__author=author,
+                visibility=LocalPost.Visibility.PUBLIC
+            )
+
+            author_liked_comments = Comment.objects.filter(likes__author=author)
             likes = []
-            for post in authorLikedPosts:
+            for post in author_liked_posts:
                 like = {
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "summary": f"{author.displayName} Likes your post",
                     "type": "like",
                     "author": author.as_json(),
-                    "object": f"http://{host}/author/{post.author.id}/posts/{post.id}"
+                    "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}"
+                }
+                likes.append(like)
+
+            for comment in author_liked_comments:
+                like = {
+                    "@context": "https://www.w3.org/ns/activitystreams",
+                    "summary": f"{author.displayName} Likes your comment",
+                    "type": "like",
+                    "author": author.as_json(),
+                    "object": f"{API_BASE}/author/{comment.post.author.id}/posts/{comment.post.id}/comments/{comment.id}"
                 }
                 likes.append(like)
 
             response = {
-                "type:": "liked",
-                "items": likes}
+                "type": "liked",
+                "items": likes
+            }
 
         except Exception as e:
             logger.error(e, exc_info=True)
@@ -199,8 +240,7 @@ class PostsView(View):
             size = request.GET.get("size")
             author = get_object_or_404(LocalAuthor, id=author_id)
             posts = LocalPost.objects.listed().get_public().filter(author=author).order_by('pk')
-        
-                
+
             if page and size:
                 page = int(page)
                 size = int(size)
@@ -210,9 +250,9 @@ class PostsView(View):
                 except Exception as e:
                     return HttpResponseBadRequest(e)
                 posts = getPaginated(posts, page, size)
-                
+
             posts = [post.as_json() for post in posts]
-            
+
             response = {
                 "type": "posts",
                 "page": page,
@@ -346,7 +386,7 @@ class PostCommentsView(View):
                 return HttpResponseNotFound()
 
             comments = post.comments()
-            
+
             if page and size:
                 page = int(page)
                 size = int(size)
@@ -357,16 +397,16 @@ class PostCommentsView(View):
                     return HttpResponseBadRequest(e)
 
                 comments = getPaginated(comments, page, size)
-            
+
             comments = [comment.as_json() for comment in comments]
             response = {
-                    "type": "comments",
-                    "page": page,
-                    "size": size,
-                    "post": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}",
-                    "id": f"http://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}/comments",
-                    "comments": comments
-                }
+                "type": "comments",
+                "page": page,
+                "size": size,
+                "post": f"{API_BASE}/author/{author_id}/posts/{post_id}",
+                "id": f"{API_BASE}/author/{author_id}/posts/{post_id}/comments",
+                "comments": comments
+            }
 
         except Exception as e:
             logger.error(e, exc_info=True)
@@ -409,7 +449,45 @@ class PostCommentsView(View):
 class CommentLikesView(View):
 
     def get(self, request, author_id, post_id, comment_id):
-        return HttpResponse("This is the authors/aid/posts/pid/comments/cid/likes/ endpoint")
+        """ GET - Get a list of likes on comment_id which 
+            was made on post_id which was created by author_id
+        """
+        try:
+            author = get_object_or_404(LocalAuthor, pk=author_id)
+            post = get_object_or_404(
+                LocalPost, 
+                id=post_id, 
+                author=author,
+                visibility=LocalPost.Visibility.PUBLIC
+            )
+            comment = get_object_or_404(Comment, id=comment_id, post=post)
+
+            comment_likes = comment.likes.all()
+            comment_likes_list = []
+
+            for like in comment_likes:
+                if LocalAuthor.objects.filter(url=like.author.url).exists():
+                    like_author = LocalAuthor.objects.get(url=like.author.url)
+
+                    like = {
+                        "@context": "https://www.w3.org/ns/activitystreams",
+                        "summary": f"{like_author.displayName} Likes your comment",
+                        "type": "like",
+                        "author": like_author.as_json(),
+                        "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment.id}"
+                    }
+                    comment_likes_list.append(like)
+
+            response = {
+                "type": "likes",
+                "items": comment_likes_list
+            }
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseServerError()
+
+        return JsonResponse(response)
 
 
 @method_decorator(csrf_exempt, name='dispatch')

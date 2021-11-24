@@ -17,8 +17,18 @@ from api.parsers import url_parser
 # Django Software Foundation, "Logging", https://docs.djangoproject.com/en/3.2/topics/logging/
 logger = logging.getLogger(__name__)
 
+def add_auth_header(url, headers):
+    '''
+        Add Auth Header for node to headers dict
+    '''
+    host = url_parser.get_host(url)
+    auth_credentials = node_manager.get_credentials(host=host, remote_credentials=True)
+    if (auth_credentials):
+        authToken = base64.b64encode(auth_credentials).decode("ascii")
+        headers['Authorization'] = 'Basic %s' % authToken
 
-def get(url, params=None):
+
+def get(url, params=None, send_basic_auth_header=False):
     """ Makes a GET request at the given URL and returns the JSON body of the HTTP response.
 
         Parameters:
@@ -34,20 +44,28 @@ def get(url, params=None):
         "Accept": "application/json"
     }
 
+    # Add Basic Auth Header
+    if send_basic_auth_header:
+        add_auth_header(url, headers)
+
     # ref: https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request - datashaman
     # 'Can I set max_retries for requests.request?'
     try:
+        logger.info(f"Trying to do GET request to {url}") #temp
         session = requests.Session()
         retries = Retry(total=2,
                         backoff_factor=0.1,
                         status_forcelist=[500, 502, 503, 504])
         session.mount(url, HTTPAdapter(max_retries=retries))
-  
+
         response = session.get(url, headers=headers, params=params)
 
         # parse JSON response if OK
         if response.status_code == 200:
-            response_data = response.json()
+            try:
+                response_data = response.json()
+            except:
+                response_data = None
         else:
             response_data = None
 
@@ -56,13 +74,13 @@ def get(url, params=None):
         logger.error(f'Something went wrong getting {url}. {str(error)}')
         status_code = 500
         response_data = None
-        return status_code , response_data
+        return status_code, response_data
 
     # caller should check status codes show error message to user (if needed)
     return response.status_code, response_data
 
 
-def post(url, params=None, data={}, sendBasicAuthHeader=False):
+def post(url, params=None, data={}, send_basic_auth_header=False):
     """ Makes a POST request at the given URL and returns the JSON body of the HTTP response.
 
         Parameters:
@@ -80,13 +98,9 @@ def post(url, params=None, data={}, sendBasicAuthHeader=False):
         "Accept": "application/json",
     }
 
-    # Add Basic Auth Header specific to a node for Inbox api 
-    host = url_parser.get_host(url)
-    auth_credentials = node_manager.get_credentials(host=host)
-    print("auth_credentials", auth_credentials)
-    if (sendBasicAuthHeader and auth_credentials):
-        authToken = base64.b64encode(auth_credentials).decode("ascii")
-        headers['Authorization'] = 'Basic %s' %  authToken
+    # Add Basic Auth Header specific to a node for Inbox api
+    if send_basic_auth_header:
+        add_auth_header(url, headers)
 
     response = requests.post(url, headers=headers, params=params, json=data)
 
@@ -104,7 +118,7 @@ def post(url, params=None, data={}, sendBasicAuthHeader=False):
     # caller should check status codes show error message to user (if needed)
     return response.status_code, response_data
 
-def delete(url, params=None):
+def delete(url, params=None, send_basic_auth_header=False):
     """ Makes a DELETE request at the given URL and returns the JSON body of the HTTP response.
 
         Parameters:
@@ -117,22 +131,40 @@ def delete(url, params=None):
     """
 
     headers = {
-        "Accept": "application/json",
-        "REFERER": HOST
+        "Accept": "application/json"
     }
 
-    response = requests.delete(url, headers=headers, params=params)
+    # Add Basic Auth Header specific to a node for Inbox api
+    if send_basic_auth_header:
+        add_auth_header(url, headers)
 
-    # parse JSON response if OK
     try:
+        # ref: https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request - datashaman
+        # 'Can I set max_retries for requests.request?'
+        session = requests.Session()
+        retries = Retry(total=2,
+                        backoff_factor=0.1,
+                        status_forcelist=[500, 502, 503, 504])
+
+        session.mount(url, HTTPAdapter(max_retries=retries))
+        response = session.delete(url, headers=headers, params=params)
+
+        # parse JSON response if OK
         if response.status_code == 200:
-            response_data = response.json()
+            try:
+                response_data = response.json()
+            except json.decoder.JSONDecodeError:
+                response_data = None
         else:
             response_data = None
-    except json.decoder.JSONDecodeError:
-        response_data = None
 
-    logger.info(f"API POST request to {url} and received {response.status_code}")
+        logger.info(f"API DELETE request to {url} and received {response.status_code}")
+
+    except Exception as error:
+        logger.error(f'Something went wrong getting {url}. {str(error)}')
+        status_code = 500
+        response_data = None
+        return status_code, response_data
 
     # caller should check status codes show error message to user (if needed)
     return response.status_code, response_data

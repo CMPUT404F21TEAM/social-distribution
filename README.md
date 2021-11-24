@@ -24,6 +24,7 @@ Port: N/A
 Hostname: social-distribution-fall2021.herokuapp.com
 Prefix: api/
 Username/Password for Basic Auth:
+  Team 08: username=team08 and password=secret08
   Team 11: username=team11 and password=secret11
   Team 16: username=team16 and password=secret16
 ```

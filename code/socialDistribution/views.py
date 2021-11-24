@@ -8,24 +8,28 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
+
+from cmput404.constants import SCHEME, HOST, API_BASE
 from .forms import CreateUserForm, PostForm
 
 import base64
 import pyperclip
 
 import socialDistribution.requests as api_requests
-from cmput404.constants import API_PREFIX
 from api.models import Node
 from .models import *
 from .forms import CreateUserForm, PostForm
 from .decorators import unauthenticated_user
 from PIL import Image
 from io import BytesIO
+import logging
+
 
 from .dispatchers import dispatch_post, dispatch_follow_request
 from .github_activity.github_activity import pull_github_events
 
-REQUIRE_SIGNUP_APPROVAL = False
+logger = logging.getLogger(__name__)
+REQUIRE_SIGNUP_APPROVAL = True
 ''' 
     sign up approval not required by default, should turn on in prod. 
     if time permits store this in database and allow change from admin dashboard.
@@ -146,11 +150,12 @@ def logoutUser(request):
     logout(request)
     return redirect('socialDistribution:login')
 
+
 def unlisted_post_image(request, post_id):
     """
         Return the embedded image (if any) of the unlisted post
     """
-    
+
     if request.method == 'GET':
         post = get_object_or_404(LocalPost, pk=int(post_id))
         user_author = get_object_or_404(LocalAuthor, user=request.user)
@@ -176,7 +181,7 @@ def unlisted_post_image(request, post_id):
                         webp_bytes_arr = BytesIO()
                         img.save(webp_bytes_arr, 'webp')
                         webp_img = webp_bytes_arr.getvalue()
-                        
+
                         response = HttpResponse()
                         response.write(webp_img)
                         response['Content-Type'] = 'image/webp'
@@ -262,7 +267,6 @@ def friend_request(request, author_id, action):
             is_accept = action == 'accept'
             curr_user.handle_follow_request(requestee, is_accept)
 
-
     return redirect('socialDistribution:inbox')
 
 
@@ -282,7 +286,6 @@ def befriend(request, author_id):
             # send follow request
             dispatch_follow_request(actor, object)
 
-
     return redirect('socialDistribution:authors')
 
 
@@ -294,17 +297,21 @@ def un_befriend(request, author_id):
         - author_id (string): the ID of the Author to follow
     """
 
-    # THIS DOES NOT RIGHT NOW
-    # STILL BASED ON OLD LOCALAUTHOR METHOD
-
     if request.method == 'POST':
-        author = get_object_or_404(LocalAuthor, pk=author_id)
-        curr_user = LocalAuthor.objects.get(user=request.user)
+        # current user follows author
+        # send delete request to author to leave me alone
+        object = get_object_or_404(Author, id=author_id)
+        actor = LocalAuthor.objects.get(user=request.user)
 
-        if author.has_follower(curr_user):
-            author.follows.filter(actor=curr_user).delete()
-        else:
-            messages.info(request, f'Couldn\'t un-befriend {author.displayName}')
+        if object.id != actor.id:
+            # tell them to delete me as a follower
+            actor_url = actor.url.strip('/')
+            object_url = object.url.strip('/')
+            url = object_url + '/followers/' + actor_url
+            status_code, response_body = api_requests.delete(url)
+
+            if status_code >= 400:
+                messages.info(request, f'Couldn\'t un-befriend {author.displayName}')
 
     return redirect('socialDistribution:author', author_id)
 
@@ -327,36 +334,35 @@ def authors(request):
     remote_authors = []
 
     # get remote authors
-    for node in Node.objects.all():
+    for node in Node.objects.filter(remote_credentials=True):
         # ignore current host
-        if node.host == request.META['HTTP_HOST']:
-            continue 
+        if node.host == HOST:
+            continue
 
         # get request for authors
         try:
-            try:
-                res_code, res_body = api_requests.get(f'http://{node.host}/api/authors/')
+            res_code, res_body = api_requests.get(f'{SCHEME}://{node.host}{node.api_prefix}/authors/', send_basic_auth_header=True)
 
-            except Exception as error:
-                # if remote server unavailable continue
+            # skip node if unresponsive
+            if res_body == None:
                 continue
 
             # prepare remote data
             for remote_author in res_body['items']:
                 author, created = Author.objects.get_or_create(
-                        url=remote_author['id']
-                    )
+                    url=remote_author['id']
+                )
 
                 # add Local database id to remote author
                 remote_author['local_id'] = author.id
-                
+
                 remote_authors.append({
                     "data": remote_author,
                     'type': "Remote"
                 })
 
         except Exception as error:
-            print(error)
+            logger.error(str(error))
 
     args["authors"] = local_authors + remote_authors
     return render(request, 'author/index.html', args)
@@ -410,6 +416,7 @@ def unlisted_posts(request, author_id):
 def create(request):
     return render(request, 'create/index.html')
 
+
 def posts(request, author_id):
     """ Handles POST request to publish a post.
 
@@ -421,9 +428,9 @@ def posts(request, author_id):
         form = PostForm(request.POST, request.FILES, user_id=user_id)
         if form.is_valid():
             content, content_type = form.get_content_and_type()
-                
+
             # Will do some more refactoring to remove code duplication soon
-            
+
             try:
                 # create the post
                 new_post = LocalPost(
@@ -435,6 +442,11 @@ def posts(request, author_id):
                     visibility=form.cleaned_data.get('visibility'),
                     unlisted=form.cleaned_data.get('unlisted'),
                 )
+                new_post.save()
+                
+                # set post origin and source to itself for a new post
+                new_post.origin = new_post.get_id()
+                new_post.source = new_post.get_id()
                 new_post.save()
 
                 categories = form.cleaned_data.get('categories')
@@ -448,7 +460,7 @@ def posts(request, author_id):
                     """
                     for category in categories:
                         category_obj, created = Category.objects.get_or_create(
-                            category__iexact=category, 
+                            category__iexact=category,
                             defaults={'category': category}
                         )
                         new_post.categories.add(category_obj)
@@ -471,6 +483,8 @@ def posts(request, author_id):
     return redirect('socialDistribution:home')
 
 # https://books.agiliq.com/projects/django-orm-cookbook/en/latest/copy.html - How to copy or clone an existing model object
+
+
 def share_post(request, id):
     """
         Allows user to share a post.
@@ -478,21 +492,24 @@ def share_post(request, id):
         Public posts are shared to everyone
         Friend posts are shared to friends
     """
-    author = LocalAuthor.objects.get(user=request.user)
-    post = LocalPost.objects.get(id=id)
-    
-    if not post.is_public() and not post.is_friends():
-        return redirect('socialDistribution:home')
-    
-    oldSource = post.get_id()
-    post.pk = None # duplicate the post
-    post.author = author
-    post.published = timezone.now()
-    post.source = oldSource
-    post.save()
-    
-    dispatch_post(post, [])
-    
+    if request.method == 'POST':
+        author = LocalAuthor.objects.get(user=request.user)
+        post = LocalPost.objects.get(id=id)
+
+        if not post.is_public() and not post.is_friends():
+            return redirect('socialDistribution:home')
+
+        # origin remains unchanged as the original true 'source'
+        oldSource = post.get_id()
+
+        post.pk = None  # duplicate the post
+        post.author = author
+        post.published = timezone.now()
+        post.source = oldSource
+        post.save()
+
+        dispatch_post(post, [])
+
     return redirect('socialDistribution:home')
 
 def copy_link(request, id):
@@ -545,7 +562,7 @@ def edit_post(request, id):
                 categories = form.cleaned_data.get('categories')
                 if categories is not None:
                     categories = categories.split()
-                    categories_to_remove = [ cat.category for cat in post.categories.all()]
+                    categories_to_remove = [cat.category for cat in post.categories.all()]
 
                     """
                     This implementation makes category names case-insensitive.
@@ -558,7 +575,7 @@ def edit_post(request, id):
                             defaults={'category': category}
                         )
                         post.categories.add(category_obj)
-                        
+
                         while category_obj.category in categories_to_remove:
                             categories_to_remove.remove(category_obj.category)     # don't remove this category
 
@@ -600,12 +617,12 @@ def like_post(request, id, post_host):
     else:
         post = get_object_or_404(LocalPost, id=id)
         host = request.get_host()
-        request_url = f'http://{host}/{API_PREFIX}/author/{post.author.id}/inbox'
-        obj = f'http://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
+        request_url = f'{API_BASE}/author/{post.author.id}/inbox'
+        obj = f'{API_BASE}/author/{post.author.id}/posts/{id}'
 
     author = LocalAuthor.objects.get(user=request.user)
     prev_page = request.META['HTTP_REFERER']
-    
+
     if request.method == 'POST':
         # create like object
         like = {
@@ -617,7 +634,7 @@ def like_post(request, id, post_host):
         }
 
         # redirect request to remote/local api
-        status_code, response_data = api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
+        status_code, response_data = api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
 
         if status_code >= 400:
             messages.error(request, 'An error occurred while liking post')
@@ -673,11 +690,11 @@ def like_comment(request, id):
             "summary": f"{author.username} Likes your comment",
             "type": "like",
             "author": author.as_json(),
-            "object": f"http://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
+            "object": f"{API_BASE}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
         }
 
     # redirect request to remote/local api
-    request_url = f'http://{host}/api/author/{comment.author.id}/inbox/'
+    request_url = f'{API_BASE}/author/{comment.author.id}/inbox/'
     api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
 
     if prev_page is None:

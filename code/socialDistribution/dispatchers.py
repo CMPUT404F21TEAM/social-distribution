@@ -8,7 +8,7 @@ def send_post(post: LocalPost, url: str):
     """ Sends a post to the given URL via a POST request. """
 
     data = post.as_json()
-    api_requests.post(url=url, data=data, sendBasicAuthHeader=True)
+    api_requests.post(url=url, data=data, send_basic_auth_header=True)
 
 def dispatch_post(post: LocalPost, recipients: List[LocalAuthor] = None,):
     """ Sends a post to the inbox of all followers who have permission to view the post.
@@ -56,4 +56,4 @@ def dispatch_follow_request(actor: LocalAuthor, object: Author):
         "object": object_json
     }
 
-    api_requests.post(url=object_inbox, data=data, sendBasicAuthHeader=True)
+    api_requests.post(url=object_inbox, data=data, send_basic_auth_header=True)

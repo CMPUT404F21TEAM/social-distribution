@@ -9,11 +9,11 @@ import base64 as b64
 
 from socialDistribution.models import LocalPost, Category, LocalAuthor
 from .test_authors import create_author
-from cmput404.constants import HOST, API_PREFIX
+from cmput404.constants import API_BASE
 from datetime import datetime
 
 def create_post(title, author):
-    return LocalPost.objects.create(
+    post = LocalPost.objects.create(
             author_id=author.id,
             title=title,
             description="testDesc",
@@ -22,6 +22,11 @@ def create_post(title, author):
             visibility=LocalPost.Visibility.PUBLIC,
             unlisted=False,
         )
+    post.origin = post.get_id()
+    post.source = post.get_id()
+    post.save()
+    
+    return post
 
 
 def get_post_json(post):
@@ -30,16 +35,16 @@ def get_post_json(post):
     return {
             "type":"post",
             "title":post.title,
-            "id": f"http://{HOST}/{API_PREFIX}/author/{post.author.id}/posts/{post.id}",
-            "source":"blah",
-            "origin":"blah",
+            "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}",
+            "source":f"{API_BASE}/author/{post.author.id}/posts/{post.id}",
+            "origin":f"{API_BASE}/author/{post.author.id}/posts/{post.id}",
             "description":post.description,
             "contentType":post.get_content_type_display(),
             "content":post.decoded_content, # 
             "author":post.author.as_json(),
             "categories":previousCategoriesNames,
             "count": 0,
-            "comments":f"http://{HOST}/{API_PREFIX}/author/{post.author.id}/posts/{post.id}/comments/",
+            "comments":f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/",
             "commentsSrc":post.comments_as_json,
             "published":post.published.isoformat(),
             "visibility":post.get_visibility_display(),
