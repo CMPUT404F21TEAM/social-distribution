@@ -5,7 +5,8 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from jsonfield import JSONField
 import datetime as dt
-import timeago, base64
+import timeago
+
 
 from cmput404.constants import SCHEME, HOST, API_PREFIX
 import socialDistribution.requests as api_requests
@@ -327,7 +328,6 @@ class InboxPost(Post):
             actor_url = self.author.strip('/')
             object_url = self.public_id.split('/')[-1]
             endpoint = actor_url + '/posts/' + object_url
-            print("          UPDATE", self.title)
 
             status_code, response_body = api_requests.get(endpoint)
 
