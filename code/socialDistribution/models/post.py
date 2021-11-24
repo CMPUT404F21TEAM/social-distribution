@@ -6,7 +6,6 @@ from django.utils import timezone
 from jsonfield import JSONField
 import datetime as dt
 import timeago, base64
-import json
 
 from cmput404.constants import SCHEME, HOST, API_PREFIX
 import socialDistribution.requests as api_requests
@@ -336,10 +335,21 @@ class InboxPost(Post):
             if status_code == 200 and response_body is not None:
                 self.title = response_body['title']
                 self.description = response_body['description']
-                self.content_type = response_body['contentType']
+
                 self.content = response_body['content'].encode('utf-8')
                 self.visibility = response_body['visibility']
                 self.unlisted = response_body['unlisted']
+                
+                if response_body['contentType'] == 'text/plain':
+                    self.content_type = self.ContentType.PLAIN
+                elif response_body['contentType'] == 'text/markdown':
+                    self.content_type = self.ContentType.MARKDOWN
+                elif response_body['contentType'] == 'application/base64':
+                    self.content_type = self.ContentType.BASE64
+                elif response_body['contentType'] == 'image/jpeg;base64':
+                    self.content_type = self.ContentType.JPEG
+                elif response_body['contentType'] == 'image/png;base64':
+                    self.content_type = self.ContentType.PNG
                 
                 categories = response_body['categories']
                 
