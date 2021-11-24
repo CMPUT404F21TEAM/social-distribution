@@ -9,13 +9,12 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 
-from cmput404.constants import SCHEME, HOST
+from cmput404.constants import SCHEME, HOST, API_BASE
 from .forms import CreateUserForm, PostForm
 
 import base64
 
 import socialDistribution.requests as api_requests
-from cmput404.constants import API_PREFIX
 from api.models import Node
 from .models import *
 from .forms import CreateUserForm, PostForm
@@ -341,7 +340,7 @@ def authors(request):
 
         # get request for authors
         try:
-            res_code, res_body = api_requests.get(f'http://{node.host}{node.api_prefix}/authors/')
+            res_code, res_body = api_requests.get(f'{SCHEME}://{node.host}{node.api_prefix}/authors/', send_basic_auth_header=True)
 
             # skip node if unresponsive
             if res_body == None:
@@ -581,8 +580,8 @@ def like_post(request, id, post_host):
     else:
         post = get_object_or_404(LocalPost, id=id)
         host = request.get_host()
-        request_url = f'{SCHEME}://{host}/{API_PREFIX}/author/{post.author.id}/inbox'
-        obj = f'{SCHEME}://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
+        request_url = f'{API_BASE}/author/{post.author.id}/inbox'
+        obj = f'{API_BASE}/author/{post.author.id}/posts/{id}'
 
     author = LocalAuthor.objects.get(user=request.user)
     prev_page = request.META['HTTP_REFERER']
@@ -598,7 +597,7 @@ def like_post(request, id, post_host):
         }
 
         # redirect request to remote/local api
-        status_code, response_data = api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
+        status_code, response_data = api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
 
         if status_code >= 400:
             messages.error(request, 'An error occurred while liking post')
@@ -654,11 +653,11 @@ def like_comment(request, id):
             "summary": f"{author.username} Likes your comment",
             "type": "like",
             "author": author.as_json(),
-            "object": f"{SCHEME}://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
+            "object": f"{API_BASE}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
         }
 
     # redirect request to remote/local api
-    request_url = f'{SCHEME}://{host}/api/author/{comment.author.id}/inbox/'
+    request_url = f'{API_BASE}/author/{comment.author.id}/inbox/'
     api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
 
     if prev_page is None:
