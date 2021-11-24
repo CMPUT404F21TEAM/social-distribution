@@ -471,7 +471,7 @@ class PostCommentsView(View):
             logger.error(e, exc_info=True)
             return HttpResponse('Internal Server Error')
 
-        return redirect('socialDistribution:comment-post', id=post_id)
+        return redirect('socialDistribution:single-post', post_type="local", id=post_id)
 
 
 @method_decorator(csrf_exempt, name='dispatch')

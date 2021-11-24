@@ -611,13 +611,19 @@ def like_post(request, id, post_host):
         # will have to edit this if other endpoints require args
         return redirect(prev_page)
 
-
-def comment_post(request, id):
+def single_post(request, post_type, id):
     '''
         Render Post and comments
     '''
-    post = get_object_or_404(LocalPost, id=id)
+
     author = get_object_or_404(LocalAuthor, user=request.user)
+
+    if post_type == "local":
+        post = get_object_or_404(LocalPost, id=id)
+    elif post_type == "remote":
+        post = get_object_or_404(InboxPost, id=id)
+    else:
+        raise Http404()
 
     try:
         comments = Comment.objects.filter(post=post).order_by('-pub_date')
