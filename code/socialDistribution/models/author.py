@@ -144,23 +144,6 @@ class LocalAuthor(Author):
     def __str__(self):
         return self.displayName
 
-    def as_json(self):
-        return {
-            "type": "author",
-            # ID of the Author
-            "id": f"{API_BASE}/author/{self.id}",
-            # the home host of the author
-            "host": f'{API_BASE}/',
-            # the display name of the author
-            "displayName": self.displayName,
-            # url to the authors profile
-            "url": f"{API_BASE}/author/{self.id}",
-            # HATEOS url for Github API
-            "github": self.githubUrl,
-            # Image from a public domain
-            "profileImage": self.profileImageUrl
-        }
-
     def save(self, *args, **kwargs):
         self._always_up_to_date = True
         super().save(*args, **kwargs)  # Call the "real" save() method.
