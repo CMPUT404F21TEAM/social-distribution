@@ -703,7 +703,12 @@ def inbox(request):
     """
     author = LocalAuthor.objects.get(user=request.user)
     follow_requests = author.follow_requests.all()
+    
+    for post in author.inbox_posts.all():
+        post.fetch_update()
     posts = author.inbox_posts.all().order_by('-published')
+        
+    
     context = {
         'author': author,
         'follow_requests': follow_requests,
