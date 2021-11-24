@@ -15,7 +15,7 @@ import json
 import logging
 import base64
 
-from cmput404.constants import SCHEME, HOST, API_PREFIX
+from cmput404.constants import API_BASE
 from socialDistribution.forms import PostForm
 from socialDistribution.models import *
 from .decorators import authenticate_request, validate_node
@@ -203,7 +203,7 @@ class LikedView(View):
                     "summary": f"{author.displayName} Likes your post",
                     "type": "like",
                     "author": author.as_json(),
-                    "object": f"{SCHEME}://{HOST}/author/{post.author.id}/posts/{post.id}"
+                    "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}"
                 }
                 likes.append(like)
 
@@ -213,7 +213,7 @@ class LikedView(View):
                     "summary": f"{author.displayName} Likes your comment",
                     "type": "like",
                     "author": author.as_json(),
-                    "object": f"{SCHEME}://{HOST}/author/{comment.post.author.id}/posts/{comment.post.id}/comments/{comment.id}"
+                    "object": f"{API_BASE}/author/{comment.post.author.id}/posts/{comment.post.id}/comments/{comment.id}"
                 }
                 likes.append(like)
 
@@ -403,8 +403,8 @@ class PostCommentsView(View):
                 "type": "comments",
                 "page": page,
                 "size": size,
-                "post": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}",
-                "id": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}/comments",
+                "post": f"{API_BASE}/author/{author_id}/posts/{post_id}",
+                "id": f"{API_BASE}/author/{author_id}/posts/{post_id}/comments",
                 "comments": comments
             }
 
@@ -474,7 +474,7 @@ class CommentLikesView(View):
                         "summary": f"{like_author.displayName} Likes your comment",
                         "type": "like",
                         "author": like_author.as_json(),
-                        "object": f"{SCHEME}://{HOST}/author/{post.author.id}/posts/{post.id}/comments/{comment.id}"
+                        "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment.id}"
                     }
                     comment_likes_list.append(like)
 

@@ -8,7 +8,7 @@ from mixer.backend.django import mixer
 import json
 
 from socialDistribution.models import PostLike, CommentLike, Comment, LocalAuthor, LocalPost
-from cmput404.constants import SCHEME, HOST, API_PREFIX
+from cmput404.constants import API_BASE
 from .test_post import create_post, get_post_json
 from .test_comments import create_comment
 from datetime import datetime
@@ -25,7 +25,7 @@ def post_like_as_json(postlike):
         "summary": f"{postlike.author.displayName} Likes your post",
         "author": postlike.author.as_json(),
         "type": "like",
-        "object": f"{SCHEME}://{HOST}/author/{postlike.object.author.id}/posts/{postlike.object.id}"
+        "object": f"{API_BASE}/author/{postlike.object.author.id}/posts/{postlike.object.id}"
     }
 
 
@@ -42,7 +42,7 @@ def comment_like_as_json(commentlike):
         "summary": f"{commentlike.author.displayName} Likes your comment",
         "author": commentlike.author.as_json(),
         "type": "like",
-        "object": f"{SCHEME}://{HOST}/author/{post.author.id}/posts/{post.id}/comments/{commentlike.object.id}"
+        "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{commentlike.object.id}"
     }
 
 
