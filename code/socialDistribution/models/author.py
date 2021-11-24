@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-import datetime   
+import datetime
 
 import socialDistribution.requests as api_requests
 from cmput404.constants import SCHEME, HOST, API_PREFIX
@@ -85,17 +85,6 @@ class LocalAuthor(Author):
 
     follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')
-
-    @classmethod
-    def get_local_if_exists(cls, author: Author):
-        """ Given an Author record, gets the LocalAuthor record if the Author is local. If
-            the Author is not local, returns the same Author object.
-        """
-
-        if cls.objects.filter(id=author.id).exists():
-            return cls.objects.get(id=author.id)
-        else:
-            return author
 
     def get_url_id(self):
         """
