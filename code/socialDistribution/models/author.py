@@ -63,6 +63,17 @@ class LocalAuthor(Author):
     follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')
 
+    @classmethod
+    def get_local_if_exists(cls, author: Author):
+        """ Given an Author record, gets the LocalAuthor record if the Author is local. If
+            the Author is not local, returns the same Author object.
+        """
+        
+        if cls.objects.filter(id=author.id).exists():
+            return cls.objects.get(id=author.id)
+        else:
+            return author
+
     def get_url_id(self):
         """
         Returns the id of the author in url form
@@ -151,11 +162,3 @@ class LocalAuthor(Author):
         url = f"{SCHEME}://{HOST}/{API_PREFIX}/author/{self.id}"
         if self.url != url:
             Author.objects.filter(id=self.id).update(url=url)
-
-    # temp
-
-    def has_req_from(self, author):
-        """
-        Returns True if the user has a request from a specific author, False otherwise 
-        """
-        return self.follow_requests.filter(pk=author.id).exists()
