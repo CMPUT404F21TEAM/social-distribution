@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
+
+import datetime   
 
 import socialDistribution.requests as api_requests
 from cmput404.constants import SCHEME, HOST, API_PREFIX
@@ -23,6 +26,10 @@ class Author(models.Model):
     githubUrl = models.CharField(max_length=50, null=True)
     profileImageUrl = models.CharField(max_length=50, null=True)
 
+    # timestamp of when the object was last updated
+    # will need later for caching
+    _last_updated = models.DateTimeField(auto_now=True)
+
     # true means that field data will always be up-to-date (used by LocalAuthor)
     _always_up_to_date = models.BooleanField(default=False)
 
@@ -32,6 +39,7 @@ class Author(models.Model):
         return self.url.strip("/") + "/inbox"
 
     def as_json(self):
+        was_recent_update = self._last_updated < timezone.now()-datetime.timedelta(seconds=10)
         if self._always_up_to_date:
             # read author data from fields
             # will do this in case of LocalAuthor

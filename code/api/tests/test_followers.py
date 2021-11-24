@@ -78,13 +78,29 @@ class FollowersSingleViewTests(TestCase):
 
 class FollowersViewTests(TestCase):
 
-    def test_get_followers(self):
+    def test_get_followers_empty(self):
 
         author = mixer.blend(LocalAuthor)
 
-        expected = json.dumps({"type": "followers", "items": []})
+        expected = {"type": "followers", "items": []}
         kwargs = {"author_id": author.id}
         response = self.client.get(reverse("api:followers", kwargs=kwargs))
 
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(response.content, expected)
+        self.assertJSONEqual(response.json(), expected)
+
+    def test_get_followers_empty(self):
+
+        author1 = mixer.blend(LocalAuthor)
+        author2 = mixer.blend(LocalAuthor)
+        author3 = mixer.blend(LocalAuthor)
+
+        author1.follows.create(actor=author2)
+        author1.follows.create(actor=author3)
+
+        expected = {"type": "followers", "items": [author2.as_json(), author3.as_json()]}
+        kwargs = {"author_id": author1.id}
+        response = self.client.get(reverse("api:followers", kwargs=kwargs))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(response.json(), expected)
