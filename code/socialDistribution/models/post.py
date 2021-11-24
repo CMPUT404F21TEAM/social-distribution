@@ -36,11 +36,7 @@ class PostQuerySet(models.QuerySet):
         )
 
     def chronological(self):
-        """ Order results in chronological order in terms of published date.
-        """
-        for post in self.all():
-            if post is InboxPost:
-                post.fetch_update()
+        """ Order results in chronological order in terms of published date."""
         return self.order_by('-published')[:]
 
 
@@ -329,22 +325,23 @@ class InboxPost(Post):
         """ Fetches update about the post for an edit or delete """
         # make api request
         try:
-            actor_url = self.author.url.strip('/')
-            object_url = self.public_id.strip('/')
+            actor_url = self.author.strip('/')
+            object_url = self.public_id.split('/')[-1]
             endpoint = actor_url + '/posts/' + object_url
+            print("          UPDATE", self.title)
+
             status_code, response_body = api_requests.get(endpoint)
 
             # check if GET request came back with post object
-            if status_code == 200 and response_body is not None and response_body.get("id") == object_url:
-                data = json.loads(response_body)
-                self.title = data['title']
-                self.description = data['description']
-                self.content_type = data['contentType']
-                self.content = data['content'].encode('utf-8')
-                self.visibility = data['visibility']
-                self.unlisted = data['unlisted']
+            if status_code == 200 and response_body is not None:
+                self.title = response_body['title']
+                self.description = response_body['description']
+                self.content_type = response_body['contentType']
+                self.content = response_body['content'].encode('utf-8')
+                self.visibility = response_body['visibility']
+                self.unlisted = response_body['unlisted']
                 
-                categories = data['categories']
+                categories = response_body['categories']
                 
                 if categories is not None:
                     categories_to_remove = [ cat.category for cat in self.categories.all()]
@@ -369,7 +366,8 @@ class InboxPost(Post):
                         self.categories.remove(category_obj)
 
                 self.save()
-            elif status_code == 400 or status_code == 410:
+            elif status_code == 400 or status_code == 404 or status_code == 410:
                 self.delete()
-        except:
-            print(f'Error updating post: {self.id}')
+        except Exception as e:
+            print(f'Error updating post: {self.title}')
+            print(e)
