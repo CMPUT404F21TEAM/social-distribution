@@ -153,11 +153,7 @@ class FollowersSingleView(View):
             # try to find and return follower author object
             follower = Author.objects.get(url=foreign_author_id)
             follow = author.follows.get(actor=follower)
-            actor = follow.actor
-            if LocalAuthor.objects.filter(url=actor.url).exists():
-                logger.info(f"Skipping extra API call for author")
-                actor = LocalAuthor.objects.get(url=actor.url)
-            response = actor.as_json()
+            response = follow.actor.as_json()
             return JsonResponse(response)
 
         except (Author.DoesNotExist, Follow.DoesNotExist):
@@ -188,7 +184,6 @@ class LikedView(View):
         try:
             author = LocalAuthor.objects.get(id=author_id)
             authorLikedPosts = LocalPost.objects.filter(likes__exact=author)
-            host = request.get_host()
             likes = []
             for post in authorLikedPosts:
                 like = {
@@ -196,13 +191,17 @@ class LikedView(View):
                     "summary": f"{author.displayName} Likes your post",
                     "type": "like",
                     "author": author.as_json(),
-                    "object": f"{SCHEME}://{host}/author/{post.author.id}/posts/{post.id}"
+                    "object": f"{SCHEME}://{HOST}/author/{post.author.id}/posts/{post.id}"
                 }
                 likes.append(like)
 
             response = {
                 "type:": "liked",
-                "items": likes}
+                "items": likes
+            }
+
+        except LocalAuthor.DoesNotExist:
+            return HttpResponseNotFound()
 
         except Exception as e:
             logger.error(e, exc_info=True)
@@ -259,7 +258,7 @@ class PostView(View):
         try:
             post = LocalPost.objects.get(id=post_id)
             response = post.as_json()
-            
+
         except LocalPost.DoesNotExist:
             return HttpResponseNotFound()
 
@@ -268,14 +267,14 @@ class PostView(View):
             return HttpResponseServerError()
 
         return JsonResponse(response)
-    
+
     #TODO: authenticate
     def delete(self, request, author_id, post_id):
         """ GET - Delete post {post_id} """
         try:
             post = LocalPost.objects.get(id=post_id)
             post.delete()
-            
+
         except LocalPost.DoesNotExist:
             return HttpResponseNotFound()
 
@@ -284,7 +283,7 @@ class PostView(View):
             return HttpResponseServerError()
 
         return HttpResponse(200)
-    
+
     #TODO: authenticate
     def post(self, request, author_id, post_id):
         """ POST - Update post {post_id} """
@@ -302,7 +301,7 @@ class PostView(View):
             categories = data['categories']
 
             if categories is not None:
-                categories_to_remove = [ cat.category for cat in post.categories.all()]
+                categories_to_remove = [cat.category for cat in post.categories.all()]
 
                 """
                 This implementation makes category names case-insensitive.
@@ -315,7 +314,7 @@ class PostView(View):
                         defaults={'category': category}
                     )
                     post.categories.add(category_obj)
-                    
+
                     while category_obj.category in categories_to_remove:
                         categories_to_remove.remove(category_obj.category)     # don't remove this category
 
@@ -325,9 +324,10 @@ class PostView(View):
 
             post.save()
             return JsonResponse(status=201, data=post.as_json())
-            
+
         except ValidationError:
             messages.info(request, 'Unable to edit post.')
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostLikesView(View):

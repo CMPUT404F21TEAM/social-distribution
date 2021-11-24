@@ -19,6 +19,12 @@ class Author(models.Model):
     """
 
     url = models.URLField()
+    displayName = models.CharField(max_length=50)
+    githubUrl = models.CharField(max_length=50, null=True)
+    profileImageUrl = models.CharField(max_length=50, null=True)
+
+    # true means that field data will always be up-to-date (used by LocalAuthor)
+    _always_up_to_date = models.BooleanField(default=False)
 
     def get_inbox(self):
         """ Gets the URL of the Authors inbox. """
@@ -26,11 +32,23 @@ class Author(models.Model):
         return self.url.strip("/") + "/inbox"
 
     def as_json(self):
-        # Makes a GET request to URL to get the Author data
-        status_code, json_data = api_requests.get(self.url)
+        if self._always_up_to_date:
+            # read author data from fields
+            # will do this in case of LocalAuthor
+            json_data = {
+                "type": "author",
+                "id": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{self.id}",
+                "host": f'{SCHEME}://{HOST}/{API_PREFIX}/',
+                "displayName": self.displayName,
+                "url": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{self.id}",
+                "github": self.githubUrl,
+                "profileImage": self.profileImageUrl
+            }
+        else:
+            # make API call to get author data
+            status_code, json_data = api_requests.get(self.url)
+            # todo handle errors is api_request fails
 
-        # could return None if something goes wrong
-        # caller should handle this
         return json_data
 
 
@@ -56,9 +74,6 @@ class LocalAuthor(Author):
 
     user = models.OneToOneField(User, null=True, on_delete=models.CASCADE)
     username = models.CharField(max_length=50, unique=True, blank=False)
-    displayName = models.CharField(max_length=50)
-    githubUrl = models.CharField(max_length=50, null=True)
-    profileImageUrl = models.CharField(max_length=50, null=True)
 
     follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')
@@ -68,7 +83,7 @@ class LocalAuthor(Author):
         """ Given an Author record, gets the LocalAuthor record if the Author is local. If
             the Author is not local, returns the same Author object.
         """
-        
+
         if cls.objects.filter(id=author.id).exists():
             return cls.objects.get(id=author.id)
         else:
@@ -150,6 +165,7 @@ class LocalAuthor(Author):
         }
 
     def save(self, *args, **kwargs):
+        self._always_up_to_date = True
         super().save(*args, **kwargs)  # Call the "real" save() method.
         self._set_url()
 
