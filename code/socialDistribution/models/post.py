@@ -322,7 +322,10 @@ class InboxPost(Post):
         return self._author_json
     
     def fetch_update(self):
-        """ Fetches update about the post for an edit or delete """
+        """ Fetches update about the post for an edit or delete if it is public """
+        if self.visibility != Post.Visibility.PUBLIC:
+            return
+        
         # make api request
         try:
             actor_url = self.author.strip('/')
