@@ -190,7 +190,11 @@ class LikedView(View):
             size = request.GET.get("size")
 
             author = LocalAuthor.objects.get(id=author_id)
-            author_liked_posts = LocalPost.objects.filter(likes__author=author)
+            author_liked_posts = LocalPost.objects.filter(
+                likes__author=author,
+                visibility=LocalPost.Visibility.PUBLIC
+            )
+
             author_liked_comments = Comment.objects.filter(likes__author=author)
             likes = []
             for post in author_liked_posts:
@@ -450,7 +454,12 @@ class CommentLikesView(View):
         """
         try:
             author = get_object_or_404(LocalAuthor, pk=author_id)
-            post = get_object_or_404(LocalPost, id=post_id, author=author)
+            post = get_object_or_404(
+                LocalPost, 
+                id=post_id, 
+                author=author,
+                visibility=LocalPost.Visibility.PUBLIC
+            )
             comment = get_object_or_404(Comment, id=comment_id, post=post)
 
             comment_likes = comment.likes.all()
