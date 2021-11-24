@@ -18,3 +18,8 @@ class Node(models.Model):
 
     def __str__(self):
         return f'{self.host} - remote:{self.remote_credentials}'
+
+    def get_credentials(self):
+        ''' get username and password encoded
+        '''
+        return str.encode(f'{self.username}:{self.password}')
