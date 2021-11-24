@@ -11,7 +11,7 @@ import logging
 
 from socialDistribution.models import *
 from socialDistribution.builders import *
-
+from cmput404.constants import API_BASE
 
 class AuthorTests(LiveServerTestCase):
     """ Unit tests for Author. """
@@ -78,10 +78,10 @@ class LocalAuthorTests(TestCase):
         self.assertEqual(author.displayName, fetched.displayName)
         self.assertEqual(author.githubUrl, fetched.githubUrl)
         self.assertEqual(author.profileImageUrl, fetched.profileImageUrl)
-        self.assertEqual(f"http://127.0.0.1:8000/api/author/{author.id}", fetched.url)
+        self.assertEqual(f"{API_BASE}/author/{author.id}", fetched.url)
 
         vanilla_author = Author.objects.get(id=author.id)
-        self.assertEqual(f"http://127.0.0.1:8000/api/author/{author.id}", vanilla_author.url)
+        self.assertEqual(f"{API_BASE}/author/{author.id}", vanilla_author.url)
 
 
 class PostTest(TestCase):

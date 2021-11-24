@@ -12,6 +12,7 @@ import logging
 
 from socialDistribution.models import Comment
 from .test_authors import create_author
+from cmput404.constants import API_BASE
 
 def create_comment(comment_id, author, content_type, comment, post, date=timezone.now()):
     return Comment.objects.create(
@@ -28,8 +29,8 @@ def get_comments_json(post, comments, page=None, size=None):
         "type": "comments",
         "page": page,
         "size": size,
-        "post": f"http://127.0.0.1:8000/api/author/{post.author.id}/posts/{post.id}",
-        "id": f"http://127.0.0.1:8000/api/author/{post.author.id}/posts/{post.id}/comments",
+        "post": f"{API_BASE}/author/{post.author.id}/posts/{post.id}",
+        "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments",
         "comments": comments
     }
 class PostCommentsViewTest(TestCase):
@@ -79,17 +80,17 @@ class PostCommentsViewTest(TestCase):
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"http://127.0.0.1:8000/api/author/100",
-                    "host": "http://127.0.0.1:8000/api/",
+                    "id": f"{API_BASE}/author/100",
+                    "host": f"{API_BASE}/",
                     "displayName": "johnDoe",
-                    "url": f"http://127.0.0.1:8000/api/author/100",
+                    "url": f"{API_BASE}/author/100",
                     "github": "https://github.com/johnDoe",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Testing comment single author",
                 "contentType": "text/markdown",
                 "published": str(comment.pub_date),
-                "id": f"http://127.0.0.1:8000/api/author/{post.author.id}/posts/{post.id}/comments/1"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/1"
             }
         ] 
 
@@ -156,49 +157,49 @@ class PostCommentsViewTest(TestCase):
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"http://127.0.0.1:8000/api/author/100",
-                    "host": "http://127.0.0.1:8000/api/",
+                    "id": f"{API_BASE}/author/100",
+                    "host": f"{API_BASE}/",
                     "displayName": "johnDoe",
-                    "url": f"http://127.0.0.1:8000/api/author/100",
+                    "url": f"{API_BASE}/author/100",
                     "github": "https://github.com/johnDoe",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Hello there",
                 "contentType": "text/markdown",
                 "published": str(comment_author1.pub_date),
-                "id": f"http://127.0.0.1:8000/api/author/{post.author.id}/posts/{post.id}/comments/1"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/1"
             },
             {
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"http://127.0.0.1:8000/api/author/200",
-                    "host": "http://127.0.0.1:8000/api/",
+                    "id": f"{API_BASE}/author/200",
+                    "host": f"{API_BASE}/",
                     "displayName": "jane_smith",
-                    "url": f"http://127.0.0.1:8000/api/author/200",
+                    "url": f"{API_BASE}/author/200",
                     "github": "https://github.com/jane_smith",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "This is great for testing",
                 "contentType": "text/markdown",
                 "published": str(comment_author2.pub_date),
-                "id": f"http://127.0.0.1:8000/api/author/{post.author.id}/posts/{post.id}/comments/2"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/2"
             },
             {
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"http://127.0.0.1:8000/api/author/204",
-                    "host": "http://127.0.0.1:8000/api/",
+                    "id": f"{API_BASE}/author/204",
+                    "host": f"{API_BASE}/",
                     "displayName": "lara_croft",
-                    "url": f"http://127.0.0.1:8000/api/author/204",
+                    "url": f"{API_BASE}/author/204",
                     "github": "https://github.com/lara_croft",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Wow! This is such a nice comment for testing",
                 "contentType": "text/markdown",
                 "published": str(comment_author3.pub_date),
-                "id": f"http://127.0.0.1:8000/api/author/{post.author.id}/posts/{post.id}/comments/3"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/3"
             },
         ]
 
@@ -278,48 +279,48 @@ class PostCommentsViewTest(TestCase):
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"http://127.0.0.1:8000/api/author/100",
-                    "host": "http://127.0.0.1:8000/api/",
+                    "id": f"{API_BASE}/author/100",
+                    "host": f"{API_BASE}/",
                     "displayName": "johnDoe",
-                    "url": f"http://127.0.0.1:8000/api/author/100",
+                    "url": f"{API_BASE}/author/100",
                     "github": "https://github.com/johnDoe",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Cool post",
                 "contentType": "text/markdown",
                 "published": str(comment1.pub_date),
-                "id": f"http://127.0.0.1:8000/api/author/{post.author.id}/posts/{post.id}/comments/1"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/1"
             },
             {
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"http://127.0.0.1:8000/api/author/100",
-                    "host": "http://127.0.0.1:8000/api/",
+                    "id": f"{API_BASE}/author/100",
+                    "host": f"{API_BASE}/",
                     "displayName": "johnDoe",
-                    "url": f"http://127.0.0.1:8000/api/author/100",
+                    "url": f"{API_BASE}/author/100",
                     "github": "https://github.com/johnDoe",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Really cool post",
                 "contentType": "text/markdown",
                 "published": str(comment2.pub_date),
-                "id": f"http://127.0.0.1:8000/api/author/{post.author.id}/posts/{post.id}/comments/2"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/2"
             },{
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"http://127.0.0.1:8000/api/author/100",
-                    "host": "http://127.0.0.1:8000/api/",
+                    "id": f"{API_BASE}/author/100",
+                    "host": f"{API_BASE}/",
                     "displayName": "johnDoe",
-                    "url": f"http://127.0.0.1:8000/api/author/100",
+                    "url": f"{API_BASE}/author/100",
                     "github": "https://github.com/johnDoe",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Hi again folks",
                 "contentType": "text/markdown",
                 "published": str(comment3.pub_date),
-                "id": f"http://127.0.0.1:8000/api/author/{post.author.id}/posts/{post.id}/comments/3"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/3"
             },
         ]
 
@@ -400,33 +401,33 @@ class PostCommentsViewTest(TestCase):
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"http://127.0.0.1:8000/api/author/204",
-                    "host": "http://127.0.0.1:8000/api/",
+                    "id": f"{API_BASE}/author/204",
+                    "host": f"{API_BASE}/",
                     "displayName": "lara_croft",
-                    "url": f"http://127.0.0.1:8000/api/author/204",
+                    "url": f"{API_BASE}/author/204",
                     "github": "https://github.com/lara_croft",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Wow! This is such a nice comment for testing",
                 "contentType": "text/markdown",
                 "published": str(comment_author3.pub_date),
-                "id": f"http://127.0.0.1:8000/api/author/{post.author.id}/posts/{post.id}/comments/3"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/3"
             },
             {
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"http://127.0.0.1:8000/api/author/200",
-                    "host": "http://127.0.0.1:8000/api/",
+                    "id": f"{API_BASE}/author/200",
+                    "host": f"{API_BASE}/",
                     "displayName": "jane_smith",
-                    "url": f"http://127.0.0.1:8000/api/author/200",
+                    "url": f"{API_BASE}/author/200",
                     "github": "https://github.com/jane_smith",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "This is great for testing",
                 "contentType": "text/markdown",
                 "published": str(comment_author2.pub_date),
-                "id": f"http://127.0.0.1:8000/api/author/{post.author.id}/posts/{post.id}/comments/2"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/2"
             }
         ]
 
@@ -507,17 +508,17 @@ class PostCommentsViewTest(TestCase):
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"http://127.0.0.1:8000/api/author/100",
-                    "host": "http://127.0.0.1:8000/api/",
+                    "id": f"{API_BASE}/author/100",
+                    "host": f"{API_BASE}/",
                     "displayName": "johnDoe",
-                    "url": f"http://127.0.0.1:8000/api/author/100",
+                    "url": f"{API_BASE}/author/100",
                     "github": "https://github.com/johnDoe",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Hello there",
                 "contentType": "text/markdown",
                 "published": str(comment_author1.pub_date),
-                "id": f"http://127.0.0.1:8000/api/author/{post.author.id}/posts/{post.id}/comments/1"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/1"
             }
         ]
 

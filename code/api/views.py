@@ -15,7 +15,7 @@ import json
 import logging
 import base64
 
-from cmput404.constants import SCHEME, HOST, API_PREFIX
+from cmput404.constants import API_BASE
 from socialDistribution.forms import PostForm
 from socialDistribution.models import *
 from .decorators import authenticate_request, validate_node
@@ -196,23 +196,41 @@ class LikedView(View):
         logger.info(f"GET /author/{author_id}/liked API endpoint invoked")
 
         try:
+            page = request.GET.get("page")
+            size = request.GET.get("size")
+
             author = LocalAuthor.objects.get(id=author_id)
-            authorLikedPosts = LocalPost.objects.filter(likes__exact=author)
-            host = request.get_host()
+            author_liked_posts = LocalPost.objects.filter(
+                likes__author=author,
+                visibility=LocalPost.Visibility.PUBLIC
+            )
+
+            author_liked_comments = Comment.objects.filter(likes__author=author)
             likes = []
-            for post in authorLikedPosts:
+            for post in author_liked_posts:
                 like = {
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "summary": f"{author.displayName} Likes your post",
                     "type": "like",
                     "author": author.as_json(),
-                    "object": f"{SCHEME}://{host}/author/{post.author.id}/posts/{post.id}"
+                    "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}"
+                }
+                likes.append(like)
+
+            for comment in author_liked_comments:
+                like = {
+                    "@context": "https://www.w3.org/ns/activitystreams",
+                    "summary": f"{author.displayName} Likes your comment",
+                    "type": "like",
+                    "author": author.as_json(),
+                    "object": f"{API_BASE}/author/{comment.post.author.id}/posts/{comment.post.id}/comments/{comment.id}"
                 }
                 likes.append(like)
 
             response = {
-                "type:": "liked",
-                "items": likes}
+                "type": "liked",
+                "items": likes
+            }
 
         except Exception as e:
             logger.error(e, exc_info=True)
@@ -411,8 +429,8 @@ class PostCommentsView(View):
                 "type": "comments",
                 "page": page,
                 "size": size,
-                "post": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}",
-                "id": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{author_id}/posts/{post_id}/comments",
+                "post": f"{API_BASE}/author/{author_id}/posts/{post_id}",
+                "id": f"{API_BASE}/author/{author_id}/posts/{post_id}/comments",
                 "comments": comments
             }
 
@@ -460,9 +478,47 @@ class PostCommentsView(View):
 class CommentLikesView(View):
 
     def get(self, request, author_id, post_id, comment_id):
+        """ GET - Get a list of likes on comment_id which 
+            was made on post_id which was created by author_id
+        """
         logger.info(f"GET /author/{author_id}/posts/{post_id}/comments/{comment_id} API endpoint invoked")
 
-        return HttpResponse("This is the authors/aid/posts/pid/comments/cid/likes/ endpoint")
+        try:
+            author = get_object_or_404(LocalAuthor, pk=author_id)
+            post = get_object_or_404(
+                LocalPost, 
+                id=post_id, 
+                author=author,
+                visibility=LocalPost.Visibility.PUBLIC
+            )
+            comment = get_object_or_404(Comment, id=comment_id, post=post)
+
+            comment_likes = comment.likes.all()
+            comment_likes_list = []
+
+            for like in comment_likes:
+                if LocalAuthor.objects.filter(url=like.author.url).exists():
+                    like_author = LocalAuthor.objects.get(url=like.author.url)
+
+                    like = {
+                        "@context": "https://www.w3.org/ns/activitystreams",
+                        "summary": f"{like_author.displayName} Likes your comment",
+                        "type": "like",
+                        "author": like_author.as_json(),
+                        "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment.id}"
+                    }
+                    comment_likes_list.append(like)
+
+            response = {
+                "type": "likes",
+                "items": comment_likes_list
+            }
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseServerError()
+
+        return JsonResponse(response)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
