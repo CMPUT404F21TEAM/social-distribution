@@ -58,9 +58,10 @@ class Post(models.Model):
         FRIENDS = "FR", "FRIEND"
         PRIVATE = "PR", "PRIVATE"
 
-    TITLE_MAXLEN = 50
-    DESCRIPTION_MAXLEN = 50
+    TITLE_MAXLEN = 100
+    DESCRIPTION_MAXLEN = 100
     CONTENT_MAXLEN = 4096
+    STRING_MAXLEN = 50
     URL_MAXLEN = 2048
 
     objects = PostQuerySet.as_manager()
@@ -79,7 +80,7 @@ class Post(models.Model):
 
     content_type = models.CharField(
         choices=ContentType.choices,
-        max_length=4,
+        max_length=STRING_MAXLEN,
         default=ContentType.PLAIN
     )
 
@@ -94,7 +95,7 @@ class Post(models.Model):
     )
 
     visibility = models.CharField(
-        max_length=10,
+        max_length=STRING_MAXLEN,
         choices=Visibility.choices,
         default=Visibility.PUBLIC
     )
