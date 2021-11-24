@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 
-from cmput404.constants import HOST
+from cmput404.constants import SCHEME, HOST
 from .forms import CreateUserForm, PostForm
 
 import base64
@@ -341,7 +341,7 @@ def authors(request):
 
         # get request for authors
         try:
-            res_code, res_body = api_requests.get(f'http://{node.host}{node.api_prefix}/authors/')
+            res_code, res_body = api_requests.get(f'http://{node.host}{node.api_prefix}/authors/', send_basic_auth_header=True)
 
             # skip node if unresponsive
             if res_body == None:
@@ -423,6 +423,11 @@ def posts(request, author_id):
                     unlisted=form.cleaned_data.get('unlisted'),
                 )
                 new_post.save()
+                
+                # set post origin and source to itself for a new post
+                new_post.origin = new_post.get_id()
+                new_post.source = new_post.get_id()
+                new_post.save()
 
                 categories = form.cleaned_data.get('categories')
                 if categories is not None:
@@ -467,21 +472,23 @@ def share_post(request, id):
         Public posts are shared to everyone
         Friend posts are shared to friends
     """
-    author = LocalAuthor.objects.get(user=request.user)
-    post = LocalPost.objects.get(id=id)
+    if request.method == 'POST':
+        author = LocalAuthor.objects.get(user=request.user)
+        post = LocalPost.objects.get(id=id)
 
-    if not post.is_public() and not post.is_friends():
-        return redirect('socialDistribution:home')
+        if not post.is_public() and not post.is_friends():
+            return redirect('socialDistribution:home')
 
-    oldSource = post.get_id()
+        # origin remains unchanged as the original true 'source'
+        oldSource = post.get_id()
 
-    post.pk = None  # duplicate the post
-    post.author = author
-    post.published = timezone.now()
-    post.source = oldSource
-    post.save()
+        post.pk = None  # duplicate the post
+        post.author = author
+        post.published = timezone.now()
+        post.source = oldSource
+        post.save()
 
-    dispatch_post(post, [])
+        dispatch_post(post, [])
 
     return redirect('socialDistribution:home')
 
@@ -574,8 +581,8 @@ def like_post(request, id, post_host):
     else:
         post = get_object_or_404(LocalPost, id=id)
         host = request.get_host()
-        request_url = f'http://{host}/{API_PREFIX}/author/{post.author.id}/inbox'
-        obj = f'http://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
+        request_url = f'{SCHEME}://{host}/{API_PREFIX}/author/{post.author.id}/inbox'
+        obj = f'{SCHEME}://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
 
     author = LocalAuthor.objects.get(user=request.user)
     prev_page = request.META['HTTP_REFERER']
@@ -591,7 +598,7 @@ def like_post(request, id, post_host):
         }
 
         # redirect request to remote/local api
-        status_code, response_data = api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
+        status_code, response_data = api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
 
         if status_code >= 400:
             messages.error(request, 'An error occurred while liking post')
@@ -647,12 +654,12 @@ def like_comment(request, id):
             "summary": f"{author.username} Likes your comment",
             "type": "like",
             "author": author.as_json(),
-            "object": f"http://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
+            "object": f"{SCHEME}://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
         }
 
     # redirect request to remote/local api
-    request_url = f'http://{host}/api/author/{comment.author.id}/inbox/'
-    api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
+    request_url = f'{SCHEME}://{host}/api/author/{comment.author.id}/inbox/'
+    api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
 
     if prev_page is None:
         return redirect('socialDistribution:home')
