@@ -6,8 +6,10 @@ from django.utils import timezone
 from jsonfield import JSONField
 import datetime as dt
 import timeago, base64
+import json
 
 from cmput404.constants import SCHEME, HOST, API_PREFIX
+import socialDistribution.requests as api_requests
 from .comment import Comment
 from .category import Category
 
@@ -319,3 +321,52 @@ class InboxPost(Post):
     def author_as_json(self):
         """ Gets the author of the post in JSON format. """
         return self._author_json
+    
+    def fetch_update(self):
+        """ Fetches update about the post for an edit or delete """
+        # make api request
+        try:
+            actor_url = self.author.url.strip('/')
+            object_url = self.public_id.strip('/')
+            endpoint = actor_url + '/posts/' + object_url
+            status_code, response_body = api_requests.get(endpoint)
+
+            # check if GET request came back with post object
+            if status_code == 200 and response_body is not None and response_body.get("id") == object_url:
+                data = json.loads(response_body)
+                self.title = data['title']
+                self.description = data['description']
+                self.content_type = data['contentType']
+                self.content = data['content'].encode('utf-8')
+                self.visibility = data['visibility']
+                self.unlisted = data['unlisted']
+                
+                categories = data['categories']
+                
+                if categories is not None:
+                    categories_to_remove = [ cat.category for cat in self.categories.all()]
+
+                    """
+                    This implementation makes category names case-insensitive.
+                    This makes handling Category objects cleaner, albeit slightly more
+                    involved.
+                    """
+                    for category in categories:
+                        category_obj, created = Category.objects.get_or_create(
+                            category__iexact=category,
+                            defaults={'category': category}
+                        )
+                        self.categories.add(category_obj)
+                        
+                        while category_obj.category in categories_to_remove:
+                            categories_to_remove.remove(category_obj.category)     # don't remove this category
+
+                    for category in categories_to_remove:
+                        category_obj = Category.objects.get(category=category)
+                        self.categories.remove(category_obj)
+
+                self.save()
+            elif status_code == 400 or status_code == 410:
+                self.delete()
+        except:
+            print(f'Error updating post: {self.id}')

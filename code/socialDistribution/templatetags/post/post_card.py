@@ -20,6 +20,7 @@ def post_card(post, author):
 
     if type(post) is InboxPost:
         post_host = 'remote'
+        post.fetch_update()
     else:
         post_host = 'local'
     
