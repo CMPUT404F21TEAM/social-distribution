@@ -38,6 +38,9 @@ class PostQuerySet(models.QuerySet):
     def chronological(self):
         """ Order results in chronological order in terms of published date.
         """
+        for post in self.all():
+            if post is InboxPost:
+                post.fetch_update()
         return self.order_by('-published')[:]
 
 
