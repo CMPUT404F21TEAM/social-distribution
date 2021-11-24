@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from socialDistribution.models import LocalAuthor, LocalPost, Comment
 from api.models import Node
-from cmput404.constants import *
+from cmput404.constants import API_BASE, HOST
 import base64
 
 # Documentation and code samples taken from the following references:
@@ -51,19 +51,19 @@ class InboxViewTests(TestCase):
             "summary": "Greg wants to follow Lara",
             "actor": {
                 "type": "author",
-                "id": "http://127.0.0.1:8000/api/author/1",
-                "url": "http://127.0.0.1:8000/api/author/1",
-                "host": "http://127.0.0.1:8000/api/",
+                "id": f"{API_BASE}/author/1",
+                "url": f"{API_BASE}/author/1",
+                "host": f"{API_BASE}/",
                 "displayName": "Greg Johnson",
                 "github": "http://github.com/gjohnson",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             },
             "object": {
                 "type": "author",
-                "id": "http://127.0.0.1:8000/api/author/2",
-                "host": "http://127.0.0.1:8000/api/",
+                "id": f"{API_BASE}/author/2",
+                "host": f"{API_BASE}/",
                 "displayName": "Lara Croft",
-                "url": "http://127.0.0.1:8000/api/author/2",
+                "url": f"{API_BASE}/author/2",
                 "github": "http://github.com/laracroft",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             }
