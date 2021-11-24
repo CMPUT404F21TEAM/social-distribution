@@ -5,7 +5,7 @@
 from .models import Node
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("api")
 
 class NodeManager:
 
@@ -20,12 +20,13 @@ class NodeManager:
             elif (username):
                 node = Node.objects.get(username=username, remote_credentials=remote_credentials)
             else:
-                raise AttributeError('host or  username must be sent!')
+                logger.warn("Incoming request with no authentication header")
+                raise AttributeError('Host or  username must be sent!')
 
             return str.encode(f'{node.username}:{node.password}')
         except Exception as e:
-            logger.error(str(e))
-            return ''
+            logger.error(e, exc_info=True)
+            return b''
 
 
 node_manager = NodeManager()
