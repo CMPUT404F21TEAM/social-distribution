@@ -224,7 +224,7 @@ class LikedView(View):
                 likes.append(like)
 
             response = {
-                "type:": "liked",
+                "type": "liked",
                 "items": likes
             }
 

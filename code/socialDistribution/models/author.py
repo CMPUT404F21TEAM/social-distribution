@@ -45,10 +45,10 @@ class Author(models.Model):
             # will do this in case of LocalAuthor
             json_data = {
                 "type": "author",
-                "id": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{self.id}",
-                "host": f'{SCHEME}://{HOST}/{API_PREFIX}/',
+                "id": f"{API_BASE}/author/{self.id}",
+                "host": f'{API_BASE}/',
                 "displayName": self.displayName,
-                "url": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{self.id}",
+                "url": f"{API_BASE}/author/{self.id}",
                 "github": self.githubUrl,
                 "profileImage": self.profileImageUrl
             }

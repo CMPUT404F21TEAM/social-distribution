@@ -95,6 +95,19 @@ class FollowersSingleViewTests(TestCase):
 
 class FollowersViewTests(TestCase):
 
+    # the pillow, https://stackoverflow.com/users/2812257/the-pillow, "How can I disable logging while running unit tests in Python Django?"
+    # https://stackoverflow.com/a/54519433, 2019-02-04, CC BY-SA 4.0
+
+    # disable logging before tests
+    @classmethod
+    def setUpClass(cls):
+        logging.disable(logging.CRITICAL)
+
+    # enable logging after tests
+    @classmethod
+    def tearDownClass(cls):
+        logging.disable(logging.NOTSET)
+
     def test_get_followers_empty(self):
 
         author = mixer.blend(LocalAuthor)
