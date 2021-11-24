@@ -341,7 +341,7 @@ def authors(request):
 
         # get request for authors
         try:
-            res_code, res_body = api_requests.get(f'http://{node.host}{node.api_prefix}/authors/', basicAuthCredentials=node.get_credentials())
+            res_code, res_body = api_requests.get(f'http://{node.host}{node.api_prefix}/authors/', send_basic_auth_header=True)
 
             # skip node if unresponsive
             if res_body == None:
@@ -598,7 +598,7 @@ def like_post(request, id, post_host):
         }
 
         # redirect request to remote/local api
-        status_code, response_data = api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
+        status_code, response_data = api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
 
         if status_code >= 400:
             messages.error(request, 'An error occurred while liking post')
@@ -659,7 +659,7 @@ def like_comment(request, id):
 
     # redirect request to remote/local api
     request_url = f'{SCHEME}://{host}/api/author/{comment.author.id}/inbox/'
-    api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
+    api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
 
     if prev_page is None:
         return redirect('socialDistribution:home')

@@ -17,8 +17,18 @@ from api.parsers import url_parser
 # Django Software Foundation, "Logging", https://docs.djangoproject.com/en/3.2/topics/logging/
 logger = logging.getLogger(__name__)
 
+def add_auth_header(url, headers):
+    '''
+        Add Auth Header for node to header dict
+    '''
+    host = url_parser.get_host(url)
+    auth_credentials = node_manager.get_credentials(host=host, remote_credentials=True)
+    if (auth_credentials):
+        authToken = base64.b64encode(auth_credentials).decode("ascii")
+        headers['Authorization'] = 'Basic %s' % authToken
 
-def get(url, params=None, basicAuthCredentials=None):
+
+def get(url, params=None, send_basic_auth_header=False):
     """ Makes a GET request at the given URL and returns the JSON body of the HTTP response.
 
         Parameters:
@@ -34,10 +44,9 @@ def get(url, params=None, basicAuthCredentials=None):
         "Accept": "application/json"
     }
 
-    # add auth credentials if getting remote node data as some may require it
-    if basicAuthCredentials:
-        authToken = base64.b64encode(basicAuthCredentials).decode("ascii")
-        headers['Authorization'] = 'Basic %s' % authToken
+    # Add Basic Auth Header
+    if send_basic_auth_header:
+        add_auth_header(url, headers)
 
     # ref: https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request - datashaman
     # 'Can I set max_retries for requests.request?'
@@ -71,7 +80,7 @@ def get(url, params=None, basicAuthCredentials=None):
     return response.status_code, response_data
 
 
-def post(url, params=None, data={}, sendBasicAuthHeader=False):
+def post(url, params=None, data={}, send_basic_auth_header=False):
     """ Makes a POST request at the given URL and returns the JSON body of the HTTP response.
 
         Parameters:
@@ -90,11 +99,8 @@ def post(url, params=None, data={}, sendBasicAuthHeader=False):
     }
 
     # Add Basic Auth Header specific to a node for Inbox api
-    host = url_parser.get_host(url)
-    auth_credentials = node_manager.get_credentials(host=host, remote_credentials=True)
-    if (sendBasicAuthHeader and auth_credentials):
-        authToken = base64.b64encode(auth_credentials).decode("ascii")
-        headers['Authorization'] = 'Basic %s' % authToken
+    if send_basic_auth_header:
+        add_auth_header(url, headers)
 
     response = requests.post(url, headers=headers, params=params, json=data)
 
@@ -112,7 +118,7 @@ def post(url, params=None, data={}, sendBasicAuthHeader=False):
     # caller should check status codes show error message to user (if needed)
     return response.status_code, response_data
 
-def delete(url, params=None):
+def delete(url, params=None, send_basic_auth_header=False):
     """ Makes a DELETE request at the given URL and returns the JSON body of the HTTP response.
 
         Parameters:
@@ -127,6 +133,10 @@ def delete(url, params=None):
     headers = {
         "Accept": "application/json"
     }
+
+    # Add Basic Auth Header specific to a node for Inbox api
+    if send_basic_auth_header:
+        add_auth_header(url, headers)
 
     try:
         # ref: https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request - datashaman
