@@ -1,4 +1,4 @@
-# python manage.py test api.tests.tests
+# python manage.py test api.tests.tests.test_models
 
 from django.test import TestCase, TransactionTestCase
 from django.contrib.auth.models import User
@@ -7,12 +7,27 @@ from django.test.testcases import LiveServerTestCase, LiveServerThread
 from mixer.backend.django import mixer
 
 from datetime import datetime, timedelta, timezone
-from .models import *
-from .builders import *
+import logging
+
+from socialDistribution.models import *
+from socialDistribution.builders import *
 from cmput404.constants import API_BASE
 
 class AuthorTests(LiveServerTestCase):
     """ Unit tests for Author. """
+
+    # the pillow, https://stackoverflow.com/users/2812257/the-pillow, "How can I disable logging while running unit tests in Python Django?"
+    # https://stackoverflow.com/a/54519433, 2019-02-04, CC BY-SA 4.0
+
+    # disable logging before tests
+    @classmethod
+    def setUpClass(cls):
+        logging.disable(logging.CRITICAL)
+
+    # enable logging after tests
+    @classmethod
+    def tearDownClass(cls):
+        logging.disable(logging.NOTSET)
 
     def test_create_author(self):
         url = "http://notmyserver.com/author/839028403"
@@ -39,6 +54,19 @@ class AuthorTests(LiveServerTestCase):
 class LocalAuthorTests(TestCase):
     """ Unit tests for LocalAuthor """
 
+    # the pillow, https://stackoverflow.com/users/2812257/the-pillow, "How can I disable logging while running unit tests in Python Django?"
+    # https://stackoverflow.com/a/54519433, 2019-02-04, CC BY-SA 4.0
+
+    # disable logging before tests
+    @classmethod
+    def setUpClass(cls):
+        logging.disable(logging.CRITICAL)
+
+    # enable logging after tests
+    @classmethod
+    def tearDownClass(cls):
+        logging.disable(logging.NOTSET)
+
     def test_create_local_author(self):
         author = mixer.blend(LocalAuthor)
 
@@ -57,6 +85,20 @@ class LocalAuthorTests(TestCase):
 
 
 class PostTest(TestCase):
+
+    # the pillow, https://stackoverflow.com/users/2812257/the-pillow, "How can I disable logging while running unit tests in Python Django?"
+    # https://stackoverflow.com/a/54519433, 2019-02-04, CC BY-SA 4.0
+
+    # disable logging before tests
+    @classmethod
+    def setUpClass(cls):
+        logging.disable(logging.CRITICAL)
+
+    # enable logging after tests
+    @classmethod
+    def tearDownClass(cls):
+        logging.disable(logging.NOTSET)
+
     def test_post_is_public(self):
         visibility = LocalPost.Visibility.FRIENDS
         post = PostBuilder().visibility(visibility).build()
@@ -80,45 +122,20 @@ class PostTest(TestCase):
     # TODO test all PostQuerySet methods
 
 
-class SharePostTest(TestCase):
-    def test_share_public_post(self):
-        visibility = LocalPost.Visibility.PUBLIC
-        post = PostBuilder().visibility(visibility).build()
-        self.client.post('socialDistribution:share-post', id=post.id)
-        
-        latestPost = LocalPost.objects.latest("published")
-        self.assertEquals(latestPost.visibility, LocalPost.Visibility.PUBLIC)
-        self.assertEqual(latestPost.origin, post.get_id())
-        self.assertEqual(latestPost.source, post.get_id())
-        
-    def test_share_public_post_twice(self):
-        visibility = LocalPost.Visibility.PUBLIC
-        post = PostBuilder().visibility(visibility).build()
-        
-        self.client.post('socialDistribution:share-post', id=post.id)
-        middlePost = LocalPost.objects.latest("published")
-        self.client.post('socialDistribution:share-post', id=middlePost.id)
-        latestPost = LocalPost.objects.latest("published")
-        
-        self.assertEquals(latestPost.visibility, LocalPost.Visibility.PUBLIC)
-        self.assertEqual(latestPost.origin, post.get_id())
-        self.assertEqual(latestPost.source, middlePost.get_id())
-
-    def test_share_private_post(self):
-        '''
-            sharing a private post shouldn't be possible
-        '''
-        visibility = LocalPost.Visibility.PRIVATE
-        post = PostBuilder().visibility(visibility).build()
-        self.client.post('socialDistribution:share-post', id=post.id)
-        
-        latestPost = LocalPost.objects.latest("published")
-        self.assertEquals(latestPost, post)
-        self.assertEqual(latestPost.origin, post.get_id())
-        self.assertEqual(latestPost.source, post.get_id())
-
-
 class CommentModelTests(TestCase):
+
+    # the pillow, https://stackoverflow.com/users/2812257/the-pillow, "How can I disable logging while running unit tests in Python Django?"
+    # https://stackoverflow.com/a/54519433, 2019-02-04, CC BY-SA 4.0
+
+    # disable logging before tests
+    @classmethod
+    def setUpClass(cls):
+        logging.disable(logging.CRITICAL)
+
+    # enable logging after tests
+    @classmethod
+    def tearDownClass(cls):
+        logging.disable(logging.NOTSET)
 
     def test_when_just_now(self):
         '''
@@ -145,6 +162,19 @@ class CommentModelTests(TestCase):
 
 class LikeTests(TransactionTestCase):
     """ Unit tests for Likes, PostLikes and CommentLikes. """
+
+    # the pillow, https://stackoverflow.com/users/2812257/the-pillow, "How can I disable logging while running unit tests in Python Django?"
+    # https://stackoverflow.com/a/54519433, 2019-02-04, CC BY-SA 4.0
+
+    # disable logging before tests
+    @classmethod
+    def setUpClass(cls):
+        logging.disable(logging.CRITICAL)
+
+    # enable logging after tests
+    @classmethod
+    def tearDownClass(cls):
+        logging.disable(logging.NOTSET)
 
     def test_post_like(self):
         """ Test successfully liking a Post """

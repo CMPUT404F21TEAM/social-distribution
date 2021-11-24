@@ -39,7 +39,7 @@ from .utility import getPaginated, makePost
 # 2017-05-30, https://stackoverflow.com/a/43712324, CC BY-SA 3.0
 
 # Django Software Foundation, "Logging", https://docs.djangoproject.com/en/3.2/topics/logging/
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("api")
 
 
 def index(request):
@@ -51,10 +51,12 @@ class AuthorsView(View):
 
     @method_decorator(ensure_csrf_cookie)
     def get(self, request):
-        """ GET - Retrieve all user profiles 
+        """ GET - Retrieve all user profiles
             'page' is indexed from 1, NOT 0.
             'size' must be greater than 0
         """
+        logger.info(f"GET /authors API endpoint invoked")
+
         authors = LocalAuthor.objects.order_by('pk')
         page = request.GET.get("page")
         size = request.GET.get("size")
@@ -66,6 +68,7 @@ class AuthorsView(View):
                 if page < 1 or size < 1:
                     return HttpResponseBadRequest("Malformed query: page and size must be > 0")
             except Exception as e:
+                logger.error(e, exc_info=True)
                 return HttpResponseBadRequest(e)
             authors = getPaginated(authors, page, size)
 
@@ -83,14 +86,17 @@ class AuthorView(View):
 
     def get(self, request, author_id):
         """ GET - Retrieve profile of {author_id} """
+        logger.info(f"GET /authors/{author_id} API endpoint invoked")
 
         author = get_object_or_404(LocalAuthor, pk=author_id)
         response = author.as_json()
+
         return JsonResponse(response)
 
     @method_decorator(authenticate_request)
     def post(self, request, author_id):
         """ POST - Update profile of {author_id} """
+        logger.info(f"POST /authors/{author_id} API endpoint invoked")
 
         # extract post data
         display_name = request.POST.get('display_name')
@@ -128,6 +134,7 @@ class FollowersView(View):
 
     def get(self, request, author_id):
         """ GET - Get a list of authors who are the followers of {author_id} """
+        logger.info(f"GET /authors/{author_id}/followers API endpoint invoked")
 
         author = get_object_or_404(LocalAuthor, pk=author_id)
         followers = [follow.actor.as_json() for follow in author.follows.all()]
@@ -147,7 +154,7 @@ class FollowersSingleView(View):
         """ GET - Check if {foreign_author_id} is a follower of {author_id} """
 
         author = get_object_or_404(LocalAuthor, pk=author_id)
-        logger.info(f"/author/{author_id}/followers/{foreign_author_id} API endpoint invoked")
+        logger.info(f"GET /author/{author_id}/followers/{foreign_author_id} API endpoint invoked")
 
         try:
             # try to find and return follower author object
@@ -166,6 +173,7 @@ class FollowersSingleView(View):
 
     def delete(self, request, author_id, foreign_author_id):
         """ DELETE - Remove {foreign_author_id} as a follower of {author_id} """
+        logger.info(f"DELETE /author/{author_id}/followers/{foreign_author_id} API endpoint invoked")
 
         author = get_object_or_404(LocalAuthor, pk=author_id)
 
@@ -185,6 +193,8 @@ class LikedView(View):
 
     def get(self, request, author_id):
         """ GET - Get a list of like objects from {author_id} """
+        logger.info(f"GET /author/{author_id}/liked API endpoint invoked")
+
         try:
             page = request.GET.get("page")
             size = request.GET.get("size")
@@ -233,6 +243,8 @@ class LikedView(View):
 class PostsView(View):
 
     def get(self, request, author_id):
+        logger.info(f"GET /author/{author_id}/posts API endpoint invoked")
+
         # Send all PUBLIC posts
         try:
             # TODO handle pagination
@@ -274,6 +286,9 @@ class PostsView(View):
 class PostView(View):
     def get(self, request, author_id, post_id):
         """ GET - Get json for post {post_id} """
+        logger.info(f"GET /author/{author_id}/posts/{post_id} API endpoint invoked")
+
+
         try:
             post = LocalPost.objects.get(id=post_id)
             response = post.as_json()
@@ -287,9 +302,11 @@ class PostView(View):
 
         return JsonResponse(response)
     
-    #TODO: authenticate
+    # TODO: authenticate
     def delete(self, request, author_id, post_id):
-        """ GET - Delete post {post_id} """
+        """ DELETE - Delete post {post_id} """
+        logger.info(f"DELETE /author/{author_id}/posts/{post_id} API endpoint invoked")
+
         try:
             post = LocalPost.objects.get(id=post_id)
             post.delete()
@@ -303,9 +320,12 @@ class PostView(View):
 
         return HttpResponse(200)
     
-    #TODO: authenticate
+    # TODO: authenticate
     def post(self, request, author_id, post_id):
         """ POST - Update post {post_id} """
+        logger.info(f"POST /author/{author_id}/posts/{post_id} API endpoint invoked")
+
+
         data = json.loads(request.body)
         post = LocalPost.objects.get(id=post_id)
 
@@ -352,6 +372,9 @@ class PostLikesView(View):
 
     def get(self, request, author_id, post_id):
         """ GET - Get a list of authors who like {post_id} """
+        logger.info(f"GET /author/{author_id}/posts/{post_id}/likes API endpoint invoked")
+
+
         try:
             post = LocalPost.objects.get(id=post_id)
             authors = [like.author.as_json() for like in post.likes.all()]
@@ -375,6 +398,8 @@ class PostCommentsView(View):
     '''
 
     def get(self, request, author_id, post_id):
+        logger.info(f"GET /author/{author_id}/posts/{post_id}/comments API endpoint invoked")
+
         # Send all comments
         try:
             page = request.GET.get("page")
@@ -394,6 +419,7 @@ class PostCommentsView(View):
                     if page < 1 or size < 1:
                         return HttpResponseBadRequest("Malformed query: page and size must be > 0")
                 except Exception as e:
+                    logger.error(e, exc_info=True)
                     return HttpResponseBadRequest(e)
 
                 comments = getPaginated(comments, page, size)
@@ -415,6 +441,8 @@ class PostCommentsView(View):
         return JsonResponse(response)
 
     def post(self, request, author_id, post_id):
+        logger.info(f"POST /author/{author_id}/posts/{post_id}/comments API endpoint invoked")
+
         # check if authenticated
         if (not request.user):
             return HttpResponseForbidden()
@@ -439,7 +467,8 @@ class PostCommentsView(View):
                 pub_date=pub_date,
             )
 
-        except Exception:
+        except Exception as e:
+            logger.error(e, exc_info=True)
             return HttpResponse('Internal Server Error')
 
         return redirect('socialDistribution:comment-post', id=post_id)
@@ -452,6 +481,8 @@ class CommentLikesView(View):
         """ GET - Get a list of likes on comment_id which 
             was made on post_id which was created by author_id
         """
+        logger.info(f"GET /author/{author_id}/posts/{post_id}/comments/{comment_id} API endpoint invoked")
+
         try:
             author = get_object_or_404(LocalAuthor, pk=author_id)
             post = get_object_or_404(
@@ -499,6 +530,9 @@ class InboxView(View):
     def get(self, request, author_id):
         """ GET - If authenticated, get a list of posts sent to {author_id} """
 
+        logger.info(f"GET /author/{author_id}/inbox API endpoint invoked")
+
+
         return JsonResponse({
             "message": f"This is the inbox for author_id={author_id}. Only author {author_id} can read this."
         })
@@ -511,13 +545,19 @@ class InboxView(View):
             - if the type is “follow” then add that follow is added to the author’s inbox to approve later
             - if the type is “like” then add that like to the author’s inbox    
         """
+        logger.info(f"POST /author/{author_id}/inbox API endpoint invoked")
+
         data = json.loads(request.body)
         try:
-            if data["type"] == "post":
+            if str(data["type"]).lower() == "post":
+                logger.info("Inbox object identified as post")
+
                 makePost(author_id, data)
                 return HttpResponse(status=200)
 
-            elif data["type"] == "follow":
+            elif str(data["type"]).lower() == "follow":
+                logger.info("Inbox object identified as follow")
+
                 # actor requests to follow object
                 actor, obj = data["actor"], data["object"]
                 if not url_parser.is_local_url(obj["id"]):
@@ -540,7 +580,9 @@ class InboxView(View):
 
                 return HttpResponse(status=200)
 
-            elif data["type"] == "like":
+            elif str(data["type"]).lower() == "like":
+                logger.info("Inbox object identified as like")
+
                 # retrieve author
                 liking_author_url = data["author"]["id"]
                 liking_author, created = Author.objects.get_or_create(
@@ -572,11 +614,13 @@ class InboxView(View):
                 raise ValueError("Unknown object received by inbox")
 
         except KeyError as e:
+            logger.warn(e, exc_info=True)
             return JsonResponse({
                 "error": "JSON body could not be parsed"
             })
 
         except ValueError as e:
+            logger.warn(e, exc_info=True)
             return JsonResponse({
                 "error": e.args[0]
             }, status=400)
@@ -589,5 +633,7 @@ class InboxView(View):
 
     def delete(self, request, author_id):
         """ DELETE - Clear the inbox """
+
+        logger.info(f"POST /author/{author_id}/inbox API endpoint invoked")
 
         return HttpResponse("Hello")
