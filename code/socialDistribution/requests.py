@@ -18,7 +18,7 @@ from api.parsers import url_parser
 logger = logging.getLogger(__name__)
 
 
-def get(url, params=None):
+def get(url, params=None, basicAuthCredentials=None):
     """ Makes a GET request at the given URL and returns the JSON body of the HTTP response.
 
         Parameters:
@@ -33,6 +33,11 @@ def get(url, params=None):
     headers = {
         "Accept": "application/json"
     }
+
+    # add auth credentials if getting remote node data as some may require it
+    if basicAuthCredentials:
+        authToken = base64.b64encode(basicAuthCredentials).decode("ascii")
+        headers['Authorization'] = 'Basic %s' % authToken
 
     # ref: https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request - datashaman
     # 'Can I set max_retries for requests.request?'

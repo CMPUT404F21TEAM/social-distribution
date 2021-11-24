@@ -341,7 +341,7 @@ def authors(request):
 
         # get request for authors
         try:
-            res_code, res_body = api_requests.get(f'http://{node.host}{node.api_prefix}/authors/')
+            res_code, res_body = api_requests.get(f'http://{node.host}{node.api_prefix}/authors/', basicAuthCredentials=node.get_credentials())
 
             # skip node if unresponsive
             if res_body == None:
