@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def add_auth_header(url, headers):
     '''
-        Add Auth Header for node to header dict
+        Add Auth Header for node to headers dict
     '''
     host = url_parser.get_host(url)
     auth_credentials = node_manager.get_credentials(host=host, remote_credentials=True)
