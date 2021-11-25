@@ -391,6 +391,31 @@ def author(request, author_id):
 
     return render(request, 'author/detail.html', context)
 
+def authorRemote(request):
+    """ Display remote author's public profile and any posts created by the author that the current 
+        user is premitted to view.
+    """
+    curr_user = LocalAuthor.objects.get(user=request.user)
+    
+    remoteAuthorURL = request.GET.get("url")
+    print(remoteAuthorURL)
+    author, created = Author.objects.get_or_create(
+                    url=remoteAuthorURL
+                )
+
+    res_code, res_body = api_requests.get(f'{remoteAuthorURL}/posts', send_basic_auth_header=True)
+    
+    #TODO:: consume res_body and turn them into Post objects to be displayed
+
+    context = {
+        'author': author,
+        'author_type': 'Local',
+        'curr_user': curr_user,
+        'author_posts': posts.chronological()
+    }
+
+    return render(request, 'author/detail.html', context)
+
 
 def create(request):
     return render(request, 'create/index.html')

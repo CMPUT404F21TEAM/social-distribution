@@ -19,7 +19,7 @@
                         {% card_author author=author.data author_type=author.type profile_card=False %}
                     </a>
                 {% else %}
-                    <a class="author-tile-link" href="{{ author.data.id }}">
+                    <a class="author-tile-link" href="{% url 'socialDistribution:author-remote' %}?url={{author.data.id}}">
                         {% card_author author=author.data author_type=author.type profile_card=False %}
                     </a>
                 {% endif %}

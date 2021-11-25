@@ -12,6 +12,7 @@ urlpatterns = [
 
   path('author/', views.authors, name='authors'),
   path('author/<int:author_id>/', views.author, name='author'),
+  path('author-remote/', views.authorRemote, name='author-remote'),
   path('home/', views.home, name='home'),
   path('author/<int:author_id>/posts/', views.posts, name='posts'),
   path('unlisted/<int:post_id>', views.unlisted_post_image, name='unlisted-post-image'),
