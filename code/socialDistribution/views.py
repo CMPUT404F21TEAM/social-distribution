@@ -310,9 +310,9 @@ def un_befriend(request, author_id):
             status_code, response_body = api_requests.delete(url)
 
             if status_code >= 400:
-                messages.info(request, f'Couldn\'t un-befriend {author.displayName}')
+                messages.info(request, f'Couldn\'t un-befriend {object.displayName}')
 
-    return redirect('socialDistribution:author', author_id)
+    return redirect('socialDistribution:authors')
 
 
 def authors(request):
@@ -349,7 +349,10 @@ def authors(request):
             # prepare remote data
             for remote_author in res_body['items']:
                 author, created = Author.objects.get_or_create(
-                    url=remote_author['id']
+                    url=remote_author['id'],
+                    displayName=remote_author.get('displayName'),
+                    githubUrl=remote_author.get('github'),
+                    profileImageUrl=remote_author.get('profileImage')
                 )
 
                 remote_authors.append({
@@ -371,14 +374,24 @@ def author(request, author_id):
     """
 
     curr_user = LocalAuthor.objects.get(user=request.user)
-    author = get_object_or_404(LocalAuthor, pk=author_id)
 
-    # TODO: Should become an API request since won't know if author is local/remote
+    try:
+        author = LocalAuthor.objects.get(pk=author_id)
+
+    except LocalAuthor.DoesNotExist:
+        author = get_object_or_404(Author, id=author_id)
 
     if curr_user.has_friend(author):
-        posts = author.posts.listed().get_friend()
-    else:
+        if type(author) is LocalAuthor:
+            posts = author.posts.listed().get_friend()
+
+        # friends post are sent to inboxes for remote authors
+        # no endpoint exists to query friends post (only public)
+
+    elif type(author) is LocalAuthor:
         posts = author.posts.listed().get_public()
+    else:
+        posts = InboxPost.objects.filter(author=author.get_url_id())
 
     context = {
         'author': author,

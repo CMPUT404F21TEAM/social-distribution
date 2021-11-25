@@ -17,7 +17,7 @@ def card_author(*args, **kwargs):
     request_sent = author.has_follow_request(curr_user)
     is_friend = curr_user.has_friend(author)
 
-    author_is_user = author.id == curr_user.get_url_id()
+    author_is_user = author.get_url_id() == curr_user.get_url_id()
 
     return {
         'author': author,
