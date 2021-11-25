@@ -413,6 +413,16 @@ class InboxPost(Post):
             return comments
         else:
             return []
+        
+    @property
+    def author_as_json(self):
+        request_url = self.public_id.strip('/')
+        status_code, response_data = api_requests.get(request_url, send_basic_auth_header=True)
+        if status_code == 200 and response_data is not None:
+            author = response_data["author"]
+            return author
+        else:
+            return None
 
     def as_json(self):
         previousCategories = self.categories.all()
@@ -440,7 +450,7 @@ class InboxPost(Post):
             "contentType": self.get_content_type_display(),
             "content": self.decoded_content,
             # the author has an ID where by authors can be disambiguated
-            "author": 'self.author.as_json()',
+            "author": self.author_as_json,
             # categories this post fits into (a list of strings
             "categories": previousCategoriesNames,
             # comments about the post
@@ -448,12 +458,12 @@ class InboxPost(Post):
             # total number of comments for this post
             "count": 0,
             # the first page of comments
-            "comments": 'f"{API_BASE}/author/{self.author.id}/posts/{self.id}/comments/"',
+            "comments": f"{self.public_id}/comments",
             # commentsSrc is OPTIONAL and can be missing
             # You should return ~ 5 comments per post.
             # should be sorted newest(first) to oldest(last)
             # this is to reduce API call counts
-            "commentsSrc": 'self.recent_comments_json',
+            "commentsSrc": self.comments_as_json,
             # ISO 8601 TIMESTAMP
             "published": self.published.isoformat(),
             # visibility ["PUBLIC","FRIENDS"]
