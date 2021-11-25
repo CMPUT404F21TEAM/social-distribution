@@ -14,21 +14,21 @@
 {% block body %}
 <!-- post -->
 <div class="conatiner">
-    {% post_card post author %}
+    {% post_card post=post author=current_user %}
 </div>
 
 <!-- comments -->
 <div class="author-prof">
     <h2>Comments</h2>
 
-    <form method="post" action="{% url 'api:post_comments' author.id post.id %}" class="d-flex">
+    <form method="post" action="{% url 'api:post_comments' current_user.id post.id %}" class="d-flex">
         {% csrf_token %}
         <textarea name="comment" id="newCommentTextArea" class="m-2" placeholder="Add New Comment."></textarea>
         <button type="submit" class="btn btn-primary" disabled id="newCommentButton">Post Comment</button>
     </form>
     
     {% for comment in comments %}
-        {% comment_card author=author comment=comment author_type=author_type post=post %}
+        {% comment_card author=current_user comment_author=comment.comment_author_object comment=comment author_type=author_type post=post %}
     {% endfor %}
 
     <!-- Workaround for bottom spacing -->

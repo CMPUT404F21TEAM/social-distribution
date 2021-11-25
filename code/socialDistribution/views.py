@@ -28,6 +28,7 @@ from .dispatchers import dispatch_post, dispatch_follow_request
 from .github_activity.github_activity import pull_github_events
 
 logger = logging.getLogger(__name__)
+
 REQUIRE_SIGNUP_APPROVAL = True
 ''' 
     sign up approval not required by default, should turn on in prod. 
@@ -612,11 +613,14 @@ def like_post(request, id, post_host):
         return redirect(prev_page)
 
 def single_post(request, post_type, id):
-    '''
-        Render Post and comments
-    '''
+    """ Displays a post to the user.
 
-    author = get_object_or_404(LocalAuthor, user=request.user)
+        Parameters:
+        - post_type (string): either "local" or "remote" which indicates type of post
+        - id (int): the id of the post to render
+    """
+
+    current_user = get_object_or_404(LocalAuthor, user=request.user)
 
     if post_type == "local":
         post = get_object_or_404(LocalPost, id=id)
@@ -627,12 +631,21 @@ def single_post(request, post_type, id):
 
     try:
         comments_json = post.comments_as_json
+        for comment in comments_json:
+            # hack 
+            # inject more data into json comment
+            # retrieve it in comment.py
+            comment_author, created = Author.objects.get_or_create(
+                url=comment["author"]["id"]
+            )
+            comment["comment_author_object"] = comment_author
 
-    except Exception:
+    except Exception as e:
+        logger.error(e, exc_info=True)
         return HttpResponseServerError()
 
     context = {
-        'author': author,
+        'current_user': current_user,
         'author_type': 'Local',
         'modal_type': 'post',
         'post': post,
