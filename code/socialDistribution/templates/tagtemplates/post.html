@@ -34,13 +34,13 @@
             <div class="d-flex justify-content-between">
                 <div class="d-flex flex-row">
                     {% if is_liked %}
-                    <form method="post" action="{% url 'socialDistribution:like-post' post.id post_host %}" class="d-flex">
+                    <form method="post" action="{% url 'socialDistribution:like-post' post.id post_type %}" class="d-flex">
                         {% csrf_token %}
                         <button class="btn btn-secondary mx-2"><i class="fas fa-thumbs-up"></i></button>
                     </form>
 
                     {% else %}
-                    <form method="post" action="{% url 'socialDistribution:like-post' post.id post_host %}" class="d-flex">
+                    <form method="post" action="{% url 'socialDistribution:like-post' post.id post_type %}" class="d-flex">
                         {% csrf_token %}
                         <button class="btn btn-primary mx-2"><i class="fas fa-thumbs-up"></i></button>
                     </form>
@@ -48,7 +48,7 @@
                     {% endif %}
 
                     <!-- Comment Icon -->
-                    <a href="{% url 'socialDistribution:single-post' post_host post.id %}"> <button class="btn btn-secondary"><i
+                    <a href="{% url 'socialDistribution:single-post' post_type post.id %}"> <button class="btn btn-secondary"><i
                                 class="fas fa-comment"></i></button></a>
 
                     <!-- Launch Share Modal -->
@@ -91,7 +91,7 @@
         </div>
     </div>
 
-    {% if post_host == 'local' %}
+    {% if post_type == 'local' %}
         {% load modal %}
         {% load utility %}
         <form method="POST" enctype="multipart/form-data" action="{% url 'socialDistribution:edit-post' post.id %}">

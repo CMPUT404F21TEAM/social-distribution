@@ -570,11 +570,11 @@ def edit_post(request, id):
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
 
 
-def like_post(request, id, post_host):
+def like_post(request, id, post_type):
     """
         Like a specific post
     """
-    if post_host == 'remote':
+    if post_type == 'inbox':
         post = get_object_or_404(InboxPost, id=id)
         request_url = post.author.strip('/') + '/inbox'
         obj = post.public_id.strip('/')
@@ -624,7 +624,7 @@ def single_post(request, post_type, id):
 
     if post_type == "local":
         post = get_object_or_404(LocalPost, id=id)
-    elif post_type == "remote":
+    elif post_type == "inbox":
         post = get_object_or_404(InboxPost, id=id)
     else:
         raise Http404()
