@@ -472,22 +472,20 @@ class PostCommentsView(View):
                 )
             elif post_type == "inbox":
                 post = get_object_or_404(InboxPost, id=post_id)
-                obj = f'{post.author}/posts/{post_id}'
 
                 # create post reqeust data
                 data = {
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "summary":f"{author.username} Commented on your post",
                     "type": "comment",
-                    "author": post.author.as_json(),
+                    "author": author.as_json(),
                     "comment": comment,
                     "contentType": "text/plain",
-                    "object": obj
+                    "object": post.public_id
                 }
 
-                request_url = post.author.get_inbox()
+                request_url = f'{post.author.strip("/")}/inbox'
 
-                print(data, request_url)
                 # send comment to remote inbox
                 api_requests.post(url=request_url, data=data, send_basic_auth_header=True)
 
@@ -638,6 +636,8 @@ class InboxView(View):
 
                 return HttpResponse(status=200)
 
+            elif str(data["type"]).lower() == "like":
+                print("\n\n\n\n", data, "\n\n\n")
             else:
                 raise ValueError("Unknown object received by inbox")
 
