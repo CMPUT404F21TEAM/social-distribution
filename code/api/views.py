@@ -636,8 +636,29 @@ class InboxView(View):
 
                 return HttpResponse(status=200)
 
-            elif str(data["type"]).lower() == "like":
-                print("\n\n\n\n", data, "\n\n\n")
+            elif str(data["type"]).lower() == "comment":
+                logger.info("Inbox object identified as comment")
+
+                # retrieve author
+                commenting_author, created = Author.objects.get_or_create(
+                    url = data["author"]['id'],
+                    displayName = data["author"]['displayName'],
+                    githubUrl = data["author"]['github'],
+                    profileImageUrl = data["author"]['profileImage']
+                )
+
+                post_id = url_parser.get_object_type(data['object'])
+                post = get_object_or_404(LocalPost, id=post_id)
+                # add remote comment
+                Comment.objects.create(
+                    author = commenting_author,
+                    post = post,
+                    comment = data['comment'],
+                    content_type = data['contentType'],
+                    pub_date= datetime.now(timezone.utc),
+                )
+
+                return HttpResponse(status=200)
             else:
                 raise ValueError("Unknown object received by inbox")
 
