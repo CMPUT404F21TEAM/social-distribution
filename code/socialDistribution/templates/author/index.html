@@ -14,15 +14,9 @@
         {% for author in authors %}
             <!-- Official Bootstrap Documentation, "Cards", https://getbootstrap.com/docs/5.0/components/card/, 2021-10-12, MIT -->
             {% if author.data.id  %}
-                {% if author.type == "Local" %}
-                    <a class="author-tile-link" href="{% url 'socialDistribution:author' author.data.id %}">
-                        {% card_author author=author.data author_type=author.type curr_user=curr_user %}
-                    </a>
-                {% else %}
-                    <a class="author-tile-link" href="{% url 'socialDistribution:author' author.data.id %}">
-                        {% card_author author=author.data author_type=author.type curr_user=curr_user %}
-                    </a>
-                {% endif %}
+                <a class="author-tile-link" href="{% url 'socialDistribution:author' author.data.id %}">
+                    {% card_author author=author.data author_type=author.type curr_user=curr_user %}
+                </a>
             {% endif %}
         {% endfor %}
 
