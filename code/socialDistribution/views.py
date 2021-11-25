@@ -384,13 +384,14 @@ def author(request, author_id):
         author_type = REMOTE
 
     if author_type == LOCAL:
-        if curr_user.has_friend(author):
-            posts = author.posts.listed().get_friend()  # get both friend and public posts
-        else:
             posts = author.posts.listed().get_public()  # get public posts only
 
     else:
-        posts = InboxPost.objects.filter(author=author.get_url_id())
+        # show public posts only
+        posts = InboxPost.objects.filter(
+            author=author.get_url_id(),
+            visibility=InboxPost.Visibility.PUBLIC
+        )
 
     context = {
         'author': author,
