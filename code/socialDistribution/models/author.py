@@ -33,6 +33,28 @@ class Author(models.Model):
     # true means that field data will always be up-to-date (used by LocalAuthor)
     _always_up_to_date = models.BooleanField(default=False)
 
+    def get_url_id(self):
+        """ Returns the id of the author in url form """
+        return self.url
+
+    def has_follower(self, author):
+        """ Over-ridden in LocalAuthor. Returns True if author is a follower of self, False otherwise """
+        res_code, res_body = api_requests.get(self.url + "/followers")
+
+        if res_code == 200 and res_body:
+            for follower in res_body["items"]:
+                if follower["id"] == author.get_url_id():
+                    return True
+        else:
+            return False
+
+    def has_follow_request(self, author):
+        """ Over-ridden in LocalAuthor. Always returns False """
+        # No endpoint give us follow request objects
+        # Even if we GET against their inbox, we'll get back a list of posts
+        # The alternative would be to keep track of outgoing follow requests
+        return False
+
     def get_inbox(self):
         """ Gets the URL of the Authors inbox. """
 
@@ -85,12 +107,6 @@ class LocalAuthor(Author):
 
     follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')
-
-    def get_url_id(self):
-        """
-        Returns the id of the author in url form
-        """
-        return self.url
 
     def has_follower(self, author: Author):
         """ Returns true if author is a follower of self, false otherwise. """

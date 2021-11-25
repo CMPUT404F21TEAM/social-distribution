@@ -33,7 +33,7 @@ def makePost(author_id, data):
             "author": data["author"]["id"],
             "_author_json": data["author"],
             "published": data["published"],
-            "visibility": data["visibility"],
+            "visibility": InboxPost.Visibility.get_visibility_choice(data["visibility"]),
             "unlisted": data["unlisted"],
         }
     )

@@ -59,6 +59,22 @@ class Post(models.Model):
         FRIENDS = "FR", "FRIEND"
         PRIVATE = "PR", "PRIVATE"
 
+        @classmethod
+        def get_visibility_choice(cls, visibility):
+            """ Returns the visibility choice matching the visibility parameter string """
+            if visibility.upper() == "PUBLIC" or visibility.upper() == "PB":
+                return cls.PUBLIC
+
+            elif visibility.upper() == "FRIEND" or visibility.upper() == "FR":
+                return cls.FRIENDS
+
+            elif visibility.upper() == "PRIVATE" or visibility.upper() == "PR":
+                return cls.PRIVATE
+
+            else:
+                return visibility.upper()   # else return visibility
+            
+
     TITLE_MAXLEN = 100
     DESCRIPTION_MAXLEN = 100
     CONTENT_MAXLEN = 4096
@@ -343,7 +359,7 @@ class InboxPost(Post):
                 self.description = response_body['description']
 
                 self.content = response_body['content'].encode('utf-8')
-                self.visibility = response_body['visibility']
+                self.visibility = Post.Visibility.get_visibility_choice(response_body['visibility'])
                 self.unlisted = response_body['unlisted']
                 
                 if response_body['contentType'] == 'text/plain':
