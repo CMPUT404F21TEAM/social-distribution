@@ -570,7 +570,7 @@ def edit_post(request, id):
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
 
 
-def like_post(request, id, post_type):
+def like_post(request, post_type, id):
     """
         Like a specific post
     """
