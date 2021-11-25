@@ -496,10 +496,17 @@ class PostCommentsSingleView(View):
             # Check if the post author match with author in url
             if post.author.id != author.id:
                 return HttpResponseNotFound()
-            
+
             comment = get_object_or_404(Comment, id=comment_id)
+            
+            # Check if the post id and comment id match
+            if post.id != comment.post.id:
+                return HttpResponseNotFound()
+            
             response = comment.as_json()
             
+        except Http404:
+            return HttpResponseNotFound()
 
         except Exception as e:
             logger.error(e, exc_info=True)
