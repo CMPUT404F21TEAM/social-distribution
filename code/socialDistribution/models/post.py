@@ -391,4 +391,8 @@ class InboxPost(Post):
     def comments_as_json(self):
         request_url = self.public_id.strip('/') + '/comments'
         status_code, response_data = api_requests.get(request_url, send_basic_auth_header=True)
-        return response_data
+        if status_code == 200 and response_data is not None:
+            comments = response_data["comments"]
+            return comments
+        else:
+            return []
