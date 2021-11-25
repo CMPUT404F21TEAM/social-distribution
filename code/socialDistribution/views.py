@@ -669,7 +669,7 @@ def like_comment(request):
 
         author = get_object_or_404(LocalAuthor, user=request.user)
 
-        # get post author
+        # get comment author
         comment_author, created = Author.objects.get_or_create(
             url=comment_author_id
         )
