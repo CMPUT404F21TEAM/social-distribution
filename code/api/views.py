@@ -16,7 +16,7 @@ import logging
 import base64
 
 from cmput404.constants import API_BASE
-from socialDistribution.forms import PostForm
+import socialDistribution.requests as api_requests
 from socialDistribution.models import *
 from .decorators import authenticate_request, validate_node
 from .parsers import url_parser
@@ -462,7 +462,8 @@ class PostCommentsView(View):
             if post_type == "local":
                 post = get_object_or_404(LocalPost, id=post_id)
 
-                comment = Comment.objects.create(
+                # create local comment
+                Comment.objects.create(
                     author=author,
                     post=post,
                     comment=comment,
@@ -471,7 +472,25 @@ class PostCommentsView(View):
                 )
             elif post_type == "inbox":
                 post = get_object_or_404(InboxPost, id=post_id)
-                # TODO: send to inbox
+                obj = f'{post.author}/posts/{post_id}'
+
+                # create post reqeust data
+                data = {
+                    "@context": "https://www.w3.org/ns/activitystreams",
+                    "summary":f"{author.username} Commented on your post",
+                    "type": "comment",
+                    "author": post.author.as_json(),
+                    "comment": comment,
+                    "contentType": "text/plain",
+                    "object": obj
+                }
+
+                request_url = post.author.get_inbox()
+
+                print(data, request_url)
+                # send comment to remote inbox
+                api_requests.post(url=request_url, data=data, send_basic_auth_header=True)
+
             else:
                 HttpResponseNotFound()
 
