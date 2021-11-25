@@ -1,8 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
+
+import datetime
 
 import socialDistribution.requests as api_requests
-from cmput404.constants import SCHEME, HOST, API_PREFIX
+from cmput404.constants import API_BASE
 from .follow import Follow
 
 
@@ -19,6 +22,16 @@ class Author(models.Model):
     """
 
     url = models.URLField()
+    displayName = models.CharField(max_length=50, default="Anonymous User")
+    githubUrl = models.CharField(max_length=50, null=True)
+    profileImageUrl = models.CharField(max_length=50, null=True)
+
+    # timestamp of when the object was last updated
+    # will need later for caching
+    _last_updated = models.DateTimeField(auto_now=True)
+
+    # true means that field data will always be up-to-date (used by LocalAuthor)
+    _always_up_to_date = models.BooleanField(default=False)
 
     def get_inbox(self):
         """ Gets the URL of the Authors inbox. """
@@ -26,11 +39,24 @@ class Author(models.Model):
         return self.url.strip("/") + "/inbox"
 
     def as_json(self):
-        # Makes a GET request to URL to get the Author data
-        status_code, json_data = api_requests.get(self.url)
+        was_recent_update = self._last_updated < timezone.now()-datetime.timedelta(seconds=10)
+        if self._always_up_to_date:
+            # read author data from fields
+            # will do this in case of LocalAuthor
+            json_data = {
+                "type": "author",
+                "id": f"{API_BASE}/author/{self.id}",
+                "host": f'{API_BASE}/',
+                "displayName": self.displayName,
+                "url": f"{API_BASE}/author/{self.id}",
+                "github": self.githubUrl,
+                "profileImage": self.profileImageUrl
+            }
+        else:
+            # make API call to get author data
+            status_code, json_data = api_requests.get(self.url)
+            # todo handle errors is api_request fails
 
-        # could return None if something goes wrong
-        # caller should handle this
         return json_data
 
 
@@ -56,9 +82,6 @@ class LocalAuthor(Author):
 
     user = models.OneToOneField(User, null=True, on_delete=models.CASCADE)
     username = models.CharField(max_length=50, unique=True, blank=False)
-    displayName = models.CharField(max_length=50)
-    githubUrl = models.CharField(max_length=50, null=True)
-    profileImageUrl = models.CharField(max_length=50, null=True)
 
     follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')
@@ -121,24 +144,8 @@ class LocalAuthor(Author):
     def __str__(self):
         return self.displayName
 
-    def as_json(self):
-        return {
-            "type": "author",
-            # ID of the Author
-            "id": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{self.id}",
-            # the home host of the author
-            "host": f'{SCHEME}://{HOST}/{API_PREFIX}/',
-            # the display name of the author
-            "displayName": self.displayName,
-            # url to the authors profile
-            "url": f"{SCHEME}://{HOST}/{API_PREFIX}/author/{self.id}",
-            # HATEOS url for Github API
-            "github": self.githubUrl,
-            # Image from a public domain
-            "profileImage": self.profileImageUrl
-        }
-
     def save(self, *args, **kwargs):
+        self._always_up_to_date = True
         super().save(*args, **kwargs)  # Call the "real" save() method.
         self._set_url()
 
@@ -148,14 +155,6 @@ class LocalAuthor(Author):
         """
         # Clark, https://stackoverflow.com/users/10424244/clark, "Django - How to get self.id when saving a new object?",
         # 2021-02-19, https://stackoverflow.com/a/66271445, CC BY-SA 4.0
-        url = f"{SCHEME}://{HOST}/{API_PREFIX}/author/{self.id}"
+        url = f"{API_BASE}/author/{self.id}"
         if self.url != url:
             Author.objects.filter(id=self.id).update(url=url)
-
-    # temp
-
-    def has_req_from(self, author):
-        """
-        Returns True if the user has a request from a specific author, False otherwise 
-        """
-        return self.follow_requests.filter(pk=author.id).exists()

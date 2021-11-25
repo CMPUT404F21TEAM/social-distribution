@@ -9,13 +9,12 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 
-from cmput404.constants import SCHEME, HOST
+from cmput404.constants import SCHEME, HOST, API_BASE
 from .forms import CreateUserForm, PostForm
 
 import base64
 
 import socialDistribution.requests as api_requests
-from cmput404.constants import API_PREFIX
 from api.models import Node
 from .models import *
 from .forms import CreateUserForm, PostForm
@@ -341,7 +340,7 @@ def authors(request):
 
         # get request for authors
         try:
-            res_code, res_body = api_requests.get(f'http://{node.host}{node.api_prefix}/authors/', send_basic_auth_header=True)
+            res_code, res_body = api_requests.get(f'{SCHEME}://{node.host}{node.api_prefix}/authors/', send_basic_auth_header=True)
 
             # skip node if unresponsive
             if res_body == None:
@@ -581,8 +580,8 @@ def like_post(request, id, post_host):
     else:
         post = get_object_or_404(LocalPost, id=id)
         host = request.get_host()
-        request_url = f'{SCHEME}://{host}/{API_PREFIX}/author/{post.author.id}/inbox'
-        obj = f'{SCHEME}://{host}/{API_PREFIX}/author/{post.author.id}/posts/{id}'
+        request_url = f'{API_BASE}/author/{post.author.id}/inbox'
+        obj = f'{API_BASE}/author/{post.author.id}/posts/{id}'
 
     author = LocalAuthor.objects.get(user=request.user)
     prev_page = request.META['HTTP_REFERER']
@@ -654,12 +653,12 @@ def like_comment(request, id):
             "summary": f"{author.username} Likes your comment",
             "type": "like",
             "author": author.as_json(),
-            "object": f"{SCHEME}://{host}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
+            "object": f"{API_BASE}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
         }
 
     # redirect request to remote/local api
-    request_url = f'{SCHEME}://{host}/api/author/{comment.author.id}/inbox/'
-    api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
+    request_url = f'{API_BASE}/author/{comment.author.id}/inbox/'
+    api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
 
     if prev_page is None:
         return redirect('socialDistribution:home')
@@ -704,7 +703,12 @@ def inbox(request):
     """
     author = LocalAuthor.objects.get(user=request.user)
     follow_requests = author.follow_requests.all()
+    
+    for post in author.inbox_posts.all():
+        post.fetch_update()
     posts = author.inbox_posts.all().order_by('-published')
+        
+    
     context = {
         'author': author,
         'follow_requests': follow_requests,
