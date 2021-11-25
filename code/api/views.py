@@ -160,11 +160,7 @@ class FollowersSingleView(View):
             # try to find and return follower author object
             follower = Author.objects.get(url=foreign_author_id)
             follow = author.follows.get(actor=follower)
-            actor = follow.actor
-            if LocalAuthor.objects.filter(url=actor.url).exists():
-                logger.info(f"Skipping extra API call for author")
-                actor = LocalAuthor.objects.get(url=actor.url)
-            response = actor.as_json()
+            response = follow.actor.as_json()
             return JsonResponse(response)
 
         except (Author.DoesNotExist, Follow.DoesNotExist):
@@ -232,6 +228,9 @@ class LikedView(View):
                 "items": likes
             }
 
+        except LocalAuthor.DoesNotExist:
+            return HttpResponseNotFound()
+
         except Exception as e:
             logger.error(e, exc_info=True)
             return HttpResponseServerError()
@@ -292,7 +291,7 @@ class PostView(View):
         try:
             post = LocalPost.objects.get(id=post_id)
             response = post.as_json()
-            
+
         except LocalPost.DoesNotExist:
             return HttpResponseNotFound()
 
@@ -310,7 +309,7 @@ class PostView(View):
         try:
             post = LocalPost.objects.get(id=post_id)
             post.delete()
-            
+
         except LocalPost.DoesNotExist:
             return HttpResponseNotFound()
 
@@ -340,7 +339,7 @@ class PostView(View):
             categories = data['categories']
 
             if categories is not None:
-                categories_to_remove = [ cat.category for cat in post.categories.all()]
+                categories_to_remove = [cat.category for cat in post.categories.all()]
 
                 """
                 This implementation makes category names case-insensitive.
@@ -353,7 +352,7 @@ class PostView(View):
                         defaults={'category': category}
                     )
                     post.categories.add(category_obj)
-                    
+
                     while category_obj.category in categories_to_remove:
                         categories_to_remove.remove(category_obj.category)     # don't remove this category
 
@@ -363,9 +362,10 @@ class PostView(View):
 
             post.save()
             return JsonResponse(status=201, data=post.as_json())
-            
+
         except ValidationError:
             messages.info(request, 'Unable to edit post.')
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostLikesView(View):
