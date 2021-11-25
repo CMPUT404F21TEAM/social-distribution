@@ -2,6 +2,7 @@ import base64
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.http import response
 from django.http.response import *
 from django.http import HttpResponse, JsonResponse
 from django.http.response import HttpResponseBadRequest
@@ -182,6 +183,10 @@ class FollowersSingleView(View):
         except (Author.DoesNotExist, Follow.DoesNotExist):
             # return 404 if author not found
             return HttpResponseNotFound()
+        
+    def put(self, request, author_id, foreign_author_id):
+        """ PUT - Add a follower (must be authenticated)"""
+        return NotImplementedError
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -278,7 +283,7 @@ class PostsView(View):
         return JsonResponse(response)
 
     def post(self, request, author_id):
-        return HttpResponse("This is the authors/aid/posts/ endpoint")
+        return NotImplementedError()
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -365,6 +370,9 @@ class PostView(View):
 
         except ValidationError:
             messages.info(request, 'Unable to edit post.')
+            
+    def put(self, request, author_id, post_id):
+        return NotImplementedError
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -473,6 +481,32 @@ class PostCommentsView(View):
 
         return redirect('socialDistribution:single-post', post_type="local", id=post_id)
 
+@method_decorator(csrf_exempt, name='dispatch')
+class PostCommentsSingleView(View):
+    '''
+        HANDLE Singular Comment GET 
+    '''
+
+    def get(self, request, author_id, post_id, comment_id):
+        logger.info(f"GET /author/{author_id}/posts/{post_id}/comments/{comment_id} API endpoint invoked")
+
+        # Send comment
+        try:
+            post = get_object_or_404(LocalPost, id=post_id)
+            author = get_object_or_404(LocalAuthor, id=author_id)
+            # Check if the post author match with author in url
+            if post.author.id != author.id:
+                return HttpResponseNotFound()
+            
+            comment = get_object_or_404(Comment, id=comment_id)
+            response = comment.as_json()
+            
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseServerError()
+
+        return JsonResponse(response)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CommentLikesView(View):
@@ -527,16 +561,14 @@ class InboxView(View):
     """ This endpoint currently only works for requests from local server.
     """
 
-    @method_decorator(authenticate_request)
+
     def get(self, request, author_id):
         """ GET - If authenticated, get a list of posts sent to {author_id} """
 
         logger.info(f"GET /author/{author_id}/inbox API endpoint invoked")
 
 
-        return JsonResponse({
-            "message": f"This is the inbox for author_id={author_id}. Only author {author_id} can read this."
-        })
+        return NotImplementedError
 
     # TODO: authenticate user
     @method_decorator(validate_node)
