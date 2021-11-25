@@ -312,7 +312,7 @@ def un_befriend(request, author_id):
             if status_code >= 400:
                 messages.info(request, f'Couldn\'t un-befriend {object.displayName}')
 
-    return redirect('socialDistribution:authors')
+    return redirect('socialDistribution:author', author_id)
 
 
 def authors(request):
