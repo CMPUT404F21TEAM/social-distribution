@@ -626,7 +626,8 @@ def single_post(request, post_type, id):
         raise Http404()
 
     try:
-        comments = Comment.objects.filter(post=post).order_by('-pub_date')
+        comments_json = post.comments_as_json
+
     except Exception:
         return HttpResponseServerError()
 
@@ -635,36 +636,44 @@ def single_post(request, post_type, id):
         'author_type': 'Local',
         'modal_type': 'post',
         'post': post,
-        'comments': comments
+        'comments': comments_json
     }
 
     return render(request, 'posts/comments.html', context)
 
 
-def like_comment(request, id):
+def like_comment(request):
     '''
         Likes a comment
     '''
 
-    comment = get_object_or_404(Comment, id=id)
-    author = get_object_or_404(LocalAuthor, user=request.user)
-
-    host = request.get_host()
     prev_page = request.META['HTTP_REFERER']
 
     if request.method == 'POST':
+        # get POST parameters
+        comment_id = request.POST.get("comment_id")
+        comment_author_id = request.POST.get("comment_author_id")
+
+        author = get_object_or_404(LocalAuthor, user=request.user)
+
+        # get post author
+        comment_author, created = Author.objects.get_or_create(
+            url=comment_author_id
+        )
+
         # create like object
         like = {
             "@context": "https://www.w3.org/ns/activitystreams",
             "summary": f"{author.username} Likes your comment",
             "type": "like",
             "author": author.as_json(),
-            "object": f"{API_BASE}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
+            "object": comment_id
         }
 
-    # redirect request to remote/local api
-    request_url = f'{API_BASE}/author/{comment.author.id}/inbox/'
-    api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
+        # redirect request to remote/local api
+        request_url = comment_author.get_inbox()
+        api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
+
 
     if prev_page is None:
         return redirect('socialDistribution:home')

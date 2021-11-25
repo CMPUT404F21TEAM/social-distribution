@@ -13,27 +13,27 @@ def comment_card(*args, **kwargs):
     author_type = kwargs['author_type']
     comment = kwargs['comment']
     post = kwargs['post']
-    is_friend = author.has_friend(comment.author)
+    is_friend = False #author.has_friend(comment.author)
 
     # manage comment like data
-    is_liked = comment.likes.filter(author=author).exists()
+    is_liked = False #comment.likes.filter(author=author).exists()
 
     like_text = ''
-    likes = comment.total_likes()
-    if is_liked:
-        likes -= 1
-        if likes >= 2:
-            like_text = f'Liked by you and {likes} others'
-        elif likes == 1:
-            like_text = f'Liked by you and 1 other'
-        else:
-            like_text = f'Liked by you'
-    else:
-        likes = comment.likes.count()
-        if likes > 1:
-            like_text = f'Liked by {likes} others'
-        elif likes == 1:
-            like_text = f'Liked by 1 other'
+    # likes = comment.total_likes()
+    # if is_liked:
+    #     likes -= 1
+    #     if likes >= 2:
+    #         like_text = f'Liked by you and {likes} others'
+    #     elif likes == 1:
+    #         like_text = f'Liked by you and 1 other'
+    #     else:
+    #         like_text = f'Liked by you'
+    # else:
+    #     likes = comment.likes.count()
+    #     if likes > 1:
+    #         like_text = f'Liked by {likes} others'
+    #     elif likes == 1:
+    #         like_text = f'Liked by 1 other'
 
     return {
         'author': author,

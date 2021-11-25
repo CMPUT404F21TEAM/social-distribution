@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import Q, manager
 from django.contrib.auth.models import User
 from django.utils import timezone
+
 from jsonfield import JSONField
 import datetime as dt
 import timeago
@@ -388,4 +389,6 @@ class InboxPost(Post):
 
     @property
     def comments_as_json(self):
-        pass
+        request_url = self.public_id.strip('/') + '/comments'
+        status_code, response_data = api_requests.get(request_url, send_basic_auth_header=True)
+        return response_data
