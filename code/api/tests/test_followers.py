@@ -15,7 +15,7 @@ from socialDistribution.models import LocalAuthor, Author, Follow
 # Python Software Foundation, https://docs.python.org/3/library/unittest.html
 
 
-class FollowersSingleViewTests(LiveServerTestCase):
+class FollowersSingleViewTests(TestCase):
     """ Test the Followers API endpoint. This test suite runs a test server on port 8000,
         which means the dev server cannot also be running on the same port. 
     """
@@ -33,13 +33,11 @@ class FollowersSingleViewTests(LiveServerTestCase):
     def tearDownClass(cls):
         logging.disable(logging.NOTSET)
 
-    port = 8000
-
     def test_get(self):
         object = mixer.blend(LocalAuthor)
-        object = LocalAuthor.objects.get(id=object.id) # refetch to get the proper url
+        object = LocalAuthor.objects.get(id=object.id)  # refetch to get the proper url
         actor = mixer.blend(LocalAuthor)
-        actor = LocalAuthor.objects.get(id=actor.id) # refetch to get the proper url
+        actor = LocalAuthor.objects.get(id=actor.id)  # refetch to get the proper url
 
         object.follows.create(actor=actor)
 
@@ -52,12 +50,12 @@ class FollowersSingleViewTests(LiveServerTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertDictEqual(expected, actual)
-    
+
     def test_get_404(self):
         object = mixer.blend(LocalAuthor)
-        object = LocalAuthor.objects.get(id=object.id) # refetch to get the proper url
+        object = LocalAuthor.objects.get(id=object.id)  # refetch to get the proper url
         actor = mixer.blend(LocalAuthor)
-        actor = LocalAuthor.objects.get(id=actor.id) # refetch to get the proper url
+        actor = LocalAuthor.objects.get(id=actor.id)  # refetch to get the proper url
 
         kwargs = {"author_id": object.id, "foreign_author_id": actor.url}
         request_url = reverse("api:followers-single", kwargs=kwargs)
@@ -67,10 +65,10 @@ class FollowersSingleViewTests(LiveServerTestCase):
 
     def test_delete(self):
         object = mixer.blend(LocalAuthor)
-        object = LocalAuthor.objects.get(id=object.id) # refetch to get the proper url
+        object = LocalAuthor.objects.get(id=object.id)  # refetch to get the proper url
         actor = mixer.blend(LocalAuthor)
-        actor = LocalAuthor.objects.get(id=actor.id) # refetch to get the proper url
-        
+        actor = LocalAuthor.objects.get(id=actor.id)  # refetch to get the proper url
+
         object.follows.create(actor=actor)
         self.assertEqual(1, object.follows.count())
         self.assertEqual(actor.url, object.follows.first().actor.url)
@@ -94,6 +92,7 @@ class FollowersSingleViewTests(LiveServerTestCase):
         self.assertEqual(b"", response.content)
         self.assertEqual(0, object.follows.count())
 
+
 class FollowersViewTests(TestCase):
 
     # the pillow, https://stackoverflow.com/users/2812257/the-pillow, "How can I disable logging while running unit tests in Python Django?"
@@ -109,13 +108,29 @@ class FollowersViewTests(TestCase):
     def tearDownClass(cls):
         logging.disable(logging.NOTSET)
 
-    def test_get_followers(self):
+    def test_get_followers_empty(self):
 
         author = mixer.blend(LocalAuthor)
 
-        expected = json.dumps({"type": "followers", "items": []})
+        expected = {"type": "followers", "items": []}
         kwargs = {"author_id": author.id}
         response = self.client.get(reverse("api:followers", kwargs=kwargs))
 
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(response.content, expected)
+        self.assertJSONEqual(response.json(), expected)
+
+    def test_get_followers_empty(self):
+
+        author1 = mixer.blend(LocalAuthor)
+        author2 = mixer.blend(LocalAuthor)
+        author3 = mixer.blend(LocalAuthor)
+
+        author1.follows.create(actor=author2)
+        author1.follows.create(actor=author3)
+
+        expected = {"type": "followers", "items": [author2.as_json(), author3.as_json()]}
+        kwargs = {"author_id": author1.id}
+        response = self.client.get(reverse("api:followers", kwargs=kwargs))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(response.json(), expected)
