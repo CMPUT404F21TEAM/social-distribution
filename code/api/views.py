@@ -533,10 +533,38 @@ class InboxView(View):
 
         logger.info(f"GET /author/{author_id}/inbox API endpoint invoked")
 
+        # Send all posts sent to the author's inbox
+        try:
+            page = request.GET.get("page")
+            size = request.GET.get("size")
+            author = get_object_or_404(LocalAuthor, id=author_id)
+            posts = author.inbox_posts.all().order_by('-published')
 
-        return JsonResponse({
-            "message": f"This is the inbox for author_id={author_id}. Only author {author_id} can read this."
-        })
+            if page and size:
+                page = int(page)
+                size = int(size)
+                try:
+                    if page < 1 or size < 1:
+                        return HttpResponseBadRequest("Malformed query: page and size must be > 0")
+                except Exception as e:
+                    return HttpResponseBadRequest(e)
+                posts = getPaginated(posts, page, size)
+
+            posts = [post.as_json() for post in posts]
+
+            response = {
+                "type": "inbox",
+                "author": author.url,
+                "page": page,
+                "size": size,
+                "items": posts
+            }
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseServerError()
+
+        return JsonResponse(response)
 
     # TODO: authenticate user
     @method_decorator(validate_node)
