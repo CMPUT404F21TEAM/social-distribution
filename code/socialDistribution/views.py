@@ -649,6 +649,7 @@ def single_post(request, post_type, id):
         'author_type': 'Local',
         'modal_type': 'post',
         'post': post,
+        'post_type': post_type,
         'comments': comments_json
     }
 

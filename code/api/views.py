@@ -448,30 +448,38 @@ class PostCommentsView(View):
             return HttpResponseForbidden()
 
         comment = request.POST.get('comment')
+        post_type = request.POST.get('post_type')
 
-        # check if empty
+        # check if empty comment
         if not len(comment):
             return HttpResponseBadRequest("Comment cannot be empty.")
 
         pub_date = datetime.now(timezone.utc)
 
-        try:
-            author = get_object_or_404(LocalAuthor, pk=author_id)
-            post = get_object_or_404(LocalPost, id=post_id)
+        author = get_object_or_404(LocalAuthor, pk=author_id)
 
-            comment = Comment.objects.create(
-                author=author,
-                post=post,
-                comment=comment,
-                content_type='PL',  # TODO: add content type
-                pub_date=pub_date,
-            )
+        try:
+            if post_type == "local":
+                post = get_object_or_404(LocalPost, id=post_id)
+
+                comment = Comment.objects.create(
+                    author=author,
+                    post=post,
+                    comment=comment,
+                    content_type='PL',  # TODO: add content type
+                    pub_date=pub_date,
+                )
+            elif post_type == "inbox":
+                post = get_object_or_404(InboxPost, id=post_id)
+                # TODO: send to inbox
+            else:
+                HttpResponseNotFound()
 
         except Exception as e:
             logger.error(e, exc_info=True)
             return HttpResponse('Internal Server Error')
 
-        return redirect('socialDistribution:single-post', post_type="local", id=post_id)
+        return redirect('socialDistribution:single-post', post_type=post_type, id=post_id)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
