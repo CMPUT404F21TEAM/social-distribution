@@ -1,3 +1,4 @@
+from django.db.models.query import QuerySet
 from django.http.response import *
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
@@ -9,7 +10,7 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 
-from cmput404.constants import SCHEME, HOST, API_BASE
+from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
 from .forms import CreateUserForm, PostForm
 
 import base64
@@ -33,7 +34,6 @@ REQUIRE_SIGNUP_APPROVAL = True
     sign up approval not required by default, should turn on in prod. 
     if time permits store this in database and allow change from admin dashboard.
 '''
-
 
 def index(request):
     """
@@ -327,7 +327,7 @@ def authors(request):
         "posts", filter=Q(posts__visibility=LocalPost.Visibility.PUBLIC)))
     local_authors = [{
         "data": author,
-        "type": "Local"
+        "type": LOCAL
     } for author in authors]
 
     remote_authors = []
@@ -357,7 +357,7 @@ def authors(request):
 
                 remote_authors.append({
                     "data": author,
-                    'type': "Remote"
+                    'type': REMOTE
                 })
 
         except Exception as error:
@@ -377,25 +377,24 @@ def author(request, author_id):
 
     try:
         author = LocalAuthor.objects.get(pk=author_id)
+        author_type = LOCAL
 
     except LocalAuthor.DoesNotExist:
         author = get_object_or_404(Author, id=author_id)
+        author_type = REMOTE
 
-    if curr_user.has_friend(author):
-        if type(author) is LocalAuthor:
-            posts = author.posts.listed().get_friend()
+    if author_type == LOCAL:
+        if curr_user.has_friend(author):
+            posts = author.posts.listed().get_friend()  # get both friend and public posts
+        else:
+            posts = author.posts.listed().get_public()  # get public posts only
 
-        # friends post are sent to inboxes for remote authors
-        # no endpoint exists to query friends post (only public)
-
-    elif type(author) is LocalAuthor:
-        posts = author.posts.listed().get_public()
     else:
         posts = InboxPost.objects.filter(author=author.get_url_id())
 
     context = {
         'author': author,
-        'author_type': 'Local',
+        'author_type': author_type,
         'curr_user': curr_user,
         'author_posts': posts.chronological()
     }

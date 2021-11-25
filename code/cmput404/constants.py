@@ -15,3 +15,6 @@ API_BASE = f"{SCHEME}://{HOST}/{API_PREFIX}"
 
 CLIENT_PREFIX = "app"
 CLIENT_PATH = CLIENT_PREFIX  + "/"
+
+LOCAL = "Local"
+REMOTE = "Remote"
