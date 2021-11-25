@@ -352,11 +352,8 @@ def authors(request):
                     url=remote_author['id']
                 )
 
-                # add Local database id to remote author
-                remote_author['local_id'] = author.id
-
                 remote_authors.append({
-                    "data": remote_author,
+                    "data": author,
                     'type': "Remote"
                 })
 
@@ -364,6 +361,7 @@ def authors(request):
             logger.error(str(error))
 
     args["authors"] = local_authors + remote_authors
+    args["curr_user"] = LocalAuthor.objects.get(user=request.user)
     return render(request, 'author/index.html', args)
 
 

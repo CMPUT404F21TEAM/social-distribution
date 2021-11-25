@@ -16,11 +16,11 @@
             {% if author.data.id  %}
                 {% if author.type == "Local" %}
                     <a class="author-tile-link" href="{% url 'socialDistribution:author' author.data.id %}">
-                        {% card_author author=author.data author_type=author.type profile_card=False %}
+                        {% card_author author=author.data author_type=author.type curr_user=curr_user %}
                     </a>
                 {% else %}
-                    <a class="author-tile-link" href="{{ author.data.id }}">
-                        {% card_author author=author.data author_type=author.type profile_card=False %}
+                    <a class="author-tile-link" href="#">
+                        {% card_author author=author.data author_type=author.type curr_user=curr_user %}
                     </a>
                 {% endif %}
             {% endif %}

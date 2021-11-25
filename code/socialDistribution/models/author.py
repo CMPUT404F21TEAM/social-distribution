@@ -20,6 +20,22 @@ class Author(models.Model):
 
     url = models.URLField()
 
+    def has_follower(self, author):
+        """ Returns True if author is a follower of self, False otherwise """
+        res_code, res_body = api_requests.get(self.url + "/followers")
+        if res_code == 200 and res_body:
+            for follower in res_body["items"]:
+                if follower["id"] == self.url:
+                    return True
+        else:
+            return False
+
+    def has_follow_request(self, author):
+        """ Over-ridden for LocalAuthors, for remote authors, always returns False """
+        # No endpoint give us follow request objects
+        # Even if we GET against their inbox, we'll get back a list of posts
+        return False
+
     def get_inbox(self):
         """ Gets the URL of the Authors inbox. """
 

@@ -11,23 +11,17 @@ def card_author(*args, **kwargs):
     """
     author = kwargs['author']
     author_type = kwargs['author_type']
-    profile_card = kwargs['profile_card']
-    is_following = False
-    request_sent = False
-    is_friend = False
-    author_is_user = False
+    curr_user = kwargs['curr_user']
 
-    if profile_card:
-        curr_user = kwargs['curr_user']
-        is_following = author.has_follower(curr_user)
-        request_sent = author.has_follow_request(curr_user)
-        is_friend = curr_user.has_friend(author)
-        author_is_user = author.id == curr_user.id
+    is_following = author.has_follower(curr_user)
+    request_sent = author.has_follow_request(curr_user)
+    is_friend = curr_user.has_friend(author)
+
+    author_is_user = author.id == curr_user.get_url_id()
 
     return {
         'author': author,
         'author_type': author_type,
-        'profile_card': profile_card,
         'is_following': is_following,
         'request_sent': request_sent,
         'is_friend': is_friend,
