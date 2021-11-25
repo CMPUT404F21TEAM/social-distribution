@@ -25,51 +25,23 @@
                 </h6>
 
                 <div>
-                    <!-- profile card labels and actions  -->
-                    {% if not profile_card and author_type == "Local" %}
-                        {% if author.posts__count == 1 %}
-                            <p>{{author.posts__count}} post</p>
-                        {% else %}
-                            <p>{{author.posts__count}} posts</p>
-                        {% endif %}
-                    {% elif not author_is_user %}
-
-                        <!-- check if local or remote author -->
-                        {% if author_type == "Local" %}
-                            <div class="author-card-opt d-flex ml-10">
-                                {% if is_following %}
-                                    <p class="text-muted h6 my-auto px-1">Following &#8226;</p>
-                                    <form method="POST" action="{% url 'socialDistribution:un-befriend' author.id %}">
-                                        {% csrf_token %}
-                                        <button class="btn bg-white text-primary px-1">Un-follow</button>
-                                    </form>
-                                {% elif request_sent %}
-                                    <p class="text-muted h6 my-auto px-1">Follow request sent</p>
-                                {% else %}
-                                    <form method="POST" action="{% url 'socialDistribution:befriend' author.id %}">
-                                        {% csrf_token %}
-                                        <button class="btn bg-white text-primary px-1">Follow</button>
-                                    </form>
-                                {% endif %}
-                            </div>
-                        {% else %}
-                                <div class="author-card-opt d-flex ml-10">
-                                    {% if is_following %}
-                                        <p class="text-muted h6 my-auto px-1">Following &#8226;</p>
-                                        <form method="POST" action="{% url 'socialDistribution:un-befriend' author.local_id %}">
-                                            {% csrf_token %}
-                                            <button class="btn bg-white text-primary px-1">Un-follow</button>
-                                        </form>
-                                    {% elif request_sent %}
-                                        <p class="text-muted h6 my-auto px-1">Follow request sent</p>
-                                    {% else %}
-                                        <form method="POST" action="{% url 'socialDistribution:befriend' author.local_id %}">
-                                            {% csrf_token %}
-                                            <button class="btn bg-white text-primary px-1">Follow</button>
-                                        </form>
-                                    {% endif %}
-                                </div>
-                        {% endif%}
+                    {% if not author_is_user %}
+                        <div class="author-card-opt d-flex ml-10">
+                            {% if is_following %}
+                                <p class="text-muted h6 my-auto px-1">Following &#8226;</p>
+                                <form method="POST" action="{% url 'socialDistribution:un-befriend' author.id %}">
+                                    {% csrf_token %}
+                                    <button class="btn bg-white text-primary px-1">Un-follow</button>
+                                </form>
+                            {% elif request_sent %}
+                                <p class="text-muted h6 my-auto px-1">Follow request sent</p>
+                            {% else %}
+                                <form method="POST" action="{% url 'socialDistribution:befriend' author.id %}">
+                                    {% csrf_token %}
+                                    <button class="btn bg-white text-primary px-1">Follow</button>
+                                </form>
+                            {% endif %}
+                        </div>
 
                     {% else %}
                         <div class="author-card-opt d-flex ml-10"> 

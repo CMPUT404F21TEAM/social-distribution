@@ -5,7 +5,9 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from mixer.backend.django import mixer
+
 import json
+import logging
 
 from socialDistribution.models import LocalPost, Category, LocalAuthor
 from .test_authors import create_author
@@ -45,13 +47,26 @@ def get_post_json(post):
             "categories":previousCategoriesNames,
             "count": 0,
             "comments":f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/",
-            "commentsSrc":post.comments_as_json,
+            "commentsSrc":post.recent_comments_json,
             "published":post.published.isoformat(),
             "visibility":post.get_visibility_display(),
             "unlisted":post.unlisted
         }
 
 class PostViewTest(TestCase):
+
+    # the pillow, https://stackoverflow.com/users/2812257/the-pillow, "How can I disable logging while running unit tests in Python Django?"
+    # https://stackoverflow.com/a/54519433, 2019-02-04, CC BY-SA 4.0
+
+    # disable logging before tests
+    @classmethod
+    def setUpClass(cls):
+        logging.disable(logging.CRITICAL)
+
+    # enable logging after tests
+    @classmethod
+    def tearDownClass(cls):
+        logging.disable(logging.NOTSET)
 
     def test_get_post_basic(self):
         self.maxDiff = None
