@@ -34,13 +34,11 @@ class Author(models.Model):
     _always_up_to_date = models.BooleanField(default=False)
 
     def get_url_id(self):
-        """
-        Returns the id of the author in url form
-        """
+        """ Returns the id of the author in url form """
         return self.url
 
     def has_follower(self, author):
-        """ Returns True if author is a follower of self, False otherwise """
+        """ Over-ridden in LocalAuthor. Returns True if author is a follower of self, False otherwise """
         res_code, res_body = api_requests.get(self.url + "/followers")
 
         if res_code == 200 and res_body:
@@ -51,9 +49,10 @@ class Author(models.Model):
             return False
 
     def has_follow_request(self, author):
-        """ Over-ridden for LocalAuthors, for remote authors, always returns False """
+        """ Over-ridden in LocalAuthor. Always returns False """
         # No endpoint give us follow request objects
         # Even if we GET against their inbox, we'll get back a list of posts
+        # The alternative would be to keep track of outgoing follow requests
         return False
 
     def get_inbox(self):

@@ -117,9 +117,9 @@ class FollowersViewTests(TestCase):
         response = self.client.get(reverse("api:followers", kwargs=kwargs))
 
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(response.json(), expected)
+        self.assertDictEqual(response.json(), expected)
 
-    def test_get_followers_empty(self):
+    def test_get_followers(self):
 
         author1 = mixer.blend(LocalAuthor)
         author2 = mixer.blend(LocalAuthor)
