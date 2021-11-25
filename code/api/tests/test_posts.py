@@ -48,7 +48,7 @@ def get_post_json(post):
             "categories":previousCategoriesNames,
             "count": 0,
             "comments":f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/",
-            "commentsSrc":post.comments_as_json,
+            "commentsSrc":post.recent_comments_json,
             "published":post.published.isoformat(),
             "visibility":post.get_visibility_display(),
             "unlisted":post.unlisted
