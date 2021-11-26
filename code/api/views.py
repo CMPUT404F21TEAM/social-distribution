@@ -520,6 +520,8 @@ class InboxView(View):
         logger.info(f"POST /author/{author_id}/inbox API endpoint invoked")
 
         data = json.loads(request.body)
+
+        logger.info(f"inbox request body\n{data}")
         try:
             if str(data["type"]).lower() == "post":
                 logger.info("Inbox object identified as post")
