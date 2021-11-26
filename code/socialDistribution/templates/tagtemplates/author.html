@@ -18,10 +18,20 @@
                 <h4 class="card-title">{{author.displayName}}</h4>
 
                 <h6 class="card-subtitle mb-2 text-muted px-1">
-                    <span class="badge bg-secondary">{{author_type}}&nbsp;</span>
+                    
+                    <!-- Display author ID  -->
+                    {% if author_type == "Local" %}
+                        <span class="badge bg-secondary">{{author.get_url_id}}&nbsp;</span>
+                    {% else %}
+                        <!-- <span class="badge bg-secondary">{{author_type}}&nbsp;</span> -->
+                        <span class="badge bg-dark">{{author.get_url_id}}</span>
+                    {% endif %}
+
+                    <!-- Display friend status -->
                     {% if is_friend %}
                         <span class="badge bg-success">Friend</span>
                     {% endif %}
+
                 </h6>
 
                 <div>
