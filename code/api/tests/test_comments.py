@@ -33,6 +33,16 @@ def get_comments_json(post, comments, page=None, size=None):
         "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments",
         "comments": comments
     }
+    
+def get_singular_comment_json(comment):
+    return {
+            "type": "comment",
+            "author": comment.author.as_json(),
+            "comment": comment.comment,
+            "contentType": "text/markdown",
+            "published": str(comment.pub_date),
+            "id": f"{API_BASE}/author/{comment.post.author.id}/posts/{comment.post.id}/comments/{comment.id}",
+        }
 class PostCommentsViewTest(TestCase):
 
     # the pillow, https://stackoverflow.com/users/2812257/the-pillow, "How can I disable logging while running unit tests in Python Django?"
@@ -54,6 +64,33 @@ class PostCommentsViewTest(TestCase):
         expected_data = json.dumps(expected)
 
         response = self.client.get(reverse('api:post_comments', args=(post.author.id, post.id)))
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(response.content, expected_data)
+
+    def test_get_singular_comment(self):
+        self.maxDiff = None
+        post = mixer.blend('socialDistribution.localpost')
+        comment_author = create_author(
+            100,
+            "John Doe",
+            "johnDoe",
+            "https://github.com/johnDoe",
+            "https://i.imgur.com/k7XVwpB.jpeg"
+        )
+
+        comment = create_comment(
+            1,
+            comment_author, 
+            'text/markdown', 
+            'Testing comment single author',
+            post
+        )
+
+        expected = get_singular_comment_json(comment)
+
+        expected_data = expected
+        response = self.client.get(reverse('api:post_comments_single', args=(post.author.id, post.id, comment.id)))
+
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(response.content, expected_data)
 

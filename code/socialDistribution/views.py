@@ -18,6 +18,7 @@ import base64
 
 import socialDistribution.requests as api_requests
 from api.models import Node
+from api.utility import makePost
 from .models import *
 from .forms import CreateUserForm, PostForm
 from .decorators import unauthenticated_user
@@ -392,10 +393,20 @@ def author(request, author_id):
         author_type = REMOTE
 
     if author_type == LOCAL:
-            posts = author.posts.listed().get_public()  # get public posts only
+        posts = author.posts.listed().get_public()  # get public posts only
 
     else:
         # show public posts only
+
+        request_url = author.get_url_id().strip('/') + "/posts"
+
+        res_code, res_body = api_requests.get(request_url, send_basic_auth_header=True)
+        
+        if res_code == 200 and res_body:
+            for post in res_body["items"]:
+                if post:
+                    makePost(post)
+
         posts = InboxPost.objects.filter(
             author=author.get_url_id(),
             visibility=InboxPost.Visibility.PUBLIC
