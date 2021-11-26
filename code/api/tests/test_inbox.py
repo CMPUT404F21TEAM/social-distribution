@@ -24,6 +24,8 @@ import base64
 
 def create_author(id, username, displayName, githubUrl):
     user = mixer.blend(User, username=username)
+    user.set_password('password')
+    user.save()
     author = LocalAuthor.objects.create(
         id=id, username=username, displayName=displayName, githubUrl=githubUrl, user=user)
     return author
@@ -182,21 +184,13 @@ class InboxViewTests(TestCase):
         )
 
         # Check the inbox of author2
+        self.client.login(username='user2', password='password')
         response = self.client.get(
             reverse("api:inbox", kwargs={"author_id": 2}),
             content_type="application/json",
             **self.basicAuthHeaders,
         )
-        
-        postAuthor = Author.objects.get(id=author2.id)
 
-        expected = {
-            "type": "inbox",
-            'page': None,
-            'size': None,
-            "author": postAuthor.get_url_id(),
-            "items": [dummy_post.as_json()]
-        }
         res_data = json.loads(response.content)
      
         resPost = res_data["items"][0]
