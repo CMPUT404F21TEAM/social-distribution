@@ -1,3 +1,4 @@
+from django.db.models.query import QuerySet
 from django.http.response import *
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
@@ -9,7 +10,7 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 
-from cmput404.constants import SCHEME, HOST, API_BASE
+from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
 from .forms import CreateUserForm, PostForm
 
 import base64
@@ -34,7 +35,6 @@ REQUIRE_SIGNUP_APPROVAL = True
     sign up approval not required by default, should turn on in prod. 
     if time permits store this in database and allow change from admin dashboard.
 '''
-
 
 def index(request):
     """
@@ -284,9 +284,13 @@ def befriend(request, author_id):
 
         if object.id != actor.id:
             # send follow request
-            dispatch_follow_request(actor, object)
+            is_success = dispatch_follow_request(actor, object)
+            if is_success:
+                messages.success(request, "Follow request sent successfully")
+            else:
+                messages.error(request, "Failed to send follow request")
 
-    return redirect('socialDistribution:authors')
+    return redirect('socialDistribution:author', author_id)
 
 
 def un_befriend(request, author_id):
@@ -311,7 +315,7 @@ def un_befriend(request, author_id):
             status_code, response_body = api_requests.delete(url)
 
             if status_code >= 400:
-                messages.info(request, f'Couldn\'t un-befriend {author.displayName}')
+                messages.info(request, f'Couldn\'t un-befriend {object.displayName}')
 
     return redirect('socialDistribution:author', author_id)
 
@@ -328,7 +332,7 @@ def authors(request):
         "posts", filter=Q(posts__visibility=LocalPost.Visibility.PUBLIC)))
     local_authors = [{
         "data": author,
-        "type": "Local"
+        "type": LOCAL
     } for author in authors]
 
     remote_authors = []
@@ -350,21 +354,22 @@ def authors(request):
             # prepare remote data
             for remote_author in res_body['items']:
                 author, created = Author.objects.get_or_create(
-                    url=remote_author['id']
+                    url=remote_author['id'],
+                    displayName=remote_author.get('displayName'),
+                    githubUrl=remote_author.get('github'),
+                    profileImageUrl=remote_author.get('profileImage')
                 )
 
-                # add Local database id to remote author
-                remote_author['local_id'] = author.id
-
                 remote_authors.append({
-                    "data": remote_author,
-                    'type': "Remote"
+                    "data": author,
+                    'type': REMOTE
                 })
 
         except Exception as error:
             logger.error(str(error))
 
     args["authors"] = local_authors + remote_authors
+    args["curr_user"] = LocalAuthor.objects.get(user=request.user)
     return render(request, 'author/index.html', args)
 
 
@@ -374,18 +379,28 @@ def author(request, author_id):
     """
 
     curr_user = LocalAuthor.objects.get(user=request.user)
-    author = get_object_or_404(LocalAuthor, pk=author_id)
 
-    # TODO: Should become an API request since won't know if author is local/remote
+    try:
+        author = LocalAuthor.objects.get(pk=author_id)
+        author_type = LOCAL
 
-    if curr_user.has_friend(author):
-        posts = author.posts.listed().get_friend()
+    except LocalAuthor.DoesNotExist:
+        author = get_object_or_404(Author, id=author_id)
+        author_type = REMOTE
+
+    if author_type == LOCAL:
+            posts = author.posts.listed().get_public()  # get public posts only
+
     else:
-        posts = author.posts.listed().get_public()
+        # show public posts only
+        posts = InboxPost.objects.filter(
+            author=author.get_url_id(),
+            visibility=InboxPost.Visibility.PUBLIC
+        )
 
     context = {
         'author': author,
-        'author_type': 'Local',
+        'author_type': author_type,
         'curr_user': curr_user,
         'author_posts': posts.chronological()
     }
