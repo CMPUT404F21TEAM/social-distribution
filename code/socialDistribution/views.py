@@ -24,6 +24,8 @@ from .decorators import unauthenticated_user
 from PIL import Image
 from io import BytesIO
 import logging
+from datetime import datetime
+import timeago
 
 
 from .dispatchers import dispatch_post, dispatch_follow_request
@@ -661,6 +663,10 @@ def single_post(request, post_type, id):
 
             comment["comment_author_object"] = comment_author
             comment["author_type"] = author_type
+
+            # add comment time
+            now = datetime.now(timezone.utc)
+            comment["when"] = timeago.format(datetime.fromisoformat(comment['published']), now)
 
     except Exception as e:
         logger.error(e, exc_info=True)
