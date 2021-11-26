@@ -8,6 +8,8 @@ from mixer.backend.django import mixer
 from datetime import datetime, timezone
 import base64
 import logging
+import json
+from socialDistribution.models.author import Author
 
 from socialDistribution.models import LocalAuthor, LocalPost, Comment
 from api.models import Node
@@ -145,6 +147,63 @@ class InboxViewTests(TestCase):
         self.assertEqual(inbox_post.title, dummy_post.title)
         self.assertEqual(inbox_post.description, dummy_post.description)
         self.assertEqual(inbox_post.decoded_content, dummy_post.decoded_content)
+        
+    def test_get_inbox(self):
+        self.maxDiff = None
+        author1 = create_author(
+            1,
+            "user1",
+            "Greg Johnson",
+            "http://github.com/gjohnson"
+        )
+        author2 = create_author(
+            2,
+            "user2",
+            "Lara Croft",
+            "http://github.com/laracroft"
+        )
+
+        # Create a post from author1
+        dummy_post = mixer.blend(
+            LocalPost, 
+            id=1, 
+            author=author1,
+            content="testcontent".encode("utf-8")
+        )
+
+        body = dummy_post.as_json()
+
+        # Send the post to author 2
+        response = self.client.post(
+            reverse("api:inbox", kwargs={"author_id": 2}),
+            content_type="application/json",
+            **self.basicAuthHeaders,
+            data=body
+        )
+
+        # Check the inbox of author2
+        response = self.client.get(
+            reverse("api:inbox", kwargs={"author_id": 2}),
+            content_type="application/json",
+            **self.basicAuthHeaders,
+        )
+        
+        postAuthor = Author.objects.get(id=author2.id)
+
+        expected = {
+            "type": "inbox",
+            'page': None,
+            'size': None,
+            "author": postAuthor.get_url_id(),
+            "items": [dummy_post.as_json()]
+        }
+        res_data = json.loads(response.content)
+     
+        resPost = res_data["items"][0]
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resPost['title'], dummy_post.title)
+        self.assertEqual(resPost['description'], dummy_post.description)
+        self.assertEqual(resPost['content'], dummy_post.decoded_content)
     
     def test_post_comment_local_like(self):
         '''
@@ -174,6 +233,7 @@ class InboxViewTests(TestCase):
             **self.basicAuthHeaders,
             data=body
         )
+        
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(comment.total_likes(), 1)

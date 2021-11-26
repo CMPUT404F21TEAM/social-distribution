@@ -527,7 +527,6 @@ class InboxView(View):
     """ This endpoint currently only works for requests from local server.
     """
 
-    @method_decorator(authenticate_request)
     def get(self, request, author_id):
         """ GET - If authenticated, get a list of posts sent to {author_id} """
 
