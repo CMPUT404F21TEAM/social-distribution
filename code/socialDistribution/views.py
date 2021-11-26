@@ -284,9 +284,13 @@ def befriend(request, author_id):
 
         if object.id != actor.id:
             # send follow request
-            dispatch_follow_request(actor, object)
+            is_success = dispatch_follow_request(actor, object)
+            if is_success:
+                messages.success(request, "Follow request sent successfully")
+            else:
+                messages.error(request, "Failed to send follow request")
 
-    return redirect('socialDistribution:authors')
+    return redirect('socialDistribution:author', author_id)
 
 
 def un_befriend(request, author_id):

@@ -42,10 +42,17 @@ def dispatch_follow_request(actor: LocalAuthor, object: Author):
     Parameters:
         actor (LocalAuthor): the local author that is sending the request
         object (Author): the author that is receiving the request
+
+    Returns:
+        true if the follow request returns a success code, false otherwise
     """
 
     actor_json = actor.as_json()
     object_json = object.as_json()
+
+    if object_json is None:
+        # failed to get the remote author info
+        return False
 
     object_inbox = object.get_inbox()
 
@@ -56,4 +63,9 @@ def dispatch_follow_request(actor: LocalAuthor, object: Author):
         "object": object_json
     }
 
-    api_requests.post(url=object_inbox, data=data, send_basic_auth_header=True)
+    status_code, response_body = api_requests.post(url=object_inbox, data=data, send_basic_auth_header=True)
+
+    if status_code >=200 and status_code < 300:
+        return True
+    else:
+        return False
