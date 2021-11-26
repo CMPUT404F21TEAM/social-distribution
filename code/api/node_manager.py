@@ -16,8 +16,10 @@ class NodeManager:
 
         try:
             if(host):
+                logger.info(f"Getting basic auth credentials for host: {host} and remote_credentials: {remote_credentials}")
                 node = Node.objects.get(host=host, remote_credentials=remote_credentials)
             elif (username):
+                logger.info(f"Getting basic auth credentials for username: {username} and remote_credentials: {remote_credentials}")
                 node = Node.objects.get(username=username, remote_credentials=remote_credentials)
             else:
                 logger.warn("Incoming request with no authentication header")
