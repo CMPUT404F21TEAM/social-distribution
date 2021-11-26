@@ -7,6 +7,7 @@ import datetime
 import socialDistribution.requests as api_requests
 from cmput404.constants import API_BASE
 from .follow import Follow
+from socialDistribution.utility import add_or_update_author
 
 
 class Author(models.Model):
@@ -61,25 +62,41 @@ class Author(models.Model):
         return self.url.strip("/") + "/inbox/"
 
     def as_json(self):
+        """ GET JSON representation of author. If local or a remote that was saved recently, return that JSON.
+            Otherwise, make an API call to update JSON.
+        """
+
         was_recent_update = self._last_updated < timezone.now()-datetime.timedelta(seconds=10)
-        if self._always_up_to_date:
+        json_data = {
+            "type": "author",
+            "id": f"{API_BASE}/author/{self.id}",
+            "host": f'{API_BASE}/',
+            "displayName": self.displayName,
+            "url": f"{API_BASE}/author/{self.id}",
+            "github": self.githubUrl,
+            "profileImage": self.profileImageUrl
+        }
+
+        if self._always_up_to_date or was_recent_update:
             # read author data from fields
-            # will do this in case of LocalAuthor
-            json_data = {
-                "type": "author",
-                "id": f"{API_BASE}/author/{self.id}",
-                "host": f'{API_BASE}/',
-                "displayName": self.displayName,
-                "url": f"{API_BASE}/author/{self.id}",
-                "github": self.githubUrl,
-                "profileImage": self.profileImageUrl
-            }
+            # will do this in case of LocalAuthor or cached data for remote
+            return json_data
+
         else:
             # make API call to get author data
-            status_code, json_data = api_requests.get(self.url.strip("/"))
-            # todo handle errors is api_request fails
+            status_code, response_body = api_requests.get(self.url.strip("/"))
+            if status_code == 200 and response_body is not None:
+                add_or_update_author(author=self, data=response_body)
+                return response_body
+            else:
+                # delete the record if there was a problem
+                self.delete()
+                # don't return None
+                return json_data
 
-        return json_data
+
+    def __str__(self) -> str:
+        return f"Author: {self.url}"
 
 
 class LocalAuthor(Author):
