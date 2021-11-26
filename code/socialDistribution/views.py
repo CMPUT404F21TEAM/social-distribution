@@ -402,7 +402,7 @@ def author(request, author_id):
         if res_code == 200 and res_body:
             for post in res_body["items"]:
                 if post:
-                    makePost(curr_user.id, post)
+                    makePost(post)
 
             posts = InboxPost.objects.filter(
                 author=author.get_url_id(),

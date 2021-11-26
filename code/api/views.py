@@ -553,7 +553,14 @@ class InboxView(View):
             if str(data["type"]).lower() == "post":
                 logger.info("Inbox object identified as post")
 
-                makePost(author_id, data)
+                received_post = makePost(data)
+                
+                # get owner of inbox
+                receiving_author = get_object_or_404(LocalAuthor, id=author_id)
+
+                # add post to inbox of author
+                receiving_author.inbox_posts.add(received_post)
+
                 return HttpResponse(status=200)
 
             elif str(data["type"]).lower() == "follow":
