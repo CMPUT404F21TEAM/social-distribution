@@ -7,7 +7,6 @@ import datetime
 import socialDistribution.requests as api_requests
 from cmput404.constants import API_BASE
 from .follow import Follow
-from socialDistribution.utility import add_or_update_author
 
 
 class Author(models.Model):
@@ -86,7 +85,7 @@ class Author(models.Model):
             # make API call to get author data
             status_code, response_body = api_requests.get(self.url.strip("/"))
             if status_code == 200 and response_body is not None:
-                add_or_update_author(author=self, data=response_body)
+                self.update_with_json(data=response_body)
                 return response_body
             else:
                 # delete the record if there was a problem
@@ -94,6 +93,18 @@ class Author(models.Model):
                 # don't return None
                 return json_data
 
+    def update_with_json(self, data):
+        '''
+            Add or update Author model data
+            Had to move here from utility.py due to import errors
+        '''
+        try:
+            self.displayName = data['displayName']
+            self.githubUrl = data['github']
+            self.profileImageUrl = data['profileImage']
+            self.save()
+        except:
+            return
 
     def __str__(self) -> str:
         return f"Author: {self.url}"
