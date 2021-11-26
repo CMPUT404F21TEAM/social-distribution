@@ -13,7 +13,21 @@ from requests.adapters import HTTPAdapter
 from cmput404.constants import HOST
 from api.node_manager import node_manager
 from api.parsers import url_parser
-from .utility import parse_res_to_dict
+
+def parse_res_to_dict(response):
+    """ 
+    Checks if response is a list.
+    If it is list, converts it to an object with an 'items' field
+    that has the list as value. Finally, returns the object
+
+    Otherwise, returns response
+    """
+
+    if type(response) is list:
+        return { "items": response }
+
+    else:
+        return response
 
 # Django Software Foundation, "Logging", https://docs.djangoproject.com/en/3.2/topics/logging/
 logger = logging.getLogger(__name__)
