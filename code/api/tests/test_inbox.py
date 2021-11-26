@@ -9,7 +9,6 @@ from datetime import datetime, timezone
 import base64
 import logging
 import json
-from socialDistribution.models.author import Author
 
 from socialDistribution.models import LocalAuthor, LocalPost, Comment
 from api.models import Node
