@@ -1,5 +1,7 @@
 from django import template
 
+from socialDistribution.utility import get_comment_like_info, get_like_text
+
 register = template.Library()
 
 # Django Software Foundation, "Custom Template tags and Filters", 2021-10-10
@@ -9,31 +11,27 @@ def comment_card(*args, **kwargs):
     '''
         Setup comment card data
     '''
+    # current user (LocalAuthor)
     author = kwargs['author']
+
+    # author type (string)
     author_type = kwargs['author_type']
+
+    # comment json (dict)
     comment = kwargs['comment']
+
+    # author of the comment (Author)
+    comment_author = comment["comment_author_object"]
+
+    # reference post (InboxPost or LocalPost)
     post = kwargs['post']
-    is_friend = author.has_friend(comment.author)
 
-    # manage comment like data
-    is_liked = comment.likes.filter(author=author).exists()
+    # is current user friends with the commenter?
+    is_friend = author.has_friend(comment_author)
 
-    like_text = ''
-    likes = comment.total_likes()
-    if is_liked:
-        likes -= 1
-        if likes >= 2:
-            like_text = f'Liked by you and {likes} others'
-        elif likes == 1:
-            like_text = f'Liked by you and 1 other'
-        else:
-            like_text = f'Liked by you'
-    else:
-        likes = comment.likes.count()
-        if likes > 1:
-            like_text = f'Liked by {likes} others'
-        elif likes == 1:
-            like_text = f'Liked by 1 other'
+    # comment like data
+    is_liked, likes = get_comment_like_info(comment["id"], author)
+    like_text = get_like_text(is_liked, likes)
 
     return {
         'author': author,

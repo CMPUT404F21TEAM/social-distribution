@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import Q, manager
 from django.contrib.auth.models import User
 from django.utils import timezone
+
 from jsonfield import JSONField
 import datetime as dt
 import timeago
@@ -220,20 +221,22 @@ class LocalPost(Post):
         return self.author.as_json()
 
     @property
-    def comments_as_json(self):
+    def recent_comments_json(self):
         """ Gets the comments of the post in JSON format. """
 
         author_id = self.author.id
+        recent_comments = [comment.as_json() for comment in self.comments()[:5]]
         return {
             "type": "comments",
-            "page": None,
-            "size": None,
+            "page": 1,
+            "size": 5,
             "post": f"{API_BASE}/author/{author_id}/posts/{self.id}",
             "id": f"{API_BASE}/author/{author_id}/posts/{self.id}/comments",
-            "comments": self.comments_json_as_list()
+            "comments": recent_comments
         }
 
-    def comments_json_as_list(self):
+    @property
+    def comments_as_json(self):
         """ Gets the comments of the post format. """
         comments_set = self.comments()
         comment_list = [comment.as_json() for comment in comments_set]
@@ -241,7 +244,7 @@ class LocalPost(Post):
     
     def comments(self):
         """ Gets the comments of the post """
-        return Comment.objects.filter(post=self.id).order_by('-pub_date')
+        return self.comment_set.order_by('-pub_date')
 
     def total_likes(self):
         """ Gets the total number of likes on the post. """
@@ -290,7 +293,7 @@ class LocalPost(Post):
             # You should return ~ 5 comments per post.
             # should be sorted newest(first) to oldest(last)
             # this is to reduce API call counts
-            "commentsSrc": self.comments_as_json,
+            "commentsSrc": self.recent_comments_json,
             # ISO 8601 TIMESTAMP
             "published": self.published.isoformat(),
             # visibility ["PUBLIC","FRIENDS"]
@@ -400,3 +403,13 @@ class InboxPost(Post):
         except Exception as e:
             print(f'Error updating post: {self.title}')
             print(e)
+
+    @property
+    def comments_as_json(self):
+        request_url = self.public_id.strip('/') + '/comments'
+        status_code, response_data = api_requests.get(request_url, send_basic_auth_header=True)
+        if status_code == 200 and response_data is not None:
+            comments = response_data["comments"]
+            return comments
+        else:
+            return []

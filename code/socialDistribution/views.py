@@ -29,6 +29,7 @@ from .dispatchers import dispatch_post, dispatch_follow_request
 from .github_activity.github_activity import pull_github_events
 
 logger = logging.getLogger(__name__)
+
 REQUIRE_SIGNUP_APPROVAL = True
 ''' 
     sign up approval not required by default, should turn on in prod. 
@@ -580,11 +581,11 @@ def edit_post(request, id):
 # https://www.youtube.com/watch?v=VoWw1Y5qqt8 - Abhishek Verma
 
 
-def like_post(request, id, post_host):
+def like_post(request, post_type, id):
     """
         Like a specific post
     """
-    if post_host == 'remote':
+    if post_type == 'inbox':
         post = get_object_or_404(InboxPost, id=id)
         request_url = post.author.strip('/') + '/inbox'
         obj = post.public_id.strip('/')
@@ -622,54 +623,81 @@ def like_post(request, id, post_host):
         # will have to edit this if other endpoints require args
         return redirect(prev_page)
 
+def single_post(request, post_type, id):
+    """ Displays a post to the user.
 
-def comment_post(request, id):
-    '''
-        Render Post and comments
-    '''
-    post = get_object_or_404(LocalPost, id=id)
-    author = get_object_or_404(LocalAuthor, user=request.user)
+        Parameters:
+        - post_type (string): either "local" or "remote" which indicates type of post
+        - id (int): the id of the post to render
+    """
+
+    current_user = get_object_or_404(LocalAuthor, user=request.user)
+
+    if post_type == "local":
+        post = get_object_or_404(LocalPost, id=id)
+    elif post_type == "inbox":
+        post = get_object_or_404(InboxPost, id=id)
+    else:
+        raise Http404()
 
     try:
-        comments = Comment.objects.filter(post=post).order_by('-pub_date')
-    except Exception:
+        comments_json = post.comments_as_json
+        for comment in comments_json:
+            # hack 
+            # inject more data into json comment
+            # retrieve it in comment.py
+            comment_author, created = Author.objects.get_or_create(
+                url=comment["author"]["id"]
+            )
+            comment["comment_author_object"] = comment_author
+
+    except Exception as e:
+        logger.error(e, exc_info=True)
         return HttpResponseServerError()
 
     context = {
-        'author': author,
+        'current_user': current_user,
         'author_type': 'Local',
         'modal_type': 'post',
         'post': post,
-        'comments': comments
+        'comments': comments_json
     }
 
     return render(request, 'posts/comments.html', context)
 
 
-def like_comment(request, id):
+def like_comment(request):
     '''
         Likes a comment
     '''
 
-    comment = get_object_or_404(Comment, id=id)
-    author = get_object_or_404(LocalAuthor, user=request.user)
-
-    host = request.get_host()
     prev_page = request.META['HTTP_REFERER']
 
     if request.method == 'POST':
+        # get POST parameters
+        comment_id = request.POST.get("comment_id")
+        comment_author_id = request.POST.get("comment_author_id")
+
+        author = get_object_or_404(LocalAuthor, user=request.user)
+
+        # get comment author
+        comment_author, created = Author.objects.get_or_create(
+            url=comment_author_id
+        )
+
         # create like object
         like = {
             "@context": "https://www.w3.org/ns/activitystreams",
             "summary": f"{author.username} Likes your comment",
             "type": "like",
             "author": author.as_json(),
-            "object": f"{API_BASE}/author/{comment.author.id}/posts/{comment.post.id}/comments/{id}"
+            "object": comment_id
         }
 
-    # redirect request to remote/local api
-    request_url = f'{API_BASE}/author/{comment.author.id}/inbox/'
-    api_requests.post(url=request_url, data=like, sendBasicAuthHeader=True)
+        # redirect request to remote/local api
+        request_url = comment_author.get_inbox()
+        api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
+
 
     if prev_page is None:
         return redirect('socialDistribution:home')

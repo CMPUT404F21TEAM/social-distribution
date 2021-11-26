@@ -491,7 +491,7 @@ class PostCommentsView(View):
             logger.error(e, exc_info=True)
             return HttpResponse('Internal Server Error')
 
-        return redirect('socialDistribution:comment-post', id=post_id)
+        return redirect('socialDistribution:single-post', post_type="local", id=post_id)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -517,14 +517,15 @@ class CommentLikesView(View):
             comment_likes_list = []
 
             for like in comment_likes:
-                if LocalAuthor.objects.filter(url=like.author.url).exists():
-                    like_author = LocalAuthor.objects.get(url=like.author.url)
+                if Author.objects.filter(url=like.author.url).exists():
+                    like_author = Author.objects.get(url=like.author.url)
+                    like_author_json = like_author.as_json()
 
                     like = {
                         "@context": "https://www.w3.org/ns/activitystreams",
-                        "summary": f"{like_author.displayName} Likes your comment",
+                        "summary": f"{like_author_json['displayName']} Likes your comment",
                         "type": "like",
-                        "author": like_author.as_json(),
+                        "author": like_author_json,
                         "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment.id}"
                     }
                     comment_likes_list.append(like)
