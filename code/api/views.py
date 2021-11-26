@@ -21,7 +21,6 @@ from socialDistribution.models import *
 from .decorators import authenticate_request, validate_node
 from .parsers import url_parser
 from .utility import getPaginated, makePost
-from socialDistribution.utility import add_or_update_author
 
 # References for entire file:
 # Django Software Foundation, "Introduction to class-based views", 2021-10-13
@@ -212,7 +211,7 @@ class LikedView(View):
                 like = {
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "summary": f"{author.displayName} Likes your post",
-                    "type": "like",
+                    "type": "Like",
                     "author": author.as_json(),
                     "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}"
                 }
@@ -222,7 +221,7 @@ class LikedView(View):
                 like = {
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "summary": f"{author.displayName} Likes your comment",
-                    "type": "like",
+                    "type": "Like",
                     "author": author.as_json(),
                     "object": f"{API_BASE}/author/{comment.post.author.id}/posts/{comment.post.id}/comments/{comment.id}"
                 }
@@ -515,7 +514,7 @@ class CommentLikesView(View):
                     like = {
                         "@context": "https://www.w3.org/ns/activitystreams",
                         "summary": f"{like_author_json['displayName']} Likes your comment",
-                        "type": "like",
+                        "type": "Like",
                         "author": like_author_json,
                         "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment.id}"
                     }
@@ -594,7 +593,7 @@ class InboxView(View):
                 )
 
                 # add or update remaining fields
-                add_or_update_author(author=actor_author, data=actor)
+                actor_author.update_with_json(data=actor)
 
                 # add follow request
                 object_author.follow_requests.add(actor_author)
@@ -610,7 +609,7 @@ class InboxView(View):
                 )
 
                 # add or update remaining fields
-                add_or_update_author(author=liking_author, data=data["author"])
+                liking_author.update_with_json(data=data["author"])
 
                 # retrieve object
                 object_type = url_parser.get_object_type(data['object'])
@@ -646,7 +645,7 @@ class InboxView(View):
                 )
 
                 # add or update remaining fields
-                add_or_update_author(author=commenting_author, data=data["author"])
+                commenting_author.update_with_json(data=data["author"])
 
                 _, post_id = url_parser.parse_post(data['object'])
                 post = get_object_or_404(LocalPost, id=post_id)
