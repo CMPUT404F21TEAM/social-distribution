@@ -63,7 +63,7 @@ class InboxViewTests(TestCase):
         )
 
         body = {
-            "type": "follow",
+            "type": "Follow",
             "summary": "Greg wants to follow Lara",
             "actor": {
                 "type": "author",
@@ -163,7 +163,7 @@ class InboxViewTests(TestCase):
         body = {
                    "@context": "https://www.w3.org/ns/activitystreams",
                     "summary": f"{author1.username} Likes your post",         
-                    "type": "like",
+                    "type": "Like",
                     "author": author1.as_json(),
                     "object":f"http://{HOST}/author/{post.author.id}/posts/{post.id}/comments/{comment.id}"
         }
@@ -192,7 +192,7 @@ class InboxViewTests(TestCase):
         body = {
             "@context": "https://www.w3.org/ns/activitystreams",
             "summary": "Diego Becerra Likes your post",
-            "type": "like",
+            "type": "Like",
             "author": {
                 "type": "author",
                 "id": "http://remote.com/author/432423432",

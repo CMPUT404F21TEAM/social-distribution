@@ -211,7 +211,7 @@ class LikedView(View):
                 like = {
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "summary": f"{author.displayName} Likes your post",
-                    "type": "like",
+                    "type": "Like",
                     "author": author.as_json(),
                     "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}"
                 }
@@ -221,7 +221,7 @@ class LikedView(View):
                 like = {
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "summary": f"{author.displayName} Likes your comment",
-                    "type": "like",
+                    "type": "Like",
                     "author": author.as_json(),
                     "object": f"{API_BASE}/author/{comment.post.author.id}/posts/{comment.post.id}/comments/{comment.id}"
                 }
@@ -514,7 +514,7 @@ class CommentLikesView(View):
                     like = {
                         "@context": "https://www.w3.org/ns/activitystreams",
                         "summary": f"{like_author_json['displayName']} Likes your comment",
-                        "type": "like",
+                        "type": "Like",
                         "author": like_author_json,
                         "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment.id}"
                     }

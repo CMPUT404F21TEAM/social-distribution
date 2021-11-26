@@ -26,7 +26,7 @@ def post_like_as_json(postlike):
         "@context": "https://www.w3.org/ns/activitystreams",
         "summary": f"{postlike.author.displayName} Likes your post",
         "author": postlike.author.as_json(),
-        "type": "like",
+        "type": "Like",
         "object": f"{API_BASE}/author/{postlike.object.author.id}/posts/{postlike.object.id}"
     }
 
@@ -43,7 +43,7 @@ def comment_like_as_json(commentlike):
         "@context": "https://www.w3.org/ns/activitystreams",
         "summary": f"{commentlike.author.displayName} Likes your comment",
         "author": commentlike.author.as_json(),
-        "type": "like",
+        "type": "Like",
         "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{commentlike.object.id}"
     }
 

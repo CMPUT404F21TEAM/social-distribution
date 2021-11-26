@@ -30,7 +30,7 @@ class Like(models.Model):
 
     def as_json(self):
         return {
-            "type": "like",
+            "type": "Like",
         }
 
 

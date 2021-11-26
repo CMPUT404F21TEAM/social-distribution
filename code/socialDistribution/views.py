@@ -621,7 +621,7 @@ def like_post(request, post_type, id):
         like = {
             "@context": "https://www.w3.org/ns/activitystreams",
             "summary": f"{author.username} Likes your post",
-            "type": "like",
+            "type": "Like",
             "author": author.as_json(),
             "object": obj
         }
@@ -727,7 +727,7 @@ def like_comment(request):
         like = {
             "@context": "https://www.w3.org/ns/activitystreams",
             "summary": f"{author.username} Likes your comment",
-            "type": "like",
+            "type": "Like",
             "author": author.as_json(),
             "object": comment_id
         }
