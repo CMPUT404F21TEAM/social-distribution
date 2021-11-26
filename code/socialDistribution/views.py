@@ -404,10 +404,10 @@ def author(request, author_id):
                 if post:
                     makePost(post)
 
-            posts = InboxPost.objects.filter(
-                author=author.get_url_id(),
-                visibility=InboxPost.Visibility.PUBLIC
-            )
+        posts = InboxPost.objects.filter(
+            author=author.get_url_id(),
+            visibility=InboxPost.Visibility.PUBLIC
+        )
 
     context = {
         'author': author,
