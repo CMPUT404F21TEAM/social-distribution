@@ -5,6 +5,20 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def parse_res_to_dict(response):
+    """ 
+    Checks if response is a list.
+    If it is list, converts it to an object with an 'items' field
+    that has the list as value. Finally, returns the object
+
+    Otherwise, returns response
+    """
+
+    if type(response) is list:
+        return { "items": response }
+
+    else:
+        return response
 
 def get_post_like_info(post, author):
     """

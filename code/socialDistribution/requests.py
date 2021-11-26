@@ -13,6 +13,7 @@ from requests.adapters import HTTPAdapter
 from cmput404.constants import HOST
 from api.node_manager import node_manager
 from api.parsers import url_parser
+from .utility import parse_res_to_dict
 
 # Django Software Foundation, "Logging", https://docs.djangoproject.com/en/3.2/topics/logging/
 logger = logging.getLogger(__name__)
@@ -77,7 +78,7 @@ def get(url, params=None, send_basic_auth_header=False):
         return status_code, response_data
 
     # caller should check status codes show error message to user (if needed)
-    return response.status_code, response_data
+    return response.status_code, parse_res_to_dict(response_data)
 
 
 def post(url, params=None, data={}, send_basic_auth_header=False):
