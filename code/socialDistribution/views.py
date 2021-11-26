@@ -15,6 +15,7 @@ from .forms import CreateUserForm, PostForm
 
 import base64
 
+from .utility import add_or_update_author
 import socialDistribution.requests as api_requests
 from api.models import Node
 from .models import *
@@ -351,10 +352,10 @@ def authors(request):
             for remote_author in res_body['items']:
                 author, created = Author.objects.get_or_create(
                     url=remote_author['id'],
-                    displayName=remote_author.get('displayName'),
-                    githubUrl=remote_author.get('github'),
-                    profileImageUrl=remote_author.get('profileImage')
                 )
+
+                # add or update remaining fields
+                add_or_update_author(author=author, data=remote_author)
 
                 remote_authors.append({
                     "data": author,
@@ -649,7 +650,17 @@ def single_post(request, post_type, id):
             comment_author, created = Author.objects.get_or_create(
                 url=comment["author"]["id"]
             )
+            # add or update remaining fields
+            add_or_update_author(author=comment_author, data=comment["author"])
+            try:
+                author = LocalAuthor.objects.get(url=comment_author.url)
+                author_type = LOCAL
+
+            except LocalAuthor.DoesNotExist:
+                author_type = REMOTE
+
             comment["comment_author_object"] = comment_author
+            comment["author_type"] = author_type
 
     except Exception as e:
         logger.error(e, exc_info=True)
@@ -657,7 +668,6 @@ def single_post(request, post_type, id):
 
     context = {
         'current_user': current_user,
-        'author_type': 'Local',
         'modal_type': 'post',
         'post': post,
         'post_type': post_type,

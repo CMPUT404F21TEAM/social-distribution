@@ -29,7 +29,7 @@
     </form>
     
     {% for comment in comments %}
-        {% comment_card author=current_user comment=comment author_type=author_type post=post %}
+        {% comment_card author=current_user comment=comment post=post %}
     {% endfor %}
 
     <!-- Workaround for bottom spacing -->

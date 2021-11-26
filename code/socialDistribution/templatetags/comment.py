@@ -14,9 +14,6 @@ def comment_card(*args, **kwargs):
     # current user (LocalAuthor)
     author = kwargs['author']
 
-    # author type (string)
-    author_type = kwargs['author_type']
-
     # comment json (dict)
     comment = kwargs['comment']
 
@@ -35,7 +32,6 @@ def comment_card(*args, **kwargs):
 
     return {
         'author': author,
-        'author_type': author_type,
         'comment': comment,
         'post': post,
         'is_friend': is_friend,

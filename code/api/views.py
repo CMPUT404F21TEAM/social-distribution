@@ -21,6 +21,7 @@ from socialDistribution.models import *
 from .decorators import authenticate_request, validate_node
 from .parsers import url_parser
 from .utility import getPaginated, makePost
+from socialDistribution.utility import add_or_update_author
 
 # References for entire file:
 # Django Software Foundation, "Introduction to class-based views", 2021-10-13
@@ -590,7 +591,6 @@ class InboxView(View):
                     raise ValueError("Author not hosted on this server")
 
                 object_id = url_parser.parse_author(obj["id"])
-                actor_url_id = actor["id"]
 
                 # check if this is the correct endpoint
                 if object_id != author_id:
@@ -598,8 +598,11 @@ class InboxView(View):
 
                 object_author = get_object_or_404(LocalAuthor, id=object_id)
                 actor_author, created = Author.objects.get_or_create(
-                    url=actor_url_id
+                    url = actor["id"]
                 )
+
+                # add or update remaining fields
+                add_or_update_author(author=actor_author, data=actor)
 
                 # add follow request
                 object_author.follow_requests.add(actor_author)
@@ -610,10 +613,12 @@ class InboxView(View):
                 logger.info("Inbox object identified as like")
 
                 # retrieve author
-                liking_author_url = data["author"]["id"]
                 liking_author, created = Author.objects.get_or_create(
-                    url=liking_author_url
+                    url= data["author"]["id"]
                 )
+
+                # add or update remaining fields
+                add_or_update_author(author=liking_author, data=data["author"])
 
                 # retrieve object
                 object_type = url_parser.get_object_type(data['object'])
@@ -641,13 +646,13 @@ class InboxView(View):
 
                 # retrieve author
                 commenting_author, created = Author.objects.get_or_create(
-                    url = data["author"]['id'],
-                    displayName = data["author"]['displayName'],
-                    githubUrl = data["author"]['github'],
-                    profileImageUrl = data["author"]['profileImage']
+                    url = data["author"]['id']
                 )
 
-                post_id = url_parser.get_object_type(data['object'])
+                # add or update remaining fields
+                add_or_update_author(author=commenting_author, data=data["author"])
+
+                _, post_id = url_parser.parse_post(data['object'])
                 post = get_object_or_404(LocalPost, id=post_id)
                 # add remote comment
                 Comment.objects.create(
