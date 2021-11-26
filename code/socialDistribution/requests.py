@@ -14,6 +14,21 @@ from cmput404.constants import HOST
 from api.node_manager import node_manager
 from api.parsers import url_parser
 
+def parse_res_to_dict(response):
+    """ 
+    Checks if response is a list.
+    If it is list, converts it to an object with an 'items' field
+    that has the list as value. Finally, returns the object
+
+    Otherwise, returns response
+    """
+
+    if type(response) is list:
+        return { "items": response }
+
+    else:
+        return response
+
 # Django Software Foundation, "Logging", https://docs.djangoproject.com/en/3.2/topics/logging/
 logger = logging.getLogger(__name__)
 
@@ -77,7 +92,7 @@ def get(url, params=None, send_basic_auth_header=False):
         return status_code, response_data
 
     # caller should check status codes show error message to user (if needed)
-    return response.status_code, response_data
+    return response.status_code, parse_res_to_dict(response_data)
 
 
 def post(url, params=None, data={}, send_basic_auth_header=False):
