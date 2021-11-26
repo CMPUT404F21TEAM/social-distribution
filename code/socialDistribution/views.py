@@ -16,7 +16,6 @@ from .forms import CreateUserForm, PostForm
 
 import base64
 
-from .utility import add_or_update_author
 import socialDistribution.requests as api_requests
 from api.models import Node
 from api.utility import makePost
@@ -363,7 +362,7 @@ def authors(request):
                 )
 
                 # add or update remaining fields
-                add_or_update_author(author=author, data=remote_author)
+                author.update_with_json(data=remote_author)
 
                 remote_authors.append({
                     "data": author,
@@ -675,7 +674,7 @@ def single_post(request, post_type, id):
                 url=comment["author"]["id"]
             )
             # add or update remaining fields
-            add_or_update_author(author=comment_author, data=comment["author"])
+            comment_author.update_with_json(data=comment["author"])
             try:
                 author = LocalAuthor.objects.get(url=comment_author.url)
                 author_type = LOCAL
