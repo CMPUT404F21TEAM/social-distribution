@@ -100,3 +100,15 @@ def get_like_text(is_liked, likes_count):
             like_text = f'Liked by 1 other'
 
     return like_text
+
+def add_or_update_author(author, data):
+    '''
+        Add or update Author model data
+    '''
+    try:
+        author.displayName = data['displayName']
+        author.githubUrl = data['github']
+        author.profileImageUrl = data['profileImage']
+        author.save()
+    except:
+        return
