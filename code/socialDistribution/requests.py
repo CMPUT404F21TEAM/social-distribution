@@ -73,7 +73,8 @@ def get(url, params=None, send_basic_auth_header=False):
                         status_forcelist=[500, 502, 503, 504])
         session.mount(url, HTTPAdapter(max_retries=retries))
 
-        response = session.get(url, headers=headers, params=params)
+        # timeout here since may need to wake up other groups heroku servers
+        response = session.get(url, headers=headers, params=params, timeout=3)
 
         # parse JSON response if OK
         if response.status_code == 200:
