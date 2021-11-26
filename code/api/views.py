@@ -644,6 +644,10 @@ class InboxView(View):
             elif str(data["type"]).lower() == "comment":
                 logger.info("Inbox object identified as comment")
 
+                # check if comment attribute present
+                if not data['comment']:
+                    HttpResponseBadRequest("Attribute 'comment' in json body must be a non-empty string.")
+
                 # retrieve author
                 commenting_author, created = Author.objects.get_or_create(
                     url = data["author"]['id']
