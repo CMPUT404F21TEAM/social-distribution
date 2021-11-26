@@ -39,7 +39,7 @@ class Author(models.Model):
 
     def has_follower(self, author):
         """ Over-ridden in LocalAuthor. Returns True if author is a follower of self, False otherwise """
-        res_code, res_body = api_requests.get(self.url + "/followers")
+        res_code, res_body = api_requests.get(self.url.strip("/") + "/followers")
 
         if res_code == 200 and res_body:
             for follower in res_body["items"]:
@@ -76,7 +76,7 @@ class Author(models.Model):
             }
         else:
             # make API call to get author data
-            status_code, json_data = api_requests.get(self.url)
+            status_code, json_data = api_requests.get(self.url.strip("/"))
             # todo handle errors is api_request fails
 
         return json_data

@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
+import requests
 
 from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
 from .forms import CreateUserForm, PostForm
@@ -721,6 +722,72 @@ def like_comment(request):
     else:
         return redirect(prev_page)
 
+def post_comment(request, author_id, post_id):
+
+    if request.method == 'POST':
+        # check if authenticated
+        if (not request.user):
+            return HttpResponseForbidden()
+
+        comment = request.POST.get('comment')
+        post_type = request.POST.get('post_type')
+
+        # check if empty comment
+        if not len(comment):
+            return HttpResponseBadRequest("Comment cannot be empty.")
+
+        pub_date = datetime.now(timezone.utc)
+
+        author = get_object_or_404(LocalAuthor, pk=author_id)
+
+        try:
+            if post_type == "local":
+                post = get_object_or_404(LocalPost, id=post_id)
+
+                # create local comment
+                Comment.objects.create(
+                    author=author,
+                    post=post,
+                    comment=comment,
+                    content_type='PL',  # TODO: add content type
+                    pub_date=pub_date,
+                )
+            elif post_type == "inbox":
+                post = get_object_or_404(InboxPost, id=post_id)
+
+                # create post reqeust data
+                data = {
+                    "@context": "https://www.w3.org/ns/activitystreams",
+                    "summary":f"{author.username} Commented on your post",
+                    "type": "comment",
+                    "author": author.as_json(),
+                    "comment": comment,
+                    "contentType": "text/plain",
+                    "object": post.public_id
+                }
+
+                request_url = f'{post.author.strip("/")}/inbox'
+
+                # send comment to remote inbox
+                api_requests.post(url=request_url, data=data, send_basic_auth_header=True)
+
+            else:
+                HttpResponseNotFound()
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponse('Internal Server Error')
+
+        return redirect('socialDistribution:single-post', post_type=post_type, id=post_id)
+    
+    else:
+        # redirect back, method not allowed
+        prev_page = request.META['HTTP_REFERER']
+
+        if prev_page is None:
+            return redirect('socialDistribution:home')
+        else:
+            return redirect(prev_page)
 
 def delete_post(request, id):
     """

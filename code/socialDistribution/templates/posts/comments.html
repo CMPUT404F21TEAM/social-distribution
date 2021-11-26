@@ -21,7 +21,7 @@
 <div class="author-prof">
     <h2>Comments</h2>
 
-    <form method="post" action="{% url 'api:post_comments' current_user.id post.id %}" class="d-flex">
+    <form method="post" action="{% url 'socialDistribution:post-comment' current_user.id post.id %}" class="d-flex">
         {% csrf_token %}
         <input type="hidden" name="post_type" value={{post_type}} />
         <textarea name="comment" id="newCommentTextArea" class="m-2" placeholder="Add New Comment."></textarea>
