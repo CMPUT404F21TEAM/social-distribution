@@ -502,7 +502,7 @@ class InboxView(View):
     def get(self, request, author_id):
         """ GET - If authenticated, get a list of posts sent to {author_id} """
 
-        logger.info(f"GET /author/{author_id}/inbox API endpoint invoked")
+        logger.info(f"GET /author/{author_id}/inbox/ API endpoint invoked")
 
 
         return JsonResponse({
@@ -517,7 +517,7 @@ class InboxView(View):
             - if the type is “follow” then add that follow is added to the author’s inbox to approve later
             - if the type is “like” then add that like to the author’s inbox    
         """
-        logger.info(f"POST /author/{author_id}/inbox API endpoint invoked")
+        logger.info(f"POST /author/{author_id}/inbox/ API endpoint invoked")
 
         data = json.loads(request.body)
 
@@ -639,6 +639,6 @@ class InboxView(View):
     def delete(self, request, author_id):
         """ DELETE - Clear the inbox """
 
-        logger.info(f"POST /author/{author_id}/inbox API endpoint invoked")
+        logger.info(f"POST /author/{author_id}/inbox/ API endpoint invoked")
 
         return HttpResponse("Hello")

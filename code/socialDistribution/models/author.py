@@ -58,7 +58,7 @@ class Author(models.Model):
     def get_inbox(self):
         """ Gets the URL of the Authors inbox. """
 
-        return self.url.strip("/") + "/inbox"
+        return self.url.strip("/") + "/inbox/"
 
     def as_json(self):
         was_recent_update = self._last_updated < timezone.now()-datetime.timedelta(seconds=10)

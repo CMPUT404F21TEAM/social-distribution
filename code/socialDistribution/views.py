@@ -591,12 +591,12 @@ def like_post(request, post_type, id):
     """
     if post_type == 'inbox':
         post = get_object_or_404(InboxPost, id=id)
-        request_url = post.author.strip('/') + '/inbox'
+        request_url = post.author.strip('/') + '/inbox/'
         obj = post.public_id.strip('/')
     else:
         post = get_object_or_404(LocalPost, id=id)
         host = request.get_host()
-        request_url = f'{API_BASE}/author/{post.author.id}/inbox'
+        request_url = f'{API_BASE}/author/{post.author.id}/inbox/'
         obj = f'{API_BASE}/author/{post.author.id}/posts/{id}'
 
     author = LocalAuthor.objects.get(user=request.user)
@@ -772,7 +772,7 @@ def post_comment(request, author_id, post_id):
                     "object": post.public_id
                 }
 
-                request_url = f'{post.author.strip("/")}/inbox'
+                request_url = f'{post.author.strip("/")}/inbox/'
 
                 # send comment to remote inbox
                 api_requests.post(url=request_url, data=data, send_basic_auth_header=True)
