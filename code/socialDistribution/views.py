@@ -9,12 +9,14 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
+import requests
 
 from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
 from .forms import CreateUserForm, PostForm
 
 import base64
 
+from .utility import add_or_update_author
 import socialDistribution.requests as api_requests
 from api.models import Node
 from .models import *
@@ -23,6 +25,8 @@ from .decorators import unauthenticated_user
 from PIL import Image
 from io import BytesIO
 import logging
+from datetime import datetime
+import timeago
 
 
 from .dispatchers import dispatch_post, dispatch_follow_request
@@ -284,9 +288,13 @@ def befriend(request, author_id):
 
         if object.id != actor.id:
             # send follow request
-            dispatch_follow_request(actor, object)
+            is_success = dispatch_follow_request(actor, object)
+            if is_success:
+                messages.success(request, "Follow request sent successfully")
+            else:
+                messages.error(request, "Failed to send follow request")
 
-    return redirect('socialDistribution:authors')
+    return redirect('socialDistribution:author', author_id)
 
 
 def un_befriend(request, author_id):
@@ -351,10 +359,10 @@ def authors(request):
             for remote_author in res_body['items']:
                 author, created = Author.objects.get_or_create(
                     url=remote_author['id'],
-                    displayName=remote_author.get('displayName'),
-                    githubUrl=remote_author.get('github'),
-                    profileImageUrl=remote_author.get('profileImage')
                 )
+
+                # add or update remaining fields
+                add_or_update_author(author=author, data=remote_author)
 
                 remote_authors.append({
                     "data": author,
@@ -587,12 +595,12 @@ def like_post(request, post_type, id):
     """
     if post_type == 'inbox':
         post = get_object_or_404(InboxPost, id=id)
-        request_url = post.author.strip('/') + '/inbox'
+        request_url = post.author.strip('/') + '/inbox/'
         obj = post.public_id.strip('/')
     else:
         post = get_object_or_404(LocalPost, id=id)
         host = request.get_host()
-        request_url = f'{API_BASE}/author/{post.author.id}/inbox'
+        request_url = f'{API_BASE}/author/{post.author.id}/inbox/'
         obj = f'{API_BASE}/author/{post.author.id}/posts/{id}'
 
     author = LocalAuthor.objects.get(user=request.user)
@@ -646,10 +654,30 @@ def single_post(request, post_type, id):
             # hack 
             # inject more data into json comment
             # retrieve it in comment.py
+
+            # redirect user if server unresponsive
+            if (not comment["author"]):
+                messages.info(request, "Remote Server Unresponsive. Failed to get comments. Please try again later.")
+                return redirect('socialDistribution:home')
+
             comment_author, created = Author.objects.get_or_create(
                 url=comment["author"]["id"]
             )
+            # add or update remaining fields
+            add_or_update_author(author=comment_author, data=comment["author"])
+            try:
+                author = LocalAuthor.objects.get(url=comment_author.url)
+                author_type = LOCAL
+
+            except LocalAuthor.DoesNotExist:
+                author_type = REMOTE
+
             comment["comment_author_object"] = comment_author
+            comment["author_type"] = author_type
+
+            # add comment time
+            now = datetime.now(timezone.utc)
+            comment["when"] = timeago.format(datetime.fromisoformat(comment['published']), now)
 
     except Exception as e:
         logger.error(e, exc_info=True)
@@ -657,9 +685,9 @@ def single_post(request, post_type, id):
 
     context = {
         'current_user': current_user,
-        'author_type': 'Local',
         'modal_type': 'post',
         'post': post,
+        'post_type': post_type,
         'comments': comments_json
     }
 
@@ -676,13 +704,13 @@ def like_comment(request):
     if request.method == 'POST':
         # get POST parameters
         comment_id = request.POST.get("comment_id")
-        comment_author_id = request.POST.get("comment_author_id")
+        post_author_url = request.POST.get("post_author_url")
 
         author = get_object_or_404(LocalAuthor, user=request.user)
 
         # get comment author
-        comment_author, created = Author.objects.get_or_create(
-            url=comment_author_id
+        post_author, created = Author.objects.get_or_create(
+            url=post_author_url
         )
 
         # create like object
@@ -695,7 +723,7 @@ def like_comment(request):
         }
 
         # redirect request to remote/local api
-        request_url = comment_author.get_inbox()
+        request_url = post_author.get_inbox()
         api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
 
 
@@ -704,6 +732,72 @@ def like_comment(request):
     else:
         return redirect(prev_page)
 
+def post_comment(request, author_id, post_id):
+
+    if request.method == 'POST':
+        # check if authenticated
+        if (not request.user):
+            return HttpResponseForbidden()
+
+        comment = request.POST.get('comment')
+        post_type = request.POST.get('post_type')
+
+        # check if empty comment
+        if not len(comment):
+            return HttpResponseBadRequest("Comment cannot be empty.")
+
+        pub_date = datetime.now(timezone.utc)
+
+        author = get_object_or_404(LocalAuthor, pk=author_id)
+
+        try:
+            if post_type == "local":
+                post = get_object_or_404(LocalPost, id=post_id)
+
+                # create local comment
+                Comment.objects.create(
+                    author=author,
+                    post=post,
+                    comment=comment,
+                    content_type='PL',  # TODO: add content type
+                    pub_date=pub_date,
+                )
+            elif post_type == "inbox":
+                post = get_object_or_404(InboxPost, id=post_id)
+
+                # create post reqeust data
+                data = {
+                    "@context": "https://www.w3.org/ns/activitystreams",
+                    "summary":f"{author.username} Commented on your post",
+                    "type": "comment",
+                    "author": author.as_json(),
+                    "comment": comment,
+                    "contentType": "text/plain",
+                    "object": post.public_id
+                }
+
+                request_url = f'{post.author.strip("/")}/inbox/'
+
+                # send comment to remote inbox
+                api_requests.post(url=request_url, data=data, send_basic_auth_header=True)
+
+            else:
+                HttpResponseNotFound()
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponse('Internal Server Error')
+
+        return redirect('socialDistribution:single-post', post_type=post_type, id=post_id)
+    
+    else:
+        # redirect back, method not allowed
+        prev_page = request.META['HTTP_REFERER']
+
+        if prev_page is None:
+            return redirect('socialDistribution:home')
+        else:
+            return redirect(prev_page)
 
 def delete_post(request, id):
     """

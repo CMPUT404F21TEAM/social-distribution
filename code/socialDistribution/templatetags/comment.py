@@ -1,6 +1,7 @@
 from django import template
 
 from socialDistribution.utility import get_comment_like_info, get_like_text
+from socialDistribution.models import LocalPost
 
 register = template.Library()
 
@@ -14,9 +15,6 @@ def comment_card(*args, **kwargs):
     # current user (LocalAuthor)
     author = kwargs['author']
 
-    # author type (string)
-    author_type = kwargs['author_type']
-
     # comment json (dict)
     comment = kwargs['comment']
 
@@ -25,6 +23,10 @@ def comment_card(*args, **kwargs):
 
     # reference post (InboxPost or LocalPost)
     post = kwargs['post']
+    if type(post) is LocalPost:
+        post_author_url = post.author.url
+    else:
+        post_author_url = post.author
 
     # is current user friends with the commenter?
     is_friend = author.has_friend(comment_author)
@@ -35,9 +37,8 @@ def comment_card(*args, **kwargs):
 
     return {
         'author': author,
-        'author_type': author_type,
         'comment': comment,
-        'post': post,
+        'post_author_url': post_author_url,
         'is_friend': is_friend,
         'is_liked': is_liked,
         'like_text': like_text
