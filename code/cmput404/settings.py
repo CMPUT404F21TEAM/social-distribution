@@ -177,6 +177,10 @@ LOGGING = {
             'handlers': ['custom'],
             'propagate': False,
         },
+        'socialDistribution.requests': {
+            'handlers': ['custom'],
+            'propagate': False,
+        },
         'socialDistribution.utility': {
             'handlers': ['custom'],
             'propagate': False,

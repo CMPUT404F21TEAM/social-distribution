@@ -66,7 +66,7 @@ def get(url, params=None, send_basic_auth_header=False):
     # ref: https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request - datashaman
     # 'Can I set max_retries for requests.request?'
     try:
-        logger.info(f"Trying to do GET request to {url}") #temp
+        logger.info(f"Trying to do GET request to {url}")
         session = requests.Session()
         retries = Retry(total=2,
                         backoff_factor=0.1,
@@ -79,14 +79,16 @@ def get(url, params=None, send_basic_auth_header=False):
         if response.status_code == 200:
             try:
                 response_data = response.json()
-            except:
+            except json.decoder.JSONDecodeError:
                 response_data = None
         else:
             response_data = None
 
         logger.info(f"API GET request to {url} and received {response.status_code}")
+
     except Exception as error:
-        logger.error(f'Something went wrong getting {url}. {str(error)}')
+        logger.error(f"Something went wrong GET'ing {url}")
+        logger.error(error, exc_info=True)
         status_code = 500
         response_data = None
         return status_code, response_data
@@ -117,18 +119,27 @@ def post(url, params=None, data={}, send_basic_auth_header=False):
     if send_basic_auth_header:
         add_auth_header(url, headers)
 
-    response = requests.post(url, headers=headers, params=params, json=data)
-
-    # parse JSON response if OK
     try:
+        logger.info(f"Trying to do POST request to {url}")
+        response = requests.post(url, headers=headers, params=params, json=data)
+
+        # parse JSON response if OK
         if response.status_code == 200:
-            response_data = response.json()
+            try:
+                response_data = response.json()
+            except json.decoder.JSONDecodeError:
+                response_data = None
         else:
             response_data = None
-    except json.decoder.JSONDecodeError:
-        response_data = None
 
-    logger.info(f"API POST request to {url} and received {response.status_code}")
+        logger.info(f"API POST request to {url} and received {response.status_code}")
+
+    except Exception as error:
+        logger.error(f"Something went wrong POST'ing {url}")
+        logger.error(error, exc_info=True)
+        status_code = 500
+        response_data = None
+        return status_code, response_data
 
     # caller should check status codes show error message to user (if needed)
     return response.status_code, response_data
@@ -176,7 +187,8 @@ def delete(url, params=None, send_basic_auth_header=False):
         logger.info(f"API DELETE request to {url} and received {response.status_code}")
 
     except Exception as error:
-        logger.error(f'Something went wrong getting {url}. {str(error)}')
+        logger.error(f"Something went wrong DELETE'ing {url}")
+        logger.error(error, exc_info=True)
         status_code = 500
         response_data = None
         return status_code, response_data
