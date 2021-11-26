@@ -13,6 +13,13 @@
 {% block body %}
     {% if latest_posts or github_events %}
         <div class="container align-self-center" id="post_container">
+            {% for message in messages %}
+                <div class="alert alert-warning alert-dismissible fade show mt-4" role="alert">
+                    {{message}}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+
             <div class="d-flex justify-content-center">
                 <label class="btn btn-primary rounded-pill mx-3 mt-md-3 w-25 active" id="posts-radio">
                     <input 

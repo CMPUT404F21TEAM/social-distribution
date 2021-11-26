@@ -650,6 +650,12 @@ def single_post(request, post_type, id):
             # hack 
             # inject more data into json comment
             # retrieve it in comment.py
+
+            # redirect user if server unresponsive
+            if (not comment["author"]):
+                messages.info(request, "Remote Server Unresponsive. Failed to get comments. Please try again later.")
+                return redirect('socialDistribution:home')
+
             comment_author, created = Author.objects.get_or_create(
                 url=comment["author"]["id"]
             )
