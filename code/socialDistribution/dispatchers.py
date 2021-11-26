@@ -1,11 +1,14 @@
 from typing import List
-
+import logging
 
 import socialDistribution.requests as api_requests
 from .models import LocalPost, Author, LocalAuthor
 
+logger = logging.getLogger(__name__)
+
 def send_post(post: LocalPost, url: str):
     """ Sends a post to the given URL via a POST request. """
+    logger.info(f"Sending post {post.get_id()} to {url}")
 
     data = post.as_json()
     api_requests.post(url=url, data=data, send_basic_auth_header=True)
@@ -55,6 +58,8 @@ def dispatch_follow_request(actor: LocalAuthor, object: Author):
         return False
 
     object_inbox = object.get_inbox()
+
+    logger.info(f"Sending follow request from {actor.get_url_id()} to {object_inbox}")
 
     data = {
         "type": "Follow",
