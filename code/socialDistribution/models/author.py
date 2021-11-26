@@ -76,9 +76,9 @@ class Author(models.Model):
             "profileImage": self.profileImageUrl
         }
 
-        if self._always_up_to_date or was_recent_update:
+        if self._always_up_to_date:
             # read author data from fields
-            # will do this in case of LocalAuthor or cached data for remote
+            # will do this in case of LocalAuthor
             return json_data
 
         else:
