@@ -57,7 +57,7 @@ def dispatch_follow_request(actor: LocalAuthor, object: Author):
     object_inbox = object.get_inbox()
 
     data = {
-        "type": "follow",
+        "type": "Follow",
         "summary": f"{actor_json['displayName']} wants to follow {object_json['displayName']}",
         "actor": actor_json,
         "object": object_json
