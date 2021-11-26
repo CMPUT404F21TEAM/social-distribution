@@ -687,13 +687,13 @@ def like_comment(request):
     if request.method == 'POST':
         # get POST parameters
         comment_id = request.POST.get("comment_id")
-        comment_author_id = request.POST.get("comment_author_id")
+        post_author_url = request.POST.get("post_author_url")
 
         author = get_object_or_404(LocalAuthor, user=request.user)
 
         # get comment author
-        comment_author, created = Author.objects.get_or_create(
-            url=comment_author_id
+        post_author, created = Author.objects.get_or_create(
+            url=post_author_url
         )
 
         # create like object
@@ -706,7 +706,7 @@ def like_comment(request):
         }
 
         # redirect request to remote/local api
-        request_url = comment_author.get_inbox()
+        request_url = post_author.get_inbox()
         api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
 
 
