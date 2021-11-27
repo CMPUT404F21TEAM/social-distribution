@@ -15,6 +15,7 @@ from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
 from .forms import CreateUserForm, PostForm
 
 import base64
+import pyperclip
 
 import socialDistribution.requests as api_requests
 from api.models import Node
@@ -421,6 +422,25 @@ def author(request, author_id):
 
     return render(request, 'author/detail.html', context)
 
+def unlisted_posts(request, author_id):
+    """ Display an author's unlisted posts 
+    """
+
+    curr_user = LocalAuthor.objects.get(user=request.user)
+    author = get_object_or_404(LocalAuthor, pk=author_id)
+
+    # TODO: Should become an API request (same as /author/<author-id>) since won't know if author is local/remote
+
+    posts = author.posts.unlisted()
+
+    context = {
+        'author': author,
+        'author_type': 'Local',
+        'curr_user': curr_user,
+        'author_posts': posts.chronological()
+    }
+
+    return render(request, 'author/detail.html', context)
 
 def create(request):
     return render(request, 'create/index.html')
@@ -521,6 +541,24 @@ def share_post(request, id):
 
     return redirect('socialDistribution:home')
 
+def copy_link(request, id):
+    """
+        Allows user to copy a post's link
+    """
+
+    # TODO:
+    #     * make copy notification prettier 
+    #     * add copy link for remote posts 
+
+    author = LocalAuthor.objects.get(user=request.user)
+    post = LocalPost.objects.get(id=id)
+    link = post.get_local_shareable_link()
+    pyperclip.copy(link)
+
+    if post.unlisted is True:
+        return redirect('socialDistribution:unlisted-posts', author.id)
+    
+    return redirect('socialDistribution:home')
 
 def edit_post(request, id):
     """
@@ -815,9 +853,15 @@ def delete_post(request, id):
     """
     author = get_object_or_404(LocalAuthor, user=request.user)
     post = get_object_or_404(LocalPost, id=id)
+    author = LocalAuthor.objects.get(user=request.user)
     
     if (author.id != post.author.id):
         return HttpResponseForbidden()
+    
+    # remain on unlisted page if the deleted post is unlisted 
+    if post.unlisted is True:
+        post.delete()
+        return redirect('socialDistribution:unlisted-posts', author.id)
     
     post.delete()
     return redirect('socialDistribution:home')
