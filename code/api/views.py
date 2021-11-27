@@ -16,7 +16,7 @@ import logging
 import base64
 
 from cmput404.constants import API_BASE
-from socialDistribution.forms import PostForm
+import socialDistribution.requests as api_requests
 from socialDistribution.models import *
 from .decorators import authenticate_request, validate_node
 from .parsers import url_parser
@@ -182,6 +182,10 @@ class FollowersSingleView(View):
         except (Author.DoesNotExist, Follow.DoesNotExist):
             # return 404 if author not found
             return HttpResponseNotFound()
+        
+    def put(self, request, author_id, foreign_author_id):
+        """ PUT - Add a follower (must be authenticated)"""
+        return NotImplementedError
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -207,7 +211,7 @@ class LikedView(View):
                 like = {
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "summary": f"{author.displayName} Likes your post",
-                    "type": "like",
+                    "type": "Like",
                     "author": author.as_json(),
                     "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}"
                 }
@@ -217,7 +221,7 @@ class LikedView(View):
                 like = {
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "summary": f"{author.displayName} Likes your comment",
-                    "type": "like",
+                    "type": "Like",
                     "author": author.as_json(),
                     "object": f"{API_BASE}/author/{comment.post.author.id}/posts/{comment.post.id}/comments/{comment.id}"
                 }
@@ -278,7 +282,7 @@ class PostsView(View):
         return JsonResponse(response)
 
     def post(self, request, author_id):
-        return HttpResponse("This is the authors/aid/posts/ endpoint")
+        return NotImplementedError()
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -365,6 +369,9 @@ class PostView(View):
 
         except ValidationError:
             messages.info(request, 'Unable to edit post.')
+            
+    def put(self, request, author_id, post_id):
+        return NotImplementedError
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -441,38 +448,41 @@ class PostCommentsView(View):
         return JsonResponse(response)
 
     def post(self, request, author_id, post_id):
-        logger.info(f"POST /author/{author_id}/posts/{post_id}/comments API endpoint invoked")
+        return NotImplementedError()
 
-        # check if authenticated
-        if (not request.user):
-            return HttpResponseForbidden()
+@method_decorator(csrf_exempt, name='dispatch')
+class PostCommentsSingleView(View):
+    '''
+        HANDLE Singular Comment GET 
+    '''
 
-        comment = request.POST.get('comment')
+    def get(self, request, author_id, post_id, comment_id):
+        logger.info(f"GET /author/{author_id}/posts/{post_id}/comments/{comment_id} API endpoint invoked")
 
-        # check if empty
-        if not len(comment):
-            return HttpResponseBadRequest("Comment cannot be empty.")
-
-        pub_date = datetime.now(timezone.utc)
-
+        # Send comment
         try:
-            author = get_object_or_404(LocalAuthor, pk=author_id)
             post = get_object_or_404(LocalPost, id=post_id)
+            author = get_object_or_404(LocalAuthor, id=author_id)
+            # Check if the post author match with author in url
+            if post.author.id != author.id:
+                return HttpResponseNotFound()
 
-            comment = Comment.objects.create(
-                author=author,
-                post=post,
-                comment=comment,
-                content_type='PL',  # TODO: add content type
-                pub_date=pub_date,
-            )
+            comment = get_object_or_404(Comment, id=comment_id)
+            
+            # Check if the post id and comment id match
+            if post.id != comment.post.id:
+                return HttpResponseNotFound()
+            
+            response = comment.as_json()
+            
+        except Http404:
+            return HttpResponseNotFound()
 
         except Exception as e:
             logger.error(e, exc_info=True)
-            return HttpResponse('Internal Server Error')
+            return HttpResponseServerError()
 
-        return redirect('socialDistribution:single-post', post_type="local", id=post_id)
-
+        return JsonResponse(response)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CommentLikesView(View):
@@ -504,7 +514,7 @@ class CommentLikesView(View):
                     like = {
                         "@context": "https://www.w3.org/ns/activitystreams",
                         "summary": f"{like_author_json['displayName']} Likes your comment",
-                        "type": "like",
+                        "type": "Like",
                         "author": like_author_json,
                         "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment.id}"
                     }
@@ -531,7 +541,7 @@ class InboxView(View):
     def get(self, request, author_id):
         """ GET - If authenticated, get a list of posts sent to {author_id} """
 
-        logger.info(f"GET /author/{author_id}/inbox API endpoint invoked")
+        logger.info(f"GET /author/{author_id}/inbox/ API endpoint invoked")
 
         # Send all posts sent to the author's inbox
         try:
@@ -574,14 +584,23 @@ class InboxView(View):
             - if the type is “follow” then add that follow is added to the author’s inbox to approve later
             - if the type is “like” then add that like to the author’s inbox    
         """
-        logger.info(f"POST /author/{author_id}/inbox API endpoint invoked")
+        logger.info(f"POST /author/{author_id}/inbox/ API endpoint invoked")
 
-        data = json.loads(request.body)
         try:
+            data = json.loads(request.body)
+            logger.info(f"Object recieved by {request.build_absolute_uri()}: \n{data}")
+
             if str(data["type"]).lower() == "post":
                 logger.info("Inbox object identified as post")
 
-                makePost(author_id, data)
+                received_post = makePost(data)
+                
+                # get owner of inbox
+                receiving_author = get_object_or_404(LocalAuthor, id=author_id)
+
+                # add post to inbox of author
+                receiving_author.inbox_posts.add(received_post)
+
                 return HttpResponse(status=200)
 
             elif str(data["type"]).lower() == "follow":
@@ -593,16 +612,24 @@ class InboxView(View):
                     raise ValueError("Author not hosted on this server")
 
                 object_id = url_parser.parse_author(obj["id"])
-                actor_url_id = actor["id"]
 
                 # check if this is the correct endpoint
                 if object_id != author_id:
                     raise ValueError("Object ID does not match inbox ID")
 
-                object_author = get_object_or_404(LocalAuthor, id=object_id)
+                # try to get object author, otherwise raise 400 error
+                try:
+                    object_author = LocalAuthor.objects.get(id=object_id)
+                except LocalAuthor.DoesNotExist:
+                    raise ValueError("'object' does not exist")
+
+                # get or create actor author
                 actor_author, created = Author.objects.get_or_create(
-                    url=actor_url_id
+                    url = actor["id"]
                 )
+
+                # add or update remaining fields
+                actor_author.update_with_json(data=actor)
 
                 # add follow request
                 object_author.follow_requests.add(actor_author)
@@ -613,21 +640,27 @@ class InboxView(View):
                 logger.info("Inbox object identified as like")
 
                 # retrieve author
-                liking_author_url = data["author"]["id"]
                 liking_author, created = Author.objects.get_or_create(
-                    url=liking_author_url
+                    url= data["author"]["id"]
                 )
+
+                # add or update remaining fields
+                liking_author.update_with_json(data=data["author"])
 
                 # retrieve object
                 object_type = url_parser.get_object_type(data['object'])
-                if object_type == "posts":
-                    _, id = url_parser.parse_post(data['object'])
-                    context_object = get_object_or_404(LocalPost, id=id)
-                elif object_type == "comments":
-                    _, __, id = url_parser.parse_comment(data['object'])
-                    context_object = get_object_or_404(Comment, id=id)
-                else:
-                    raise ValueError("Unknown object type")
+                try:
+                    if object_type == "posts":
+                        _, id = url_parser.parse_post(data['object'])
+                        context_object = LocalPost.objects.get(id=id)                        
+                    elif object_type == "comments":
+                        _, __, id = url_parser.parse_comment(data['object'])
+                        context_object = Comment.objects.get(id=id)
+                    else:
+                        raise ValueError("Unknown object type")
+
+                except (LocalPost.DoesNotExist, Comment.DoesNotExist):
+                    raise ValueError("'object' does not exist")
 
                 if context_object.likes.filter(author=liking_author).exists():
                     # if like already exists, remove it
@@ -639,14 +672,55 @@ class InboxView(View):
 
                 return HttpResponse(status=200)
 
+            elif str(data["type"]).lower() == "comment":
+                logger.info("Inbox object identified as comment")
+
+                # check if comment attribute present
+                if not data['comment']:
+                    raise ValueError("Attribute 'comment' in json body must be a non-empty string.")
+
+                # retrieve author
+                commenting_author, created = Author.objects.get_or_create(
+                    url = data["author"]['id']
+                )
+
+                # add or update remaining fields
+                commenting_author.update_with_json(data=data["author"])
+
+                # get the post
+                try:
+                    _, post_id = url_parser.parse_post(data['object'])
+                    post = LocalPost.objects.get(id=post_id)
+                except LocalPost.DoesNotExist:
+                    raise ValueError("'object' does not exist")
+
+                # add remote comment
+                Comment.objects.create(
+                    author = commenting_author,
+                    post = post,
+                    comment = data['comment'],
+                    content_type = data['contentType'],
+                    pub_date= datetime.now(timezone.utc),
+                )
+
+                return HttpResponse(status=200)
             else:
-                raise ValueError("Unknown object received by inbox")
+                raise ValueError("Unknown object sent to inbox")
+        
+        except json.decoder.JSONDecodeError:
+            return JsonResponse({
+                "error": "Invalid JSON"
+            }, status=400)
+
+        except Http404:
+            return HttpResponseNotFound()
 
         except KeyError as e:
             logger.warn(e, exc_info=True)
             return JsonResponse({
-                "error": "JSON body could not be parsed"
-            })
+                "error": "JSON body could not be parsed",
+                "details": f"{e.args[0]} field not found"
+            }, status=400)
 
         except ValueError as e:
             logger.warn(e, exc_info=True)
@@ -657,12 +731,12 @@ class InboxView(View):
         except Exception as e:
             logger.error(e, exc_info=True)
             return JsonResponse({
-                "error": "Internal Server Error"
+                "error": "An unknown error occurred"
             }, status=500)
 
     def delete(self, request, author_id):
         """ DELETE - Clear the inbox """
 
-        logger.info(f"POST /author/{author_id}/inbox API endpoint invoked")
+        logger.info(f"POST /author/{author_id}/inbox/ API endpoint invoked")
 
         return HttpResponse("Hello")

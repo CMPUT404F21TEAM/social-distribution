@@ -19,7 +19,7 @@ class Comment(models.Model):
         PLAIN = 'PL', 'text/plain'
         MARKDOWN = 'MD', 'text/markdown'
 
-    author = models.ForeignKey('LocalAuthor', on_delete=models.CASCADE)
+    author = models.ForeignKey('Author', on_delete=models.CASCADE)
     content_type = models.CharField(
         max_length=2,
         choices=CommentContentType.choices

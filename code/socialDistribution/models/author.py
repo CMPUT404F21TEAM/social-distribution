@@ -39,7 +39,7 @@ class Author(models.Model):
 
     def has_follower(self, author):
         """ Over-ridden in LocalAuthor. Returns True if author is a follower of self, False otherwise """
-        res_code, res_body = api_requests.get(self.url + "/followers")
+        res_code, res_body = api_requests.get(self.url.strip("/") + "/followers")
 
         if res_code == 200 and res_body:
             for follower in res_body["items"]:
@@ -58,28 +58,56 @@ class Author(models.Model):
     def get_inbox(self):
         """ Gets the URL of the Authors inbox. """
 
-        return self.url.strip("/") + "/inbox"
+        return self.url.strip("/") + "/inbox/"
 
     def as_json(self):
+        """ GET JSON representation of author. If local or a remote that was saved recently, return that JSON.
+            Otherwise, make an API call to update JSON.
+        """
+
         was_recent_update = self._last_updated < timezone.now()-datetime.timedelta(seconds=10)
+        json_data = {
+            "type": "author",
+            "id": f"{API_BASE}/author/{self.id}",
+            "host": f'{API_BASE}/',
+            "displayName": self.displayName,
+            "url": f"{API_BASE}/author/{self.id}",
+            "github": self.githubUrl,
+            "profileImage": self.profileImageUrl
+        }
+
         if self._always_up_to_date:
             # read author data from fields
             # will do this in case of LocalAuthor
-            json_data = {
-                "type": "author",
-                "id": f"{API_BASE}/author/{self.id}",
-                "host": f'{API_BASE}/',
-                "displayName": self.displayName,
-                "url": f"{API_BASE}/author/{self.id}",
-                "github": self.githubUrl,
-                "profileImage": self.profileImageUrl
-            }
+            return json_data
+
         else:
             # make API call to get author data
-            status_code, json_data = api_requests.get(self.url)
-            # todo handle errors is api_request fails
+            status_code, response_body = api_requests.get(self.url.strip("/"))
+            if status_code == 200 and response_body is not None:
+                self.update_with_json(data=response_body)
+                return response_body
+            else:
+                # delete the record if there was a problem
+                self.delete()
+                # don't return None
+                return json_data
 
-        return json_data
+    def update_with_json(self, data):
+        '''
+            Add or update Author model data
+            Had to move here from utility.py due to import errors
+        '''
+        try:
+            self.displayName = data['displayName']
+            self.githubUrl = data['github']
+            self.profileImageUrl = data['profileImage']
+            self.save()
+        except:
+            return
+
+    def __str__(self) -> str:
+        return f"Author: {self.url}"
 
 
 class LocalAuthor(Author):
