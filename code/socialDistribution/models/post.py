@@ -80,7 +80,7 @@ class Post(models.Model):
     CONTENT_MAXLEN = 4096
     STRING_MAXLEN = 50
     URL_MAXLEN = 2048
-    
+
     # Django Software Foundation, https://docs.djangoproject.com/en/dev/ref/models/fields/#uuidfield
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
