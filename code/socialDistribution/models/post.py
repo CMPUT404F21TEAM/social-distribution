@@ -413,3 +413,64 @@ class InboxPost(Post):
             return comments
         else:
             return []
+        
+    @property
+    def author_as_json(self):
+        request_url = self.public_id.strip('/')
+        status_code, response_data = api_requests.get(request_url, send_basic_auth_header=True)
+        if status_code == 200 and response_data is not None:
+            author = response_data["author"]
+            return author
+        else:
+            return None
+
+    def as_json(self):
+        previousCategories = self.categories.all()
+        previousCategoriesNames = [cat.category for cat in previousCategories]
+        return {
+            "type": "post",
+            # title of a post
+            "title": self.title,
+            # id of the post
+            "id": self.public_id,
+            # where did you get this post from?
+            "source": self.source,
+            # where is it actually from
+            "origin": self.origin,
+            # a brief description of the post
+            "description": self.description,
+            # The content type of the post
+            # assume either
+            # text/markdown -- common mark
+            # text/plain -- UTF-8
+            # application/base64
+            # image/png;base64 # this is an embedded png -- images are POSTS. So you might have a user make 2 posts if a post includes an image!
+            # image/jpeg;base64 # this is an embedded jpeg
+            # for HTML you will want to strip tags before displaying
+            "contentType": self.get_content_type_display(),
+            "content": self.decoded_content,
+            # the author has an ID where by authors can be disambiguated
+            "author": self.author_as_json,
+            # categories this post fits into (a list of strings
+            "categories": previousCategoriesNames,
+            # comments about the post
+            # return a maximum number of comments
+            # total number of comments for this post
+            "count": 0,
+            # the first page of comments
+            "comments": f"{self.public_id}/comments",
+            # commentsSrc is OPTIONAL and can be missing
+            # You should return ~ 5 comments per post.
+            # should be sorted newest(first) to oldest(last)
+            # this is to reduce API call counts
+            "commentsSrc": self.comments_as_json,
+            # ISO 8601 TIMESTAMP
+            "published": self.published.isoformat(),
+            # visibility ["PUBLIC","FRIENDS"]
+            "visibility": self.get_visibility_display(),
+            # for visibility PUBLIC means it is open to the wild web
+            # FRIENDS means if we're direct friends I can see the post
+            # FRIENDS should've already been sent the post so they don't need this
+            "unlisted": self.unlisted
+            # unlisted means it is public if you know the post name -- use this for images, it's so images don't show up in timelines
+        }
