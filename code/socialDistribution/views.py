@@ -853,7 +853,6 @@ def delete_post(request, id):
     """
     author = get_object_or_404(LocalAuthor, user=request.user)
     post = get_object_or_404(LocalPost, id=id)
-    author = LocalAuthor.objects.get(user=request.user)
     
     if (author.id != post.author.id):
         return HttpResponseForbidden()
