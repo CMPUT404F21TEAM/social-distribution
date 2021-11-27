@@ -1,6 +1,7 @@
 from django.db import models
 from datetime import *
 import timeago
+import uuid
 
 from cmput404.constants import API_BASE
 
@@ -18,6 +19,9 @@ class Comment(models.Model):
     class CommentContentType(models.TextChoices):
         PLAIN = 'PL', 'text/plain'
         MARKDOWN = 'MD', 'text/markdown'
+
+    # Django Software Foundation, https://docs.djangoproject.com/en/dev/ref/models/fields/#uuidfield
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     author = models.ForeignKey('Author', on_delete=models.CASCADE)
     content_type = models.CharField(
