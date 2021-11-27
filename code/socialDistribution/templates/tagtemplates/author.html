@@ -59,7 +59,7 @@
                                 {% csrf_token %}
                                 <button class="btn bg-blue text-white btn-md btn-primary rounded-pill">See inbox</button>
                             </form>
-                            <form method="GET" action="{% url 'socialDistribution:unlisted-posts' author.id %}">
+                            <form method="GET" action="{% url 'socialDistribution:unlisted-posts' %}">
                                 <button class="btn bg-blue text-white btn-md btn-primary rounded-pill">See Unlisted Posts</button>
                             </form>
                         </div>                            

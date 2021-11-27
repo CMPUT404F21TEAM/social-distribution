@@ -422,19 +422,18 @@ def author(request, author_id):
 
     return render(request, 'author/detail.html', context)
 
-def unlisted_posts(request, author_id):
+def unlisted_posts(request):
     """ Display an author's unlisted posts 
     """
 
     curr_user = LocalAuthor.objects.get(user=request.user)
-    author = get_object_or_404(LocalAuthor, pk=author_id)
 
     # TODO: Should become an API request (same as /author/<author-id>) since won't know if author is local/remote
 
-    posts = author.posts.unlisted()
+    posts = curr_user.posts.unlisted()
 
     context = {
-        'author': author,
+        'author': curr_user,
         'author_type': 'Local',
         'curr_user': curr_user,
         'author_posts': posts.chronological()
@@ -556,7 +555,7 @@ def copy_link(request, id):
     pyperclip.copy(link)
 
     if post.unlisted is True:
-        return redirect('socialDistribution:unlisted-posts', author.id)
+        return redirect('socialDistribution:unlisted-posts')
     
     return redirect('socialDistribution:home')
 
@@ -860,7 +859,7 @@ def delete_post(request, id):
     # remain on unlisted page if the deleted post is unlisted 
     if post.unlisted is True:
         post.delete()
-        return redirect('socialDistribution:unlisted-posts', author.id)
+        return redirect('socialDistribution:unlisted-posts')
     
     post.delete()
     return redirect('socialDistribution:home')
