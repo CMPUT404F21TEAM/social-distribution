@@ -9,13 +9,12 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
-import requests
 
 from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
 from .forms import CreateUserForm, PostForm
 
 import base64
-import pyperclip
+import subprocess
 
 import socialDistribution.requests as api_requests
 from api.models import Node
@@ -434,6 +433,7 @@ def unlisted_posts(request):
 
     context = {
         'author': curr_user,
+        'modal_type':'copy',
         'author_type': 'Local',
         'curr_user': curr_user,
         'author_posts': posts.chronological()
@@ -548,11 +548,10 @@ def copy_link(request, id):
     # TODO:
     #     * make copy notification prettier 
     #     * add copy link for remote posts 
-
-    author = LocalAuthor.objects.get(user=request.user)
     post = LocalPost.objects.get(id=id)
     link = post.get_local_shareable_link()
-    pyperclip.copy(link)
+    cmd='echo '+link.strip()+'|pbcopy'
+    subprocess.check_call(cmd, shell=True)
 
     if post.unlisted is True:
         return redirect('socialDistribution:unlisted-posts')

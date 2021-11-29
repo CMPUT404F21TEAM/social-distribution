@@ -18,9 +18,11 @@
                 {% if modal_type == "post" or modal_type == "edit" %}
                 {% post_form user post_id %}
                 {% elif modal_type == "delete" %}
-                 Are you sure you want to delete this item? (Irreversible)
-                 {% elif modal_type == "share" %}
-                 Are you sure you want to share this item?
+                Are you sure you want to delete this item? (Irreversible)
+                {% elif modal_type == "share" %}
+                Are you sure you want to share this item?
+                {% elif modal_type == "copy" %}
+                Copy link to clipboard:
                 {% endif %}
             </div>
             <div class="modal-footer">
