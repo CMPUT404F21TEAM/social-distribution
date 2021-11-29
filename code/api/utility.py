@@ -28,7 +28,6 @@ def makeLocalPost(data, author_id, post_id=None):
             unlisted=data["unlisted"],
     )
 
-    received_post.save()
     # set post origin and source to itself for a new post
     received_post.origin = received_post.get_id()
     received_post.source = received_post.get_id()

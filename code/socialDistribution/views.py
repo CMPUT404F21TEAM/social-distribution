@@ -451,7 +451,6 @@ def posts(request, author_id):
                     visibility=form.cleaned_data.get('visibility'),
                     unlisted=form.cleaned_data.get('unlisted'),
                 )
-                new_post.save()
                 
                 # set post origin and source to itself for a new post
                 new_post.origin = new_post.get_id()
