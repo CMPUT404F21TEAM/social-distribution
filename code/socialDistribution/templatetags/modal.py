@@ -1,4 +1,5 @@
 from django import template
+from ..models import LocalPost
 
 register = template.Library()
 
@@ -6,7 +7,15 @@ register = template.Library()
 # https://docs.djangoproject.com/en/3.2/howto/custom-template-tags/#inclusion-tags
 @register.inclusion_tag('tagtemplates/modal.html')
 def modal(*args, **kwargs):
-
+    postid = 0
+    post_link = ''
+    if 'postid' in kwargs:
+        postid = kwargs['postid']
+        post = LocalPost.objects.get(id=postid)
+        if isinstance(post, LocalPost):
+            post_link = post.get_local_shareable_link()
+        else:
+            post_link = 'Not a local post'
     return {
             'user': kwargs.get('user'),
             'modal_id': kwargs['id'],
@@ -14,5 +23,6 @@ def modal(*args, **kwargs):
             'modal_label': kwargs['label'],
             'modal_title': kwargs['title'],
             'submit_btn_text': kwargs['btn'],
-            'post_id': kwargs.get("postid"),
+            'post_id': postid,
+            'post_link': post_link,
         }

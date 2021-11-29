@@ -10,7 +10,7 @@ import timeago
 import uuid
 
 import socialDistribution.requests as api_requests
-from cmput404.constants import API_BASE
+from cmput404.constants import API_BASE, CLIENT_BASE
 from .comment import Comment
 from .category import Category
 
@@ -21,6 +21,11 @@ class PostQuerySet(models.QuerySet):
         """ Get all listed posts.
         """
         return self.filter(unlisted=False)
+    
+    def unlisted(self):
+        """ Get all unlisted posts.
+        """
+        return self.filter(unlisted=True)
 
     def get_public(self):
         """ Get all public posts.
@@ -256,6 +261,9 @@ class LocalPost(Post):
 
     def get_id(self):
         return f"{API_BASE}/author/{self.author.id}/posts/{self.id}"
+    
+    def get_local_shareable_link(self):
+        return f"{CLIENT_BASE}/posts/local/{self.id}"
 
     def as_json(self):
         previousCategories = self.categories.all()

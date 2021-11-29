@@ -18,6 +18,7 @@ urlpatterns = [
   path('author/<str:author_id>/befriend/', views.befriend, name='befriend'),
   path('author/<str:author_id>/un-befriend/', views.un_befriend, name='un-befriend'),
   path('author/<str:author_id>/friend-request/<str:action>', views.friend_request, name='friend-request'),
+  path('author/unlisted-posts', views.unlisted_posts, name='unlisted-posts'),
   path('create/', views.create, name='create'),
   path('profile/', views.profile, name='profile'),
   path('user/', views.user, name='user'),
@@ -28,5 +29,6 @@ urlpatterns = [
   path('author/<author_id>/posts/<str:post_id>/comments/', views.post_comment, name='post-comment'),
   path('delete-post/<str:id>', views.delete_post, name='delete-post'),
   path('edit-post/<str:id>', views.edit_post, name='edit-post'),
-  path('share-post/<str:id>', views.share_post, name='share-post')
+  path('share-post/<str:id>', views.share_post, name='share-post'),
+  path('copy-link/<int:id>', views.copy_link, name='copy-link')
 ]
