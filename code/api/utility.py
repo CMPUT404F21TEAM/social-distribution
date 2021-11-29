@@ -13,11 +13,52 @@ def getPaginated(data, page, size):
     except:
         return []
     
-def makeInboxPost(data):
+def makeLocalPost(data, author_id, id=None):
+    """ 
+    Creates a LocalPost given json data
+    """
+    # save the received post as a LocalPost
+    received_post = LocalPost(
+            author_id=author_id,
+            title=data["title"],
+            description=data["description"],
+            content_type=data["contentType"],
+            content=data["content"].encode('utf-8'),
+            visibility=LocalPost.Visibility.get_visibility_choice(data["visibility"]),
+            unlisted=data["unlisted"],
+    )
+    received_post.save()
+    # set post origin and source to itself for a new post
+    received_post.origin = received_post.get_id()
+    received_post.source = received_post.get_id()
+    received_post.save()
+
+    categories_to_remove = []
+
+    for category in data["categories"]:
+        if category != "":
+            category_obj, cat_created = Category.objects.get_or_create(
+                category__iexact=category,
+                defaults={"category": category}
+            )
+            received_post.categories.add(category_obj)
+
+            # loop condition is always false if post was created
+            # because categories_to_remove is an empty list then
+            while category_obj.category in categories_to_remove:
+                categories_to_remove.remove(category_obj.category)      # don't remove this category
+
+    # won't execute if post was created
+    for category in categories_to_remove:
+        category_obj = Category.objects.get(category=category)
+        received_post.categories.remove(category_obj)
+
+    return received_post
+    
+def makeInboxPost(data, id=None):
     """ 
     Creates an InboxPost given json data
     """
-
     # save the received post as an InboxPost
     received_post, post_created = InboxPost.objects.get_or_create(
         public_id=data["id"],

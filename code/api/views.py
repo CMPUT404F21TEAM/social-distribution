@@ -20,7 +20,7 @@ import socialDistribution.requests as api_requests
 from socialDistribution.models import *
 from .decorators import authenticate_request, validate_node
 from .parsers import url_parser
-from .utility import getPaginated, makeInboxPost
+from .utility import getPaginated, makeInboxPost, makeLocalPost
 
 # References for entire file:
 # Django Software Foundation, "Introduction to class-based views", 2021-10-13
@@ -283,12 +283,12 @@ class PostsView(View):
 
     def post(self, request, author_id):
         '''
-            POST - creates an InboxPost with the given data
+            POST - creates a LocalPost for the given {author_id} with the given data
         '''
 
         try:
             data = json.loads(request.body)
-            post = makeInboxPost(data)
+            post = makeLocalPost(data, author_id)
             
         except json.decoder.JSONDecodeError:
             return JsonResponse({
