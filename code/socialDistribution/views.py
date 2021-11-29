@@ -680,8 +680,10 @@ def single_post(request, post_type, id):
                 author_type = LOCAL
 
             except LocalAuthor.DoesNotExist:
+                author = get_object_or_404(Author, url=comment_author.url)
                 author_type = REMOTE
 
+            comment["comment_author_local_server_id"] = author.id
             comment["comment_author_object"] = comment_author
             comment["author_type"] = author_type
 
