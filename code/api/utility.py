@@ -13,7 +13,7 @@ def getPaginated(data, page, size):
     except:
         return []
     
-def makeLocalPost(data, author_id, id=None):
+def makeLocalPost(data, author_id, post_id=None):
     """ 
     Creates a LocalPost given json data
     """
@@ -27,10 +27,13 @@ def makeLocalPost(data, author_id, id=None):
             visibility=LocalPost.Visibility.get_visibility_choice(data["visibility"]),
             unlisted=data["unlisted"],
     )
+
     received_post.save()
     # set post origin and source to itself for a new post
     received_post.origin = received_post.get_id()
     received_post.source = received_post.get_id()
+    if post_id:
+        received_post.id = post_id
     received_post.save()
 
     categories_to_remove = []
