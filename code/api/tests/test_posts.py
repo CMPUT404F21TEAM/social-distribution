@@ -82,7 +82,11 @@ class PostsViewTest(TestCase):
 
         response = self.client.get(reverse('api:posts', args=(post.author.id,)))
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(response.content, expected)
+        
+        res_json = response.json()
+
+        for post in expected["items"]:
+            self.assertIn(post, res_json["items"])
         
     def test_get_posts_paginated(self):
         self.maxDiff = None
@@ -101,7 +105,13 @@ class PostsViewTest(TestCase):
         
         response = self.client.get(reverse('api:posts', args=(post1.author.id,)) + f'?page={page}&size={size}')
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(response.content, expected)
+        
+        res_json = response.json()
+
+        self.assertTrue(res_json["type"] == "posts")
+
+        for post in expected["items"]:
+            self.assertIn(post, res_json["items"])
         
     def test_get_posts_paginated_page_2(self):
         self.maxDiff = None
@@ -116,9 +126,20 @@ class PostsViewTest(TestCase):
                 "type": "posts",
                 "page": page,
                 "size": size,
-                "items": [get_post_json(post3)]
+                "items": [
+                    get_post_json(post1),
+                    get_post_json(post2),
+                    get_post_json(post3),
+                ]
             }
         
         response = self.client.get(reverse('api:posts', args=(post1.author.id,)) + f'?page={page}&size={size}')
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(response.content, expected)
+        
+        res_json = response.json()
+
+        self.assertTrue(res_json["type"] == "posts")
+        self.assertTrue(len(res_json["items"]) == 1)
+
+        post = res_json["items"][0]
+        self.assertIn(post, expected["items"])
