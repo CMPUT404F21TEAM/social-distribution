@@ -98,7 +98,7 @@ def get(url, params=None, send_basic_auth_header=True):
     return response.status_code, parse_res_to_dict(response_data)
 
 
-def post(url, params=None, data={}, send_basic_auth_header=False):
+def post(url, params=None, data={}, send_basic_auth_header=True):
     """ Makes a POST request at the given URL and returns the JSON body of the HTTP response.
 
         Parameters:
@@ -145,7 +145,7 @@ def post(url, params=None, data={}, send_basic_auth_header=False):
     # caller should check status codes show error message to user (if needed)
     return response.status_code, response_data
 
-def delete(url, params=None, send_basic_auth_header=False):
+def delete(url, params=None, send_basic_auth_header=True):
     """ Makes a DELETE request at the given URL and returns the JSON body of the HTTP response.
 
         Parameters:
