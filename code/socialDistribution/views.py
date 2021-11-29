@@ -18,7 +18,7 @@ import base64
 
 import socialDistribution.requests as api_requests
 from api.models import Node
-from api.utility import makePost
+from api.utility import makeInboxPost
 from .models import *
 from .forms import CreateUserForm, PostForm
 from .decorators import unauthenticated_user
@@ -405,7 +405,7 @@ def author(request, author_id):
         if res_code == 200 and res_body:
             for post in res_body["items"]:
                 if post:
-                    makePost(post)
+                    makeInboxPost(post)
 
         posts = InboxPost.objects.filter(
             author=author.get_url_id(),

@@ -20,7 +20,7 @@ import socialDistribution.requests as api_requests
 from socialDistribution.models import *
 from .decorators import authenticate_request, validate_node
 from .parsers import url_parser
-from .utility import getPaginated, makePost
+from .utility import getPaginated, makeInboxPost
 
 # References for entire file:
 # Django Software Foundation, "Introduction to class-based views", 2021-10-13
@@ -282,7 +282,26 @@ class PostsView(View):
         return JsonResponse(response)
 
     def post(self, request, author_id):
-        return NotImplementedError()
+        '''
+            POST - creates an InboxPost with the given data
+        '''
+
+        try:
+            data = json.loads(request.body)
+            post = makeInboxPost(data)
+            
+        except json.decoder.JSONDecodeError:
+            return JsonResponse({
+                "error": "Invalid JSON"
+            }, status=400)
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return JsonResponse({
+                "error": "An unknown error occurred"
+            }, status=500)
+            
+        return JsonResponse(status=201, data=post.as_json())
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -593,7 +612,7 @@ class InboxView(View):
             if str(data["type"]).lower() == "post":
                 logger.info("Inbox object identified as post")
 
-                received_post = makePost(data)
+                received_post = makeInboxPost(data)
                 
                 # get owner of inbox
                 receiving_author = get_object_or_404(LocalAuthor, id=author_id)

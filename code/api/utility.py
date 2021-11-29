@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.http.response import HttpResponseBadRequest
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
@@ -12,9 +13,9 @@ def getPaginated(data, page, size):
     except:
         return []
     
-def makePost(data):
+def makeInboxPost(data):
     """ 
-    Creates an InboxPost given json data and adds it to the given author_id's inbox
+    Creates an InboxPost given json data
     """
 
     # save the received post as an InboxPost
@@ -29,7 +30,7 @@ def makePost(data):
             "content": data["content"].encode('utf-8'),
             "author": data["author"]["id"],
             "_author_json": data["author"],
-            "published": data["published"],
+            "published": datetime.fromisoformat(data['published']),
             "visibility": InboxPost.Visibility.get_visibility_choice(data["visibility"]),
             "unlisted": data["unlisted"],
         }

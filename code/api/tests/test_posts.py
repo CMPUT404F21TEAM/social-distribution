@@ -1,5 +1,6 @@
 # python manage.py test api
 
+import json
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -10,7 +11,7 @@ import base64 as b64
 import logging
 from datetime import datetime
 
-from socialDistribution.models import LocalPost, Category, LocalAuthor
+from socialDistribution.models import InboxPost, LocalPost, Category, LocalAuthor
 from .test_authors import create_author
 from cmput404.constants import API_BASE
 from datetime import datetime
@@ -83,6 +84,18 @@ class PostsViewTest(TestCase):
         response = self.client.get(reverse('api:posts', args=(post.author.id,)))
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(response.content, expected)
+        
+    def test_post_posts(self):
+        self.maxDiff = None
+        author = mixer.blend(LocalAuthor)
+        post = create_post("first", author)
+        newJson = get_post_json(post)
+        newJson['title'] = 'newPost'
+        newJson['content'] = newJson['content']
+
+        response = self.client.post(reverse('api:posts', args=(post.author.id,)), content_type="application/json", data=json.dumps(newJson))
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(newJson['title'], InboxPost.objects.filter(id=post.id).first().title)
         
     def test_get_posts_paginated(self):
         self.maxDiff = None
