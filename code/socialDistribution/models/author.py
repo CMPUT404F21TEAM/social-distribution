@@ -21,10 +21,13 @@ class Author(models.Model):
         When a local author is created, it must be re-fetched from the database in order to access the auto-generated author.url attribute.
     """
 
+    NAME_MAXLEN = 50
+    URL_MAXLEN = 200
+
     url = models.URLField()
-    displayName = models.CharField(max_length=50, default="Anonymous User")
-    githubUrl = models.CharField(max_length=50, null=True)
-    profileImageUrl = models.CharField(max_length=50, null=True)
+    displayName = models.CharField(max_length=NAME_MAXLEN, default="Anonymous User")
+    githubUrl = models.CharField(max_length=URL_MAXLEN, null=True)
+    profileImageUrl = models.CharField(max_length=URL_MAXLEN, null=True)
 
     # timestamp of when the object was last updated
     # will need later for caching
