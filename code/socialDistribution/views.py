@@ -9,12 +9,12 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
-import requests
 
 from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
 from .forms import CreateUserForm, PostForm
 
 import base64
+import pyperclip
 
 import socialDistribution.requests as api_requests
 from api.models import Node
@@ -421,6 +421,25 @@ def author(request, author_id):
 
     return render(request, 'author/detail.html', context)
 
+def unlisted_posts(request):
+    """ Display an author's unlisted posts 
+    """
+
+    curr_user = LocalAuthor.objects.get(user=request.user)
+
+    # TODO: Should become an API request (same as /author/<author-id>) since won't know if author is local/remote
+
+    posts = curr_user.posts.unlisted()
+
+    context = {
+        'author': curr_user,
+        'modal_type':'copy',
+        'author_type': 'Local',
+        'curr_user': curr_user,
+        'author_posts': posts.chronological()
+    }
+
+    return render(request, 'author/detail.html', context)
 
 def create(request):
     return render(request, 'create/index.html')
@@ -521,6 +540,25 @@ def share_post(request, id):
 
     return redirect('socialDistribution:home')
 
+def copy_link(request, id):
+    """
+        Allows user to copy a post's link
+    """
+
+    # TODO:
+    #     * add copy link for remote posts 
+    
+    post = LocalPost.objects.get(id=id)
+    link = post.get_local_shareable_link()
+    try:
+        pyperclip.copy(link)
+    except: # pyperclip.PyperclipException
+        pass # nothing gets copied, but the link is still displayed
+
+    if post.unlisted is True:
+        return redirect('socialDistribution:unlisted-posts')
+    
+    return redirect('socialDistribution:home')
 
 def edit_post(request, id):
     """
@@ -820,6 +858,11 @@ def delete_post(request, id):
     
     if (author.id != post.author.id):
         return HttpResponseForbidden()
+    
+    # remain on unlisted page if the deleted post is unlisted 
+    if post.unlisted is True:
+        post.delete()
+        return redirect('socialDistribution:unlisted-posts')
     
     post.delete()
     return redirect('socialDistribution:home')
