@@ -43,7 +43,7 @@ def add_auth_header(url, headers):
         headers['Authorization'] = 'Basic %s' % authToken
 
 
-def get(url, params=None, send_basic_auth_header=False):
+def get(url, params=None, send_basic_auth_header=True):
     """ Makes a GET request at the given URL and returns the JSON body of the HTTP response.
 
         Parameters:

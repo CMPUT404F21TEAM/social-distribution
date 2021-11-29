@@ -407,7 +407,7 @@ class InboxPost(Post):
     @property
     def comments_as_json(self):
         request_url = self.public_id.strip('/') + '/comments'
-        status_code, response_data = api_requests.get(request_url, send_basic_auth_header=True)
+        status_code, response_data = api_requests.get(request_url)
         if status_code == 200 and response_data is not None:
             comments = response_data["comments"]
             return comments
@@ -417,7 +417,7 @@ class InboxPost(Post):
     @property
     def author_as_json(self):
         request_url = self.public_id.strip('/')
-        status_code, response_data = api_requests.get(request_url, send_basic_auth_header=True)
+        status_code, response_data = api_requests.get(request_url)
         if status_code == 200 and response_data is not None:
             author = response_data["author"]
             return author
