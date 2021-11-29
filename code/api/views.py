@@ -537,7 +537,6 @@ class InboxView(View):
     """ This endpoint currently only works for requests from local server.
     """
 
-    @method_decorator(authenticate_request)
     def get(self, request, author_id):
         """ GET - If authenticated, get a list of posts sent to {author_id} """
 
@@ -570,9 +569,14 @@ class InboxView(View):
                 "items": posts
             }
 
+        except Http404:
+            return HttpResponseNotFound()
+
         except Exception as e:
             logger.error(e, exc_info=True)
-            return HttpResponseServerError()
+            return JsonResponse({
+                "error": "An unknown error occurred"
+            }, status=500)
 
         return JsonResponse(response)
 
