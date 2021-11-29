@@ -21,12 +21,12 @@ import base64
 # Python Software Foundation, https://docs.python.org/3/library/unittest.html
 
 
-def create_author(id, username, displayName, githubUrl):
+def create_author(username, displayName, githubUrl):
     user = mixer.blend(User, username=username)
     user.set_password('password')
     user.save()
     author = LocalAuthor.objects.create(
-        id=id, username=username, displayName=displayName, githubUrl=githubUrl, user=user)
+        username=username, displayName=displayName, githubUrl=githubUrl, user=user)
     return author
 
 
@@ -53,13 +53,11 @@ class InboxViewTests(TestCase):
 
     def test_post_local_follow(self):
         author1 = create_author(
-            1,
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
         )
         author2 = create_author(
-            2,
             "user2",
             "Lara Croft",
             "http://github.com/laracroft"
@@ -70,8 +68,8 @@ class InboxViewTests(TestCase):
             "summary": "Greg wants to follow Lara",
             "actor": {
                 "type": "author",
-                "id": f"{API_BASE}/author/1",
-                "url": f"{API_BASE}/author/1",
+                "id": f"{API_BASE}/author/{author1.id}",
+                "url": f"{API_BASE}/author/{author1.id}",
                 "host": f"{API_BASE}/",
                 "displayName": "Greg Johnson",
                 "github": "http://github.com/gjohnson",
@@ -79,17 +77,17 @@ class InboxViewTests(TestCase):
             },
             "object": {
                 "type": "author",
-                "id": f"{API_BASE}/author/2",
+                "id": f"{API_BASE}/author/{author2.id}",
                 "host": f"{API_BASE}/",
                 "displayName": "Lara Croft",
-                "url": f"{API_BASE}/author/2",
+                "url": f"{API_BASE}/author/{author2.id}",
                 "github": "http://github.com/laracroft",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             }
         }
 
         response = self.client.post(
-            reverse("api:inbox", kwargs={"author_id": 2}),
+            reverse("api:inbox", kwargs={"author_id": author2.id}),
             content_type="application/json",
             **self.basicAuthHeaders,
             data=body
@@ -108,13 +106,11 @@ class InboxViewTests(TestCase):
         # NOTE: This test is very basic. More work needed on this endpoint.
 
         author1 = create_author(
-            1,
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
         )
         author2 = create_author(
-            2,
             "user2",
             "Lara Croft",
             "http://github.com/laracroft"
@@ -123,7 +119,6 @@ class InboxViewTests(TestCase):
         # Create a post from author1
         dummy_post = mixer.blend(
             LocalPost, 
-            id=1, 
             author=author1,
             content="testcontent".encode("utf-8")
         )
@@ -132,7 +127,7 @@ class InboxViewTests(TestCase):
 
         # Send the post to author 2
         response = self.client.post(
-            reverse("api:inbox", kwargs={"author_id": 2}),
+            reverse("api:inbox", kwargs={"author_id": author2.id}),
             content_type="application/json",
             **self.basicAuthHeaders,
             data=body
@@ -152,13 +147,11 @@ class InboxViewTests(TestCase):
     def test_get_inbox(self):
         self.maxDiff = None
         author1 = create_author(
-            1,
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
         )
         author2 = create_author(
-            2,
             "user2",
             "Lara Croft",
             "http://github.com/laracroft"
@@ -176,7 +169,7 @@ class InboxViewTests(TestCase):
 
         # Send the post to author 2
         response = self.client.post(
-            reverse("api:inbox", kwargs={"author_id": 2}),
+            reverse("api:inbox", kwargs={"author_id": author2.id}),
             content_type="application/json",
             **self.basicAuthHeaders,
             data=body
@@ -185,7 +178,7 @@ class InboxViewTests(TestCase):
         # Check the inbox of author2
         self.client.login(username='user2', password='password')
         response = self.client.get(
-            reverse("api:inbox", kwargs={"author_id": 2}),
+            reverse("api:inbox", kwargs={"author_id": author2.id}),
             content_type="application/json",
             **self.basicAuthHeaders,
         )
@@ -203,7 +196,6 @@ class InboxViewTests(TestCase):
             Test liking a comment from a local author
         '''
         author1 = create_author(
-            1,
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
@@ -221,7 +213,7 @@ class InboxViewTests(TestCase):
         }
 
         response = self.client.post(
-            reverse("api:inbox", kwargs={"author_id": 1}),
+            reverse("api:inbox", kwargs={"author_id": author1.id}),
             content_type="application/json",
             **self.basicAuthHeaders,
             data=body
@@ -231,16 +223,15 @@ class InboxViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(comment.total_likes(), 1)
         liker = comment.likes.all()[0]
-        self.assertEqual(liker.id, author1.id)
+        self.assertEqual(liker.author.id, author1.id)
 
     def test_post_like(self):
         author = create_author(
-            1,
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
         )
-        post = mixer.blend(LocalPost, id=1, author=author)
+        post = mixer.blend(LocalPost, author=author)
 
         body = {
             "@context": "https://www.w3.org/ns/activitystreams",
@@ -255,12 +246,12 @@ class InboxViewTests(TestCase):
                 "github": "http://github.com/diego",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             },
-            "object": "http://127.0.0.1:5454/author/1/posts/1"
+            "object": f"http://127.0.0.1:5454/author/{author.id}/posts/{post.id}"
         }
 
         # Send the like to author
         response = self.client.post(
-            reverse("api:inbox", kwargs={"author_id": 1}),
+            reverse("api:inbox", kwargs={"author_id": author.id}),
             content_type="application/json",
             **self.basicAuthHeaders,
             data=body
@@ -269,7 +260,7 @@ class InboxViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         
         # Check that the post received a like
-        post = LocalPost.objects.get(id=1)
+        post = LocalPost.objects.get(id=post.id)
         self.assertEqual(1, post.likes.count())
 
         # Check that the like was from the right author
