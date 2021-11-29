@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 import datetime
+import uuid
 
 import socialDistribution.requests as api_requests
 from cmput404.constants import API_BASE
@@ -20,6 +21,9 @@ class Author(models.Model):
 
         When a local author is created, it must be re-fetched from the database in order to access the auto-generated author.url attribute.
     """
+    
+    # Django Software Foundation, https://docs.djangoproject.com/en/dev/ref/models/fields/#uuidfield
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     NAME_MAXLEN = 50
     URL_MAXLEN = 200
@@ -28,6 +32,8 @@ class Author(models.Model):
     displayName = models.CharField(max_length=NAME_MAXLEN, default="Anonymous User")
     githubUrl = models.CharField(max_length=URL_MAXLEN, null=True)
     profileImageUrl = models.CharField(max_length=URL_MAXLEN, null=True)
+
+    created_date = models.DateTimeField(auto_now_add=True)
 
     # timestamp of when the object was last updated
     # will need later for caching

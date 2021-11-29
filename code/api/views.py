@@ -57,7 +57,7 @@ class AuthorsView(View):
         """
         logger.info(f"GET /authors API endpoint invoked")
 
-        authors = LocalAuthor.objects.order_by('pk')
+        authors = LocalAuthor.objects.order_by('created_date')
         page = request.GET.get("page")
         size = request.GET.get("size")
 

@@ -14,13 +14,15 @@ from socialDistribution.models import LocalAuthor
 # Django Software Foundation, https://docs.djangoproject.com/en/3.2/topics/testing/overview/
 # Python Software Foundation, https://docs.python.org/3/library/unittest.html
 
-def create_author(id, username, displayName, githubUrl, profileImageUrl):
+
+def create_author(username, displayName, githubUrl, profileImageUrl):
     user = mixer.blend(User, username=username)
-    return LocalAuthor.objects.create(id=id, username=username, displayName=displayName, githubUrl=githubUrl, user=user, profileImageUrl=profileImageUrl)
+    author = LocalAuthor.objects.create(username=username, displayName=displayName, githubUrl=githubUrl, user=user, profileImageUrl=profileImageUrl)
+    return LocalAuthor.objects.get(id=author.id) # refetch to get the generated ID
 
 
 class AuthorsViewTests(TestCase):
-    
+
     # the pillow, https://stackoverflow.com/users/2812257/the-pillow, "How can I disable logging while running unit tests in Python Django?"
     # https://stackoverflow.com/a/54519433, 2019-02-04, CC BY-SA 4.0
 
@@ -43,18 +45,18 @@ class AuthorsViewTests(TestCase):
 
     def test_get_authors_single(self):
         author = create_author(
-            1,
             "user1",
             "John Doe",
             "https://github.com/johndoe",
             "https://i.imgur.com/k7XVwpB.jpeg"
         )
+
         expected = {
             "type": "author",
-            "id": "http://127.0.0.1:8000/api/author/1",
+            "id": author.get_url_id(),
             "host": "http://127.0.0.1:8000/api/",
             "displayName": "John Doe",
-            "url": "http://127.0.0.1:8000/api/author/1",
+            "url": author.get_url_id(),
             "github": "https://github.com/johndoe",
             "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
         }
@@ -70,23 +72,24 @@ class AuthorsViewTests(TestCase):
         self.assertDictEqual(author, expected)
 
     def test_get_authors_multiple(self):
+        self.maxDiff = None
         user = mixer.blend(User)
+
         author1 = create_author(
-            1,
             "user1",
             "John Smith",
             "https://github.com/smith",
             "https://i.imgur.com/k7XVwpB.jpeg"
         )
+
         author2 = create_author(
-            2,
             "user2",
             "Apple J Doe",
             "https://github.com/apple",
             "https://i.imgur.com/k7XVwpB.jpeg"
         )
+
         author3 = create_author(
-            3,
             "user3",
             "Jane Smith G. Sr.",
             "https://github.com/another",
@@ -96,28 +99,28 @@ class AuthorsViewTests(TestCase):
         expected = [
             {
                 "type": "author",
-                "id": "http://127.0.0.1:8000/api/author/1",
+                "id": author1.get_url_id(),
                 "host": "http://127.0.0.1:8000/api/",
                 "displayName": "John Smith",
-                "url": "http://127.0.0.1:8000/api/author/1",
+                "url": author1.get_url_id(),
                 "github": "https://github.com/smith",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             },
             {
                 "type": "author",
-                "id": "http://127.0.0.1:8000/api/author/2",
+                "id": author2.get_url_id(),
                 "host": "http://127.0.0.1:8000/api/",
                 "displayName": "Apple J Doe",
-                "url": "http://127.0.0.1:8000/api/author/2",
+                "url": author2.get_url_id(),
                 "github": "https://github.com/apple",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             },
             {
                 "type": "author",
-                "id": "http://127.0.0.1:8000/api/author/3",
+                "id": author3.get_url_id(),
                 "host": "http://127.0.0.1:8000/api/",
                 "displayName": "Jane Smith G. Sr.",
-                "url": "http://127.0.0.1:8000/api/author/3",
+                "url": author3.get_url_id(),
                 "github": "https://github.com/another",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             }
@@ -133,49 +136,47 @@ class AuthorsViewTests(TestCase):
 
         items = data.get("items")
         self.assertListEqual(items, expected)
-        
+
     def test_get_authors_multiple_paginated(self):
         self.maxDiff = None
-        
+
         user = mixer.blend(User)
+
         author1 = create_author(
-            1,
             "user1",
             "John Smith",
             "https://github.com/smith",
             "https://i.imgur.com/k7XVwpB.jpeg"
         )
         author2 = create_author(
-            2,
             "user2",
             "Apple J Doe",
             "https://github.com/apple",
             "https://i.imgur.com/k7XVwpB.jpeg"
         )
         author3 = create_author(
-            3,
             "user3",
             "Jane Smith G. Sr.",
             "https://github.com/another",
             "https://i.imgur.com/k7XVwpB.jpeg"
         )
-        
+
         expected = [
             {
                 "type": "author",
-                "id": "http://127.0.0.1:8000/api/author/1",
+                "id": author1.get_url_id(),
                 "host": "http://127.0.0.1:8000/api/",
                 "displayName": "John Smith",
-                "url": "http://127.0.0.1:8000/api/author/1",
+                "url": author1.get_url_id(),
                 "github": "https://github.com/smith",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             },
             {
                 "type": "author",
-                "id": "http://127.0.0.1:8000/api/author/2",
+                "id": author2.get_url_id(),
                 "host": "http://127.0.0.1:8000/api/",
                 "displayName": "Apple J Doe",
-                "url": "http://127.0.0.1:8000/api/author/2",
+                "url": author2.get_url_id(),
                 "github": "https://github.com/apple",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             },
@@ -191,41 +192,38 @@ class AuthorsViewTests(TestCase):
 
         items = data.get("items")
         self.assertListEqual(items, expected)
-        
+
     def test_get_authors_multiple_paginated_page_2(self):
         self.maxDiff = None
         page = 2
         size = 2
         user = mixer.blend(User)
         author1 = create_author(
-            1,
             "user1",
             "John Smith",
             "https://github.com/smith",
             "https://i.imgur.com/k7XVwpB.jpeg"
         )
         author2 = create_author(
-            2,
             "user2",
             "Apple J Doe",
             "https://github.com/apple",
             "https://i.imgur.com/k7XVwpB.jpeg"
         )
         author3 = create_author(
-            3,
             "user3",
             "Jane Smith G. Sr.",
             "https://github.com/another",
             "https://i.imgur.com/k7XVwpB.jpeg"
         )
-        
+
         expected = [
             {
                 "type": "author",
-                "id": "http://127.0.0.1:8000/api/author/3",
+                "id": author3.get_url_id(),
                 "host": "http://127.0.0.1:8000/api/",
                 "displayName": "Jane Smith G. Sr.",
-                "url": "http://127.0.0.1:8000/api/author/3",
+                "url": author3.get_url_id(),
                 "github": "https://github.com/another",
                 "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
             }
@@ -244,7 +242,6 @@ class AuthorsViewTests(TestCase):
 
     def test_get_author(self):
         author = create_author(
-            1,
             "user1",
             "John Doe",
             "https://github.com/johndoe",
@@ -252,15 +249,15 @@ class AuthorsViewTests(TestCase):
         )
         expected = {
             "type": "author",
-            "id": "http://127.0.0.1:8000/api/author/1",
+            "id": author.get_url_id(),
             "host": "http://127.0.0.1:8000/api/",
             "displayName": "John Doe",
-            "url": "http://127.0.0.1:8000/api/author/1",
+            "url": author.get_url_id(),
             "github": "https://github.com/johndoe",
             "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
         }
         response = self.client.get(
-            reverse("api:author", kwargs={"author_id": 1}))
+            reverse("api:author", kwargs={"author_id": author.id}))
 
         actual = json.loads(response.content)
 
