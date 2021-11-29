@@ -29,8 +29,7 @@ def makeLocalPost(data, author_id, post_id=None):
     )
 
     # set post origin and source to itself for a new post
-    received_post.origin = received_post.get_id()
-    received_post.source = received_post.get_id()
+    received_post.origin = received_post.source = received_post.get_id()
     if post_id:
         received_post.id = post_id
     received_post.save()

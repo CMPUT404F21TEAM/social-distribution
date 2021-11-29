@@ -453,8 +453,7 @@ def posts(request, author_id):
                 )
                 
                 # set post origin and source to itself for a new post
-                new_post.origin = new_post.get_id()
-                new_post.source = new_post.get_id()
+                new_post.origin = new_post.source = new_post.get_id()
                 new_post.save()
 
                 categories = form.cleaned_data.get('categories')
