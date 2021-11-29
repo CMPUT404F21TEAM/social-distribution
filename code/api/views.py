@@ -536,15 +536,49 @@ class CommentLikesView(View):
 class InboxView(View):
     """ This endpoint currently only works for requests from local server.
     """
-
     @method_decorator(authenticate_request)
     def get(self, request, author_id):
         """ GET - If authenticated, get a list of posts sent to {author_id} """
 
         logger.info(f"GET /author/{author_id}/inbox/ API endpoint invoked")
 
+        # Send all posts sent to the author's inbox
+        try:
+            page = request.GET.get("page")
+            size = request.GET.get("size")
+            author = get_object_or_404(LocalAuthor, id=author_id)
+            posts = author.inbox_posts.all().order_by('-published')
 
-        return NotImplementedError
+            if page and size:
+                page = int(page)
+                size = int(size)
+                try:
+                    if page < 1 or size < 1:
+                        return HttpResponseBadRequest("Malformed query: page and size must be > 0")
+                except Exception as e:
+                    return HttpResponseBadRequest(e)
+                posts = getPaginated(posts, page, size)
+
+            posts = [post.as_json() for post in posts]
+
+            response = {
+                "type": "inbox",
+                "author": author.url,
+                "page": page,
+                "size": size,
+                "items": posts
+            }
+
+        except Http404:
+            return HttpResponseNotFound()
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return JsonResponse({
+                "error": "An unknown error occurred"
+            }, status=500)
+
+        return JsonResponse(response)
 
     # TODO: authenticate user
     @method_decorator(validate_node)
@@ -556,10 +590,10 @@ class InboxView(View):
         """
         logger.info(f"POST /author/{author_id}/inbox/ API endpoint invoked")
 
-        data = json.loads(request.body)
-
-        logger.info(f"inbox request body\n{data}")
         try:
+            data = json.loads(request.body)
+            logger.info(f"Object recieved by {request.build_absolute_uri()}: \n{data}")
+
             if str(data["type"]).lower() == "post":
                 logger.info("Inbox object identified as post")
 
@@ -587,7 +621,13 @@ class InboxView(View):
                 if object_id != author_id:
                     raise ValueError("Object ID does not match inbox ID")
 
-                object_author = get_object_or_404(LocalAuthor, id=object_id)
+                # try to get object author, otherwise raise 400 error
+                try:
+                    object_author = LocalAuthor.objects.get(id=object_id)
+                except LocalAuthor.DoesNotExist:
+                    raise ValueError("'object' does not exist")
+
+                # get or create actor author
                 actor_author, created = Author.objects.get_or_create(
                     url = actor["id"]
                 )
@@ -613,14 +653,18 @@ class InboxView(View):
 
                 # retrieve object
                 object_type = url_parser.get_object_type(data['object'])
-                if object_type == "posts":
-                    _, id = url_parser.parse_post(data['object'])
-                    context_object = get_object_or_404(LocalPost, id=id)
-                elif object_type == "comments":
-                    _, __, id = url_parser.parse_comment(data['object'])
-                    context_object = get_object_or_404(Comment, id=id)
-                else:
-                    raise ValueError("Unknown object type")
+                try:
+                    if object_type == "posts":
+                        _, id = url_parser.parse_post(data['object'])
+                        context_object = LocalPost.objects.get(id=id)                        
+                    elif object_type == "comments":
+                        _, __, id = url_parser.parse_comment(data['object'])
+                        context_object = Comment.objects.get(id=id)
+                    else:
+                        raise ValueError("Unknown object type")
+
+                except (LocalPost.DoesNotExist, Comment.DoesNotExist):
+                    raise ValueError("'object' does not exist")
 
                 if context_object.likes.filter(author=liking_author).exists():
                     # if like already exists, remove it
@@ -637,7 +681,7 @@ class InboxView(View):
 
                 # check if comment attribute present
                 if not data['comment']:
-                    HttpResponseBadRequest("Attribute 'comment' in json body must be a non-empty string.")
+                    raise ValueError("Attribute 'comment' in json body must be a non-empty string.")
 
                 # retrieve author
                 commenting_author, created = Author.objects.get_or_create(
@@ -647,8 +691,13 @@ class InboxView(View):
                 # add or update remaining fields
                 commenting_author.update_with_json(data=data["author"])
 
-                _, post_id = url_parser.parse_post(data['object'])
-                post = get_object_or_404(LocalPost, id=post_id)
+                # get the post
+                try:
+                    _, post_id = url_parser.parse_post(data['object'])
+                    post = LocalPost.objects.get(id=post_id)
+                except LocalPost.DoesNotExist:
+                    raise ValueError("'object' does not exist")
+
                 # add remote comment
                 Comment.objects.create(
                     author = commenting_author,
@@ -660,13 +709,22 @@ class InboxView(View):
 
                 return HttpResponse(status=200)
             else:
-                raise ValueError("Unknown object received by inbox")
+                raise ValueError("Unknown object sent to inbox")
+        
+        except json.decoder.JSONDecodeError:
+            return JsonResponse({
+                "error": "Invalid JSON"
+            }, status=400)
+
+        except Http404:
+            return HttpResponseNotFound()
 
         except KeyError as e:
             logger.warn(e, exc_info=True)
             return JsonResponse({
-                "error": "JSON body could not be parsed"
-            })
+                "error": "JSON body could not be parsed",
+                "details": f"{e.args[0]} field not found"
+            }, status=400)
 
         except ValueError as e:
             logger.warn(e, exc_info=True)
@@ -677,7 +735,7 @@ class InboxView(View):
         except Exception as e:
             logger.error(e, exc_info=True)
             return JsonResponse({
-                "error": "Internal Server Error"
+                "error": "An unknown error occurred"
             }, status=500)
 
     def delete(self, request, author_id):

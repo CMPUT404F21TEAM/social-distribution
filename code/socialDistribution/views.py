@@ -627,7 +627,7 @@ def like_post(request, post_type, id):
         }
 
         # redirect request to remote/local api
-        status_code, response_data = api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
+        status_code, response_data = api_requests.post(url=request_url, data=like)
 
         if status_code >= 400:
             messages.error(request, 'An error occurred while liking post')
@@ -680,8 +680,10 @@ def single_post(request, post_type, id):
                 author_type = LOCAL
 
             except LocalAuthor.DoesNotExist:
+                author = get_object_or_404(Author, url=comment_author.url)
                 author_type = REMOTE
 
+            comment["comment_author_local_server_id"] = author.id
             comment["comment_author_object"] = comment_author
             comment["author_type"] = author_type
 
@@ -734,7 +736,7 @@ def like_comment(request):
 
         # redirect request to remote/local api
         request_url = post_author.get_inbox()
-        api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
+        api_requests.post(url=request_url, data=like)
 
 
     if prev_page is None:
@@ -789,7 +791,7 @@ def post_comment(request, author_id, post_id):
                 request_url = f'{post.author.strip("/")}/inbox/'
 
                 # send comment to remote inbox
-                api_requests.post(url=request_url, data=data, send_basic_auth_header=True)
+                api_requests.post(url=request_url, data=data)
 
             else:
                 HttpResponseNotFound()

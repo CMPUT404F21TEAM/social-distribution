@@ -7,10 +7,10 @@
             <div class="col col-sm-6 col-md-4 col-lg-3 d-flex align-items-center justify-content-center ml-2">
 
                 {% if comment.author.profileImageUrl %}
-                    <img src="{{ comment.author.profileImageUrl }}" onclick="redirectToAuthorPage('{{comment.author.id}}')"
+                    <img src="{{ comment.author.profileImageUrl }}" onclick="redirectToAuthorPage('{{comment.comment_author_local_server_id}}')"
                         class="profile-img align-middle" alt="Profile Image">
                 {% else %}
-                    <img src="{% static 'assets/blank-profile-picture.png' %}" onclick="redirectToAuthorPage('{{comment.author.id}}')"
+                    <img src="{% static 'assets/blank-profile-picture.png' %}" onclick="redirectToAuthorPage('{{comment.comment_author_local_server_id}}')"
                     class="profile-img align-middle" alt="Profile Imag">
                 {% endif %}
             </div>
@@ -18,7 +18,7 @@
             <!-- Card details -->
             <div class="col col-sm-6 col-md-8 col-lg-9">
 
-                <h4 class="card-title" onclick="redirectToAuthorPage('{{comment.author.id}}')">
+                <h4 class="card-title" onclick="redirectToAuthorPage('{{comment.comment_author_local_server_id}}')">
                     <span class="comment-card__display-name">{{comment.author.displayName}}&nbsp;</span>
                     <span class="text-muted fs-6">•&nbsp;{{comment.when}}</span> 
                 </h4>
