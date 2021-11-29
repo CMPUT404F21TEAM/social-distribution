@@ -21,10 +21,9 @@
                     
                     <!-- Display author ID  -->
                     {% if author_type == "Local" %}
-                        <span class="badge bg-secondary">{{author.get_url_id}}&nbsp;</span>
+                        <span class="badge normal-white-space bg-secondary">{{author_type}}&nbsp;</span>
                     {% else %}
-                        <!-- <span class="badge bg-secondary">{{author_type}}&nbsp;</span> -->
-                        <span class="badge bg-dark">{{author.get_url_id}}</span>
+                        <span class="badge normal-white-space bg-dark">{{author.get_url_id}}</span>
                     {% endif %}
 
                     <!-- Display friend status -->
