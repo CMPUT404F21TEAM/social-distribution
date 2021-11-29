@@ -14,7 +14,7 @@ from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
 from .forms import CreateUserForm, PostForm
 
 import base64
-import subprocess
+import pyperclip
 
 import socialDistribution.requests as api_requests
 from api.models import Node
@@ -546,12 +546,14 @@ def copy_link(request, id):
     """
 
     # TODO:
-    #     * make copy notification prettier 
     #     * add copy link for remote posts 
+    
     post = LocalPost.objects.get(id=id)
     link = post.get_local_shareable_link()
-    cmd='echo '+link.strip()+'|pbcopy'
-    subprocess.check_call(cmd, shell=True)
+    try:
+        pyperclip.copy(link)
+    except: # pyperclip.PyperclipException
+        pass # nothing gets copied, but the link is still displayed
 
     if post.unlisted is True:
         return redirect('socialDistribution:unlisted-posts')
