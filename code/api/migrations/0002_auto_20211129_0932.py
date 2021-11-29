@@ -10,14 +10,14 @@ def add_local_auth_credentials(apps, schema_editor):
 
     # Add local credentials
     local_secret = secrets.token_hex(10)
-    Node.objects.create(
+    Node.objects.get_or_create(
         host=HOST,
         api_prefix="/api",
         username="local",
         password=local_secret,
         remote_credentials=False
     )
-    Node.objects.create(
+    Node.objects.get_or_create(
         host=HOST,
         api_prefix="/api",
         username="local",
@@ -37,14 +37,14 @@ def add_dummy_auth_credentials(apps, schema_editor):
     if "127.0.0.1" in HOST:
         dummy_host = "127.0.0.1:8080" if ":8000" in HOST else "127.0.0.1:8000"
 
-        Node.objects.create(
+        Node.objects.get_or_create(
             host=dummy_host,
             api_prefix="/api",
             username="dummy",
             password="secret",
             remote_credentials=False
         )
-        Node.objects.create(
+        Node.objects.get_or_create(
             host=dummy_host,
             api_prefix="/api",
             username="dummy",
@@ -66,7 +66,7 @@ def add_prod_auth_credentials(apps, schema_editor):
 
     # Add inbound credentials
     # Clone Team 04
-    Node.objects.create(
+    Node.objects.get_or_create(
         host="cmput404f21-team04.herokuapp.com",
         api_prefix="/api",
         username="team04clone",
@@ -74,7 +74,7 @@ def add_prod_auth_credentials(apps, schema_editor):
         remote_credentials=False
     )
     # Team 08
-    Node.objects.create(
+    Node.objects.get_or_create(
         host="cmput404-bettersocial.herokuapp.com",
         api_prefix="/api",
         username="team08",
@@ -82,7 +82,7 @@ def add_prod_auth_credentials(apps, schema_editor):
         remote_credentials=False
     )
     # Team 11
-    Node.objects.create(
+    Node.objects.get_or_create(
         host="cmput404fall21g11.herokuapp.com",
         api_prefix="/api",
         username="team11",
@@ -90,7 +90,7 @@ def add_prod_auth_credentials(apps, schema_editor):
         remote_credentials=False
     )
     # Team 16
-    Node.objects.create(
+    Node.objects.get_or_create(
         host="i-connect.herokuapp.com",
         api_prefix="/service",
         username="team16",
@@ -100,7 +100,7 @@ def add_prod_auth_credentials(apps, schema_editor):
 
     # Add outbound credentials
     # Clone Team 04
-    Node.objects.create(
+    Node.objects.get_or_create(
         host="cmput404f21-team04.herokuapp.com",
         api_prefix="/api",
         username="theOG",
@@ -108,7 +108,7 @@ def add_prod_auth_credentials(apps, schema_editor):
         remote_credentials=True
     )
     # Team 08
-    Node.objects.create(
+    Node.objects.get_or_create(
         host="cmput404-bettersocial.herokuapp.com",
         api_prefix="/api",
         username="team4",
@@ -116,7 +116,7 @@ def add_prod_auth_credentials(apps, schema_editor):
         remote_credentials=True
     )
     # Team 11
-    Node.objects.create(
+    Node.objects.get_or_create(
         host="cmput404fall21g11.herokuapp.com",
         api_prefix="/api",
         username="team4",
@@ -124,7 +124,7 @@ def add_prod_auth_credentials(apps, schema_editor):
         remote_credentials=True
     )
     # Team 16
-    Node.objects.create(
+    Node.objects.get_or_create(
         host="i-connect.herokuapp.com",
         api_prefix="/service",
         username="admin",
