@@ -103,8 +103,8 @@ class PostViewTest(TestCase):
 
         response = self.client.put(reverse('api:post', args=(post.author.id,str(post_id))), content_type="application/json", data=json.dumps(newJson))
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(newJson['title'], LocalPost.objects.latest('id').title)
-        self.assertEqual(post_id, LocalPost.objects.latest('id').id)
+        self.assertEqual(newJson['title'], LocalPost.objects.latest('published').title)
+        self.assertEqual(post_id, LocalPost.objects.latest('published').id)
         
     def test_delete_post(self):
         self.maxDiff = None
