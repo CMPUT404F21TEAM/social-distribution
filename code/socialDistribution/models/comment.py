@@ -3,7 +3,7 @@ from datetime import *
 import timeago
 import uuid
 
-from cmput404.constants import API_BASE
+from cmput404.constants import API_BASE, STRING_MAXLEN, URL_MAXLEN
 
 class Comment(models.Model):
     '''
@@ -16,7 +16,6 @@ class Comment(models.Model):
         post                Post related to the comment (reference to post)
         likes               Likes created by Authors that liked this comment
     '''
-    STRING_MAXLEN = 255
 
     class CommentContentType(models.TextChoices):
         PLAIN = 'PL', 'text/plain'
