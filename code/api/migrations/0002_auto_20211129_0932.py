@@ -8,7 +8,7 @@ from cmput404.constants import HOST
 def add_local_auth_credentials(apps, schema_editor):
     Node = apps.get_model('api', 'Node')
 
-    # Add local credentials
+    # Add credentials for host server
     local_secret = secrets.token_hex(10)
     Node.objects.get_or_create(
         host=HOST,
@@ -26,12 +26,8 @@ def add_local_auth_credentials(apps, schema_editor):
     )
 
 
-def add_dummy_auth_credentials(apps, schema_editor):
+def add_dev_dummy_auth_credentials(apps, schema_editor):
     Node = apps.get_model('api', 'Node')
-
-    # Don't run migration if on clone deployment
-    if HOST == "cmput404f21-team04.herokuapp.com":
-        return
 
     # Add local dummy server (if running locally)
     if "127.0.0.1" in HOST:
@@ -56,81 +52,97 @@ def add_dummy_auth_credentials(apps, schema_editor):
 def add_prod_auth_credentials(apps, schema_editor):
     Node = apps.get_model('api', 'Node')
 
-    # Don't run migration if on clone deployment
+    # Add remote group credentials if running in prod
+    if HOST == "social-distribution-fall2021.herokuapp.com":
+
+        # Add inbound credentials
+        # Clone Team 04
+        Node.objects.get_or_create(
+            host="cmput404f21-team04.herokuapp.com",
+            api_prefix="/api",
+            username="team04clone",
+            password="secret04clone",
+            remote_credentials=False
+        )
+        # Team 08
+        Node.objects.get_or_create(
+            host="cmput404-bettersocial.herokuapp.com",
+            api_prefix="/api",
+            username="team08",
+            password="secret08",
+            remote_credentials=False
+        )
+        # Team 11
+        Node.objects.get_or_create(
+            host="cmput404fall21g11.herokuapp.com",
+            api_prefix="/api",
+            username="team11",
+            password="secret11",
+            remote_credentials=False
+        )
+        # Team 16
+        Node.objects.get_or_create(
+            host="i-connect.herokuapp.com",
+            api_prefix="/service",
+            username="team16",
+            password="secret16",
+            remote_credentials=False
+        )
+
+        # Add outbound credentials
+        # Clone Team 04
+        Node.objects.get_or_create(
+            host="cmput404f21-team04.herokuapp.com",
+            api_prefix="/api",
+            username="theOG",
+            password="secretOG",
+            remote_credentials=True
+        )
+        # Team 08
+        Node.objects.get_or_create(
+            host="cmput404-bettersocial.herokuapp.com",
+            api_prefix="/api",
+            username="team4",
+            password="team4",
+            remote_credentials=True
+        )
+        # Team 11
+        Node.objects.get_or_create(
+            host="cmput404fall21g11.herokuapp.com",
+            api_prefix="/api",
+            username="team4",
+            password="123456",
+            remote_credentials=True
+        )
+        # Team 16
+        Node.objects.get_or_create(
+            host="i-connect.herokuapp.com",
+            api_prefix="/service",
+            username="admin",
+            password="admin",
+            remote_credentials=True
+        )
+
+
+def add_prod_clone_auth_credentials(apps, schema_editor):
+    Node = apps.get_model('api', 'Node')
+
+    # Add credentials if deployed on clone
     if HOST == "cmput404f21-team04.herokuapp.com":
-        return
-
-    # Don't run migration if running locally
-    if "127.0.0.1" in HOST:
-        return
-
-    # Add inbound credentials
-    # Clone Team 04
-    Node.objects.get_or_create(
-        host="cmput404f21-team04.herokuapp.com",
-        api_prefix="/api",
-        username="team04clone",
-        password="secret04clone",
-        remote_credentials=False
-    )
-    # Team 08
-    Node.objects.get_or_create(
-        host="cmput404-bettersocial.herokuapp.com",
-        api_prefix="/api",
-        username="team08",
-        password="secret08",
-        remote_credentials=False
-    )
-    # Team 11
-    Node.objects.get_or_create(
-        host="cmput404fall21g11.herokuapp.com",
-        api_prefix="/api",
-        username="team11",
-        password="secret11",
-        remote_credentials=False
-    )
-    # Team 16
-    Node.objects.get_or_create(
-        host="i-connect.herokuapp.com",
-        api_prefix="/service",
-        username="team16",
-        password="secret16",
-        remote_credentials=False
-    )
-
-    # Add outbound credentials
-    # Clone Team 04
-    Node.objects.get_or_create(
-        host="cmput404f21-team04.herokuapp.com",
-        api_prefix="/api",
-        username="theOG",
-        password="secretOG",
-        remote_credentials=True
-    )
-    # Team 08
-    Node.objects.get_or_create(
-        host="cmput404-bettersocial.herokuapp.com",
-        api_prefix="/api",
-        username="team4",
-        password="team4",
-        remote_credentials=True
-    )
-    # Team 11
-    Node.objects.get_or_create(
-        host="cmput404fall21g11.herokuapp.com",
-        api_prefix="/api",
-        username="team4",
-        password="123456",
-        remote_credentials=True
-    )
-    # Team 16
-    Node.objects.get_or_create(
-        host="i-connect.herokuapp.com",
-        api_prefix="/service",
-        username="admin",
-        password="admin",
-        remote_credentials=True
-    )
+        Node.objects.get_or_create(
+            host="social-distribution-fall2021.herokuapp.com",
+            api_prefix="/api",
+            username="theOG",
+            password="secretOG",
+            remote_credentials=False
+        )
+        Node.objects.get_or_create(
+            host="social-distribution-fall2021.herokuapp.com",
+            api_prefix="/api",
+            username="team04clone",
+            password="secret04clone",
+            remote_credentials=True
+        )
 
 
 class Migration(migrations.Migration):
@@ -141,6 +153,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(add_local_auth_credentials),
-        migrations.RunPython(add_dummy_auth_credentials),
+        migrations.RunPython(add_dev_dummy_auth_credentials),
         migrations.RunPython(add_prod_auth_credentials),
+        migrations.RunPython(add_prod_clone_auth_credentials),
     ]
