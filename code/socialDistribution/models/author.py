@@ -24,7 +24,7 @@ class Author(models.Model):
     url = models.URLField()
     displayName = models.CharField(max_length=50, default="Anonymous User")
     githubUrl = models.CharField(max_length=50, null=True)
-    profileImageUrl = models.CharField(max_length=2000, null=True)  # needs to be about 2000 (max url len)
+    profileImageUrl = models.CharField(max_length=50, null=True)
 
     # timestamp of when the object was last updated
     # will need later for caching
