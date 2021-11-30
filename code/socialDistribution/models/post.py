@@ -7,9 +7,10 @@ from django.utils import timezone
 from jsonfield import JSONField
 import datetime as dt
 import timeago
+import uuid
 
 import socialDistribution.requests as api_requests
-from cmput404.constants import API_BASE
+from cmput404.constants import API_BASE, CLIENT_BASE
 from .comment import Comment
 from .category import Category
 
@@ -20,6 +21,11 @@ class PostQuerySet(models.QuerySet):
         """ Get all listed posts.
         """
         return self.filter(unlisted=False)
+    
+    def unlisted(self):
+        """ Get all unlisted posts.
+        """
+        return self.filter(unlisted=True)
 
     def get_public(self):
         """ Get all public posts.
@@ -73,7 +79,6 @@ class Post(models.Model):
 
             else:
                 return visibility.upper()   # else return visibility
-            
 
     TITLE_MAXLEN = 100
     DESCRIPTION_MAXLEN = 100
@@ -81,10 +86,13 @@ class Post(models.Model):
     STRING_MAXLEN = 50
     URL_MAXLEN = 2048
 
+    # Django Software Foundation, https://docs.djangoproject.com/en/dev/ref/models/fields/#uuidfield
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     objects = PostQuerySet.as_manager()
 
     title = models.CharField(max_length=TITLE_MAXLEN)
-    
+
     source = models.URLField(max_length=URL_MAXLEN, default='')
 
     origin = models.URLField(max_length=URL_MAXLEN, default='')
@@ -161,7 +169,7 @@ class Post(models.Model):
         """ Check if post is public. """
 
         return self.visibility == self.Visibility.PUBLIC
-    
+
     def is_friends(self):
         """ Check if post is friends. """
 
@@ -241,7 +249,7 @@ class LocalPost(Post):
         comments_set = self.comments()
         comment_list = [comment.as_json() for comment in comments_set]
         return comment_list
-    
+
     def comments(self):
         """ Gets the comments of the post """
         return self.comment_set.order_by('-pub_date')
@@ -253,6 +261,9 @@ class LocalPost(Post):
 
     def get_id(self):
         return f"{API_BASE}/author/{self.author.id}/posts/{self.id}"
+    
+    def get_local_shareable_link(self):
+        return f"{CLIENT_BASE}/posts/local/{self.id}"
 
     def as_json(self):
         previousCategories = self.categories.all()
@@ -339,12 +350,12 @@ class InboxPost(Post):
     def author_as_json(self):
         """ Gets the author of the post in JSON format. """
         return self._author_json
-    
+
     def fetch_update(self):
         """ Fetches update about the post for an edit or delete if it is public """
         if self.visibility != Post.Visibility.PUBLIC:
             return
-        
+
         # make api request
         try:
             actor_url = self.author.strip('/')
@@ -361,7 +372,7 @@ class InboxPost(Post):
                 self.content = response_body['content'].encode('utf-8')
                 self.visibility = Post.Visibility.get_visibility_choice(response_body['visibility'])
                 self.unlisted = response_body['unlisted']
-                
+
                 if response_body['contentType'] == 'text/plain':
                     self.content_type = self.ContentType.PLAIN
                 elif response_body['contentType'] == 'text/markdown':
@@ -372,11 +383,11 @@ class InboxPost(Post):
                     self.content_type = self.ContentType.JPEG
                 elif response_body['contentType'] == 'image/png;base64':
                     self.content_type = self.ContentType.PNG
-                
+
                 categories = response_body['categories']
-                
+
                 if categories is not None:
-                    categories_to_remove = [ cat.category for cat in self.categories.all()]
+                    categories_to_remove = [cat.category for cat in self.categories.all()]
 
                     """
                     This implementation makes category names case-insensitive.
@@ -389,7 +400,7 @@ class InboxPost(Post):
                             defaults={'category': category}
                         )
                         self.categories.add(category_obj)
-                        
+
                         while category_obj.category in categories_to_remove:
                             categories_to_remove.remove(category_obj.category)     # don't remove this category
 

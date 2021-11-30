@@ -2,7 +2,13 @@
 
 CMPUT404-project-socialdistribution
 
-# Usage 
+# Usage
+
+### Recommended Python Version
+```
+python >= 3.7
+```
+
 Install prerequisites
 ```
 cd code
