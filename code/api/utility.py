@@ -22,6 +22,8 @@ def makeLocalPost(data, author_id, post_id=None):
     
     # get content type of post
     contentType = data['contentType']
+    content = data["content"]
+    
     mime_type, subtype = contentType.split('/')
     if mime_type not in ['image', 'application', 'text']:
         raise json.decoder.JSONDecodeError(f'File type {mime_type} is not supported', '', 0)
@@ -30,9 +32,13 @@ def makeLocalPost(data, author_id, post_id=None):
     PNG = LocalPost.ContentType.PNG
     JPEG = LocalPost.ContentType.JPEG
     if subtype not in ['PLAIN', 'MARKDOWN', PNG, JPEG]:
+        if subtype in [PNG, JPEG]:
+            content = base64.b64encode(content)
         raise json.decoder.JSONDecodeError(f'Subtype {subtype} is not supported', '', 0)
 
     contentType = subtype
+    content = content.encode('utf-8')
+    
 
     # save the received post as a LocalPost
     received_post = LocalPost(
@@ -40,7 +46,7 @@ def makeLocalPost(data, author_id, post_id=None):
             title=data["title"],
             description=data["description"],
             content_type=contentType,
-            content=data["content"].encode('utf-8'),
+            content=content,
             visibility=LocalPost.Visibility.get_visibility_choice(data["visibility"]),
             unlisted=data["unlisted"],
     )
@@ -79,11 +85,24 @@ def makeInboxPost(data, id=None):
     """
     # save the received post as an InboxPost
     
-    # base64 encode if base64 type
-    contentType = data["contentType"]
+    # get content type of post
+    contentType = data['contentType']
     content = data["content"]
-    if contentType == 'application/base64' or contentType == 'image/png;base64' or contentType == 'image/jpeg;base64':
-        content = base64.b64encode(content)
+    
+    mime_type, subtype = contentType.split('/')
+    if mime_type not in ['image', 'application', 'text']:
+        raise json.decoder.JSONDecodeError(f'File type {mime_type} is not supported', '', 0)
+    
+    subtype = subtype.replace(';base64', '').upper()
+    PNG = LocalPost.ContentType.PNG
+    JPEG = LocalPost.ContentType.JPEG
+    if subtype not in ['PLAIN', 'MARKDOWN', PNG, JPEG]:
+        if subtype in [PNG, JPEG]:
+            content = base64.b64encode(content)
+        raise json.decoder.JSONDecodeError(f'Subtype {subtype} is not supported', '', 0)
+
+    contentType = subtype
+    content = content.encode('utf-8')
     
     received_post, post_created = InboxPost.objects.get_or_create(
         public_id=data["id"],
@@ -92,8 +111,8 @@ def makeInboxPost(data, id=None):
             "source": data["source"],
             "origin": data["origin"],
             "description": data["description"],
-            "content_type": data["contentType"],
-            "content": content.encode('utf-8'),
+            "content_type": contentType,
+            "content": content,
             "author": data["author"]["id"],
             "_author_json": data["author"],
             "published": datetime.fromisoformat(data['published']),
