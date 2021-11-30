@@ -409,7 +409,6 @@ class PostView(View):
 
         except Exception as e:
             logger.error(e, exc_info=True)
-            print(e)
             return JsonResponse({
                 "error": "An unknown error occurred"
             }, status=500)
