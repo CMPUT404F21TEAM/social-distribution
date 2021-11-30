@@ -99,7 +99,7 @@ class PostsViewTest(TestCase):
 
         response = self.client.post(reverse('api:posts', args=(post.author.id,)), content_type="application/json", data=json.dumps(newJson))
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(newJson['title'], LocalPost.objects.latest('id').title)
+        self.assertEqual(newJson['title'], LocalPost.objects.latest('published').title)
         
     def test_get_posts_paginated(self):
         self.maxDiff = None

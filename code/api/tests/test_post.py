@@ -8,6 +8,7 @@ from mixer.backend.django import mixer
 
 import json
 import logging
+import uuid
 
 from socialDistribution.models import LocalPost, Category, LocalAuthor
 from .test_authors import create_author
@@ -98,12 +99,12 @@ class PostViewTest(TestCase):
         newJson = get_post_json(post)
         newJson['title'] = 'newPost'
         newJson['content'] = newJson['content'].decode('utf-8')
-        post_id = 123
+        post_id = uuid.uuid4()
 
-        response = self.client.put(reverse('api:post', args=(post.author.id,post_id)), content_type="application/json", data=json.dumps(newJson))
+        response = self.client.put(reverse('api:post', args=(post.author.id,str(post_id))), content_type="application/json", data=json.dumps(newJson))
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(newJson['title'], LocalPost.objects.latest('id').title)
-        self.assertEqual(post_id, LocalPost.objects.latest('id').id)
+        self.assertEqual(newJson['title'], LocalPost.objects.latest('published').title)
+        self.assertEqual(post_id, LocalPost.objects.latest('published').id)
         
     def test_delete_post(self):
         self.maxDiff = None
