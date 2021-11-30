@@ -5,6 +5,8 @@ from django.http.response import HttpResponseBadRequest
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
 
+from dateutil import parser
+
 from socialDistribution.models import *
 
 # https://docs.djangoproject.com/en/3.2/topics/pagination/ - Pagination
@@ -84,10 +86,13 @@ def makeInboxPost(data, id=None):
     Creates an InboxPost given json data
     """
     # save the received post as an InboxPost
+    received_post, post_created = InboxPost.objects.get_or_create(
+        public_id=data["id"],
+    )
     
     # get content type of post
-    contentType = data['contentType']
-    content = data["content"]
+    contentType = data.get('contentType')
+    content = data.get("content")
     
     mime_type, subtype = contentType.split('/')
     if mime_type not in ['image', 'application', 'text']:
@@ -103,23 +108,40 @@ def makeInboxPost(data, id=None):
 
     contentType = subtype
     content = content.encode('utf-8')
+
+    if data.get("title") is not None:
+        received_post.title = data["title"]
+    else: 
+        received_post.title = "No title"
     
-    received_post, post_created = InboxPost.objects.get_or_create(
-        public_id=data["id"],
-        defaults={
-            "title": data["title"],
-            "source": data["source"],
-            "origin": data["origin"],
-            "description": data["description"],
-            "content_type": contentType,
-            "content": content,
-            "author": data["author"]["id"],
-            "_author_json": data["author"],
-            "published": datetime.fromisoformat(data['published']),
-            "visibility": InboxPost.Visibility.get_visibility_choice(data["visibility"]),
-            "unlisted": data["unlisted"],
-        }
-    )
+    if data.get("source") is not None:
+        received_post.source = data["source"]
+
+    if data.get("origin") is not None:
+        received_post.origin = data["origin"]
+
+    if data.get("description") is not None:    
+        received_post.description = data["description"]
+    
+    received_post.content_type = contentType
+    received_post.content = content
+
+    if data.get("author") is not None:
+        received_post.author = data.get("author").get("id")
+        received_post._author_json = data.get("author")
+    
+    if data.get("published") is not None:
+        # Handle different data formats (some groups not following correct ISO)
+        # Nicolas Gervais, https://stackoverflow.com/users/10908375/nicolas-gervais,
+        # How do I translate an ISO 8601 datetime string into a Python datetime object? [duplicate]
+        # https://stackoverflow.com/a/3908349, CC BY-SA 4.0
+        received_post.published = parser.parse(data["published"])
+
+    if data.get("visibility") is not None and type(data["visibility"])==str:
+        received_post.visibility = InboxPost.Visibility.get_visibility_choice(data["visibility"])
+
+    if data.get("unlisted") is not None:
+        received_post.unlisted = data["unlisted"]
 
     if not post_created:
         categories_to_remove = [category_obj.category 
@@ -146,3 +168,5 @@ def makeInboxPost(data, id=None):
         received_post.categories.remove(category_obj)
 
     return received_post
+
+    
