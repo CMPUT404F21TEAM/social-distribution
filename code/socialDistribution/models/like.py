@@ -2,9 +2,6 @@ from django.db import models
 from datetime import datetime, timezone
 import timeago
 
-from cmput404.constants import HOST, API_PREFIX
-
-
 class Like(models.Model):
     '''
     Like model:

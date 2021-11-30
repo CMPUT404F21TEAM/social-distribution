@@ -6,7 +6,7 @@ import datetime
 import uuid
 
 import socialDistribution.requests as api_requests
-from cmput404.constants import API_BASE
+from cmput404.constants import API_BASE, STRING_MAXLEN, URL_MAXLEN
 from .follow import Follow
 
 
@@ -24,15 +24,10 @@ class Author(models.Model):
     
     # Django Software Foundation, https://docs.djangoproject.com/en/dev/ref/models/fields/#uuidfield
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
-    NAME_MAXLEN = 50
-    URL_MAXLEN = 200
-
-    url = models.URLField()
-    displayName = models.CharField(max_length=NAME_MAXLEN, default="Anonymous User")
+    url = models.URLField(max_length=URL_MAXLEN)
+    displayName = models.CharField(max_length=STRING_MAXLEN, default="Anonymous User")
     githubUrl = models.CharField(max_length=URL_MAXLEN, null=True)
     profileImageUrl = models.CharField(max_length=URL_MAXLEN, null=True)
-
     created_date = models.DateTimeField(auto_now_add=True)
 
     # timestamp of when the object was last updated
@@ -140,7 +135,7 @@ class LocalAuthor(Author):
     '''
 
     user = models.OneToOneField(User, null=True, on_delete=models.CASCADE)
-    username = models.CharField(max_length=50, unique=True, blank=False)
+    username = models.CharField(max_length=STRING_MAXLEN, unique=True, blank=False)
 
     follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')

@@ -3,7 +3,7 @@ from datetime import *
 import timeago
 import uuid
 
-from cmput404.constants import API_BASE
+from cmput404.constants import API_BASE, STRING_MAXLEN, URL_MAXLEN
 
 class Comment(models.Model):
     '''
@@ -16,6 +16,7 @@ class Comment(models.Model):
         post                Post related to the comment (reference to post)
         likes               Likes created by Authors that liked this comment
     '''
+
     class CommentContentType(models.TextChoices):
         PLAIN = 'PL', 'text/plain'
         MARKDOWN = 'MD', 'text/markdown'
@@ -25,10 +26,11 @@ class Comment(models.Model):
 
     author = models.ForeignKey('Author', on_delete=models.CASCADE)
     content_type = models.CharField(
-        max_length=2,
-        choices=CommentContentType.choices
+        max_length=STRING_MAXLEN,
+        choices=CommentContentType.choices,
+        default=CommentContentType.PLAIN
     )
-    comment = models.CharField(max_length=200)
+    comment = models.CharField(max_length=STRING_MAXLEN)
 
     post = models.ForeignKey('LocalPost', on_delete=models.CASCADE)
     pub_date = models.DateTimeField()

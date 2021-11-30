@@ -12,7 +12,7 @@
         <p class="card-text text-center">
             <span class="mx-auto">{{ post.description }}<span><br>
                 {% if not post.is_image_post %}
-                    <span class="p-1 content-markdown">{{ post.decoded_content | safe}}</span>
+                    <span class="p-1 content-markdown">{{ post.decoded_content }}</span>
                 {% endif %}
         </p>
         <p>
