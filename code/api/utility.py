@@ -26,15 +26,11 @@ def makeLocalPost(data, author_id, post_id=None):
     if mime_type not in ['image', 'application', 'text']:
         raise json.decoder.JSONDecodeError(f'File type {mime_type} is not supported', '', 0)
     
-    subtype.replace(';base64', '')
-    if subtype not in ['markdown', 'plain ', 'png', 'jpeg']:
-        raise json.decoder.JSONDecodeError(f'File subtype {subtype} is not supported', '', 0)
-    if mime_type == 'image':
-        subtype = subtype.upper()
-        PNG = LocalPost.ContentType.PNG
-        JPEG = LocalPost.ContentType.JPEG
-        if subtype not in [PNG, JPEG]:
-            raise json.decoder.JSONDecodeError(f'Image type {subtype} is not supported', '', 0)
+    subtype = subtype.replace(';base64', '').upper()
+    PNG = LocalPost.ContentType.PNG
+    JPEG = LocalPost.ContentType.JPEG
+    if subtype not in ['PLAIN', 'MARKDOWN', PNG, JPEG]:
+        raise json.decoder.JSONDecodeError(f'Subtype {subtype} is not supported', '', 0)
 
     contentType = subtype
 
