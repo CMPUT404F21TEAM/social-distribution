@@ -401,6 +401,11 @@ class PostView(View):
             return JsonResponse({
                 "error": "Invalid JSON"
             }, status=400)
+            
+        except ValidationError:
+            return JsonResponse({
+                "error": "Not a valid UUID"
+            }, status=400)
 
         except Exception as e:
             logger.error(e, exc_info=True)
