@@ -30,5 +30,5 @@ urlpatterns = [
   path('delete-post/<str:id>', views.delete_post, name='delete-post'),
   path('edit-post/<str:id>', views.edit_post, name='edit-post'),
   path('share-post/<str:id>', views.share_post, name='share-post'),
-  path('copy-link/<int:id>', views.copy_link, name='copy-link')
+  path('copy-link/<str:id>', views.copy_link, name='copy-link')
 ]
