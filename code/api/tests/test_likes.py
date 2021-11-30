@@ -193,6 +193,60 @@ class LikedViewTest(TestCase):
             self.assertIn(like, res_json["items"])
 
 
+
+class TestPostLikesView(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        logging.disable(logging.CRITICAL)
+
+    @classmethod
+    def tearDownClass(cls):
+        logging.disable(logging.NOTSET)
+
+    def test_get_posts(self):
+        author1 = mixer.blend(LocalAuthor)
+        post = create_post("Test post", author1)
+
+        author2 = mixer.blend(LocalAuthor)
+        author3 = mixer.blend(LocalAuthor)
+        author4 = mixer.blend(LocalAuthor)
+
+        post_like1 = create_postlike(author2, post)
+        post_like2 = create_postlike(author3, post)
+        post_like3 = create_postlike(author4, post)
+
+        expected = {
+            "type": "likes",
+            "items": [
+                post_like_as_json(post_like1),
+                post_like_as_json(post_like2),
+                post_like_as_json(post_like3)
+            ]
+        }
+
+        response = self.client.get(reverse('api:post_likes', args=(author1.id, post.id)))
+        self.maxDiff = None
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(json.dumps(expected), response.json())
+
+    def test_get_post_likes_404(self):
+        author1 = mixer.blend(LocalAuthor)
+        post = create_post("Test post", author1)
+
+        self.assertTrue(LocalPost.objects.filter(id=post.id).exists())
+
+        author2 = mixer.blend(LocalAuthor)
+        create_postlike(author2, post)
+
+        post_id = post.id
+        post.delete()
+        self.assertFalse(LocalPost.objects.filter(id=post_id).exists())
+
+        response = self.client.get(reverse('api:post_likes', args=(author1.id, post_id)))
+        self.assertEqual(response.status_code, 404)
+
+
 class TestCommentLikesView(TestCase):
 
     # the pillow, https://stackoverflow.com/users/2812257/the-pillow, "How can I disable logging while running unit tests in Python Django?"
@@ -208,7 +262,7 @@ class TestCommentLikesView(TestCase):
     def tearDownClass(cls):
         logging.disable(logging.NOTSET)
 
-    def test_get_comments(self):
+    def test_get_comment_likes(self):
         author1 = mixer.blend(LocalAuthor)
         author2 = mixer.blend(LocalAuthor)
         author3 = mixer.blend(LocalAuthor)
@@ -235,4 +289,37 @@ class TestCommentLikesView(TestCase):
         self.maxDiff = None
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(json.dumps(expected), response.json())
-        
+
+    def test_get_comment_likes_missing_post(self):
+        author1 = mixer.blend(LocalAuthor)
+        post = create_post("Test post", author1)
+        comment = mixer.blend(Comment, author=author1, post=post)
+
+        self.assertTrue(LocalPost.objects.filter(id=post.id).exists())
+
+        author2 = mixer.blend(LocalAuthor)
+        create_commentlike(author2, comment)
+
+        post_id = post.id
+        post.delete()
+        self.assertFalse(LocalPost.objects.filter(id=post_id).exists())
+
+        response = self.client.get(reverse('api:comment_likes', args=(author1.id, post_id, comment.id)))
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_comment_likes_missing_comment(self):
+        author1 = mixer.blend(LocalAuthor)
+        post = create_post("Test post", author1)
+        comment = mixer.blend(Comment, author=author1, post=post)
+
+        self.assertTrue(LocalPost.objects.filter(id=post.id).exists())
+
+        author2 = mixer.blend(LocalAuthor)
+        create_commentlike(author2, comment)
+
+        comment_id = comment.id
+        comment.delete()
+        self.assertFalse(LocalPost.objects.filter(id=comment.id).exists())
+
+        response = self.client.get(reverse('api:comment_likes', args=(author1.id, post.id, comment_id)))
+        self.assertEqual(response.status_code, 404)
