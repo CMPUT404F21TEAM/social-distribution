@@ -14,9 +14,8 @@ from socialDistribution.models import Comment
 from .test_authors import create_author
 from cmput404.constants import API_BASE
 
-def create_comment(comment_id, author, content_type, comment, post, date=timezone.now()):
+def create_comment(author, content_type, comment, post, date=timezone.now()):
     return Comment.objects.create(
-        id=comment_id,
         author=author,
         content_type=content_type,
         comment=comment,
@@ -71,7 +70,6 @@ class PostCommentsViewTest(TestCase):
         self.maxDiff = None
         post = mixer.blend('socialDistribution.localpost')
         comment_author = create_author(
-            100,
             "John Doe",
             "johnDoe",
             "https://github.com/johnDoe",
@@ -79,7 +77,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment = create_comment(
-            1,
             comment_author, 
             'text/markdown', 
             'Testing comment single author',
@@ -97,7 +94,6 @@ class PostCommentsViewTest(TestCase):
     def test_comment_single_author(self):
         post = mixer.blend('socialDistribution.localpost')
         comment_author = create_author(
-            100,
             "John Doe",
             "johnDoe",
             "https://github.com/johnDoe",
@@ -105,7 +101,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment = create_comment(
-            1,
             comment_author, 
             'text/markdown', 
             'Testing comment single author',
@@ -117,17 +112,17 @@ class PostCommentsViewTest(TestCase):
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"{API_BASE}/author/100",
+                    "id": comment_author.get_url_id(),
                     "host": f"{API_BASE}/",
                     "displayName": "johnDoe",
-                    "url": f"{API_BASE}/author/100",
+                    "url": comment_author.get_url_id(),
                     "github": "https://github.com/johnDoe",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Testing comment single author",
                 "contentType": "text/markdown",
                 "published": str(comment.pub_date),
-                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/1"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment.id}"
             }
         ] 
 
@@ -142,7 +137,6 @@ class PostCommentsViewTest(TestCase):
     def test_comment_multiple_authors(self):
         post = mixer.blend('socialDistribution.localpost')
         author1 = create_author(
-            100,
             "John Doe",
             "johnDoe",
             "https://github.com/johnDoe",
@@ -150,7 +144,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         author2 = create_author(
-            200,
             "Jane Smith",
             "jane_smith",
             "https://github.com/jane_smith",
@@ -158,7 +151,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         author3 = create_author(
-            204,
             "Lara Croft",
             "lara_croft",
             "https://github.com/lara_croft",
@@ -166,7 +158,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment_author1 = create_comment(
-            1,
             author1,
             "text/markdown",
             "Hello there",
@@ -174,7 +165,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment_author2 = create_comment(
-            2,
             author2,
             "text/markdown",
             "This is great for testing",
@@ -182,7 +172,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment_author3 =create_comment(
-            3,
             author3,
             "text/markdown",
             "Wow! This is such a nice comment for testing",
@@ -194,49 +183,49 @@ class PostCommentsViewTest(TestCase):
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"{API_BASE}/author/100",
+                    "id": f"{API_BASE}/author/{author1.id}",
                     "host": f"{API_BASE}/",
                     "displayName": "johnDoe",
-                    "url": f"{API_BASE}/author/100",
+                    "url": f"{API_BASE}/author/{author1.id}",
                     "github": "https://github.com/johnDoe",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Hello there",
                 "contentType": "text/markdown",
                 "published": str(comment_author1.pub_date),
-                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/1"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment_author1.id}"
             },
             {
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"{API_BASE}/author/200",
+                    "id": f"{API_BASE}/author/{author2.id}",
                     "host": f"{API_BASE}/",
                     "displayName": "jane_smith",
-                    "url": f"{API_BASE}/author/200",
+                    "url": f"{API_BASE}/author/{author2.id}",
                     "github": "https://github.com/jane_smith",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "This is great for testing",
                 "contentType": "text/markdown",
                 "published": str(comment_author2.pub_date),
-                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/2"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment_author2.id}"
             },
             {
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"{API_BASE}/author/204",
+                    "id": f"{API_BASE}/author/{author3.id}",
                     "host": f"{API_BASE}/",
                     "displayName": "lara_croft",
-                    "url": f"{API_BASE}/author/204",
+                    "url": f"{API_BASE}/author/{author3.id}",
                     "github": "https://github.com/lara_croft",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Wow! This is such a nice comment for testing",
                 "contentType": "text/markdown",
                 "published": str(comment_author3.pub_date),
-                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/3"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment_author3.id}"
             },
         ]
 
@@ -258,7 +247,6 @@ class PostCommentsViewTest(TestCase):
     def test_404_unmatching_authors(self):
         post = mixer.blend('socialDistribution.localpost')
         author = create_author(
-            100,
             "John Doe",
             "johnDoe",
             "http://github.com/johnDoe",
@@ -266,7 +254,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment = create_comment(
-            1,
             author,
             "text/markdown",
             "Cool post",
@@ -280,7 +267,6 @@ class PostCommentsViewTest(TestCase):
     def test_multi_comments_same_author(self):
         post = mixer.blend('socialDistribution.localpost')
         author = create_author(
-            100,
             "John Doe",
             "johnDoe",
             "https://github.com/johnDoe",
@@ -288,7 +274,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment1 = create_comment(
-            1,
             author,
             "text/markdown",
             "Cool post",
@@ -296,7 +281,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment2 = create_comment(
-            2,
             author,
             "text/markdown",
             "Really cool post",
@@ -304,7 +288,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment3 = create_comment(
-            3,
             author,
             "text/markdown",
             "Hi again folks",
@@ -316,48 +299,48 @@ class PostCommentsViewTest(TestCase):
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"{API_BASE}/author/100",
+                    "id": f"{API_BASE}/author/{author.id}",
                     "host": f"{API_BASE}/",
                     "displayName": "johnDoe",
-                    "url": f"{API_BASE}/author/100",
+                    "url": f"{API_BASE}/author/{author.id}",
                     "github": "https://github.com/johnDoe",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Cool post",
                 "contentType": "text/markdown",
                 "published": str(comment1.pub_date),
-                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/1"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment1.id}"
             },
             {
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"{API_BASE}/author/100",
+                    "id": f"{API_BASE}/author/{author.id}",
                     "host": f"{API_BASE}/",
                     "displayName": "johnDoe",
-                    "url": f"{API_BASE}/author/100",
+                    "url": f"{API_BASE}/author/{author.id}",
                     "github": "https://github.com/johnDoe",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Really cool post",
                 "contentType": "text/markdown",
                 "published": str(comment2.pub_date),
-                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/2"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment2.id}"
             },{
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"{API_BASE}/author/100",
+                    "id": f"{API_BASE}/author/{author.id}",
                     "host": f"{API_BASE}/",
                     "displayName": "johnDoe",
-                    "url": f"{API_BASE}/author/100",
+                    "url": f"{API_BASE}/author/{author.id}",
                     "github": "https://github.com/johnDoe",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Hi again folks",
                 "contentType": "text/markdown",
                 "published": str(comment3.pub_date),
-                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/3"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment3.id}"
             },
         ]
 
@@ -383,7 +366,6 @@ class PostCommentsViewTest(TestCase):
         page = 1
         size = 2
         author1 = create_author(
-            100,
             "John Doe",
             "johnDoe",
             "https://github.com/johnDoe",
@@ -391,7 +373,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         author2 = create_author(
-            200,
             "Jane Smith",
             "jane_smith",
             "https://github.com/jane_smith",
@@ -399,7 +380,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         author3 = create_author(
-            204,
             "Lara Croft",
             "lara_croft",
             "https://github.com/lara_croft",
@@ -407,7 +387,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment_author1 = create_comment(
-            1,
             author1,
             "text/markdown",
             "Hello there",
@@ -416,7 +395,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment_author2 = create_comment(
-            2,
             author2,
             "text/markdown",
             "This is great for testing",
@@ -425,7 +403,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment_author3 =create_comment(
-            3,
             author3,
             "text/markdown",
             "Wow! This is such a nice comment for testing",
@@ -438,33 +415,33 @@ class PostCommentsViewTest(TestCase):
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"{API_BASE}/author/204",
+                    "id": f"{API_BASE}/author/{author3.id}",
                     "host": f"{API_BASE}/",
                     "displayName": "lara_croft",
-                    "url": f"{API_BASE}/author/204",
+                    "url": f"{API_BASE}/author/{author3.id}",
                     "github": "https://github.com/lara_croft",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Wow! This is such a nice comment for testing",
                 "contentType": "text/markdown",
                 "published": str(comment_author3.pub_date),
-                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/3"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment_author3.id}"
             },
             {
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"{API_BASE}/author/200",
+                    "id": f"{API_BASE}/author/{author2.id}",
                     "host": f"{API_BASE}/",
                     "displayName": "jane_smith",
-                    "url": f"{API_BASE}/author/200",
+                    "url": f"{API_BASE}/author/{author2.id}",
                     "github": "https://github.com/jane_smith",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "This is great for testing",
                 "contentType": "text/markdown",
                 "published": str(comment_author2.pub_date),
-                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/2"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment_author2.id}"
             }
         ]
 
@@ -490,7 +467,6 @@ class PostCommentsViewTest(TestCase):
         page = 2
         size = 2
         author1 = create_author(
-            100,
             "John Doe",
             "johnDoe",
             "https://github.com/johnDoe",
@@ -498,7 +474,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         author2 = create_author(
-            200,
             "Jane Smith",
             "jane_smith",
             "https://github.com/jane_smith",
@@ -506,7 +481,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         author3 = create_author(
-            204,
             "Lara Croft",
             "lara_croft",
             "https://github.com/lara_croft",
@@ -514,7 +488,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment_author1 = create_comment(
-            1,
             author1,
             "text/markdown",
             "Hello there",
@@ -523,7 +496,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment_author2 = create_comment(
-            2,
             author2,
             "text/markdown",
             "This is great for testing",
@@ -532,7 +504,6 @@ class PostCommentsViewTest(TestCase):
         )
 
         comment_author3 =create_comment(
-            3,
             author3,
             "text/markdown",
             "Wow! This is such a nice comment for testing",
@@ -545,17 +516,17 @@ class PostCommentsViewTest(TestCase):
                 "type": "comment",
                 "author": {
                     "type": "author",
-                    "id": f"{API_BASE}/author/100",
+                    "id": f"{API_BASE}/author/{author1.id}",
                     "host": f"{API_BASE}/",
                     "displayName": "johnDoe",
-                    "url": f"{API_BASE}/author/100",
+                    "url": f"{API_BASE}/author/{author1.id}",
                     "github": "https://github.com/johnDoe",
                     "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
                 },
                 "comment": "Hello there",
                 "contentType": "text/markdown",
                 "published": str(comment_author1.pub_date),
-                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/1"
+                "id": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{comment_author1.id}"
             }
         ]
 

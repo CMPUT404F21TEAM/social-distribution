@@ -18,7 +18,7 @@ import pyperclip
 
 import socialDistribution.requests as api_requests
 from api.models import Node
-from api.utility import makePost
+from api.utility import makeInboxPost
 from .models import *
 from .forms import CreateUserForm, PostForm
 from .decorators import unauthenticated_user
@@ -34,7 +34,7 @@ from .github_activity.github_activity import pull_github_events
 
 logger = logging.getLogger(__name__)
 
-REQUIRE_SIGNUP_APPROVAL = True
+REQUIRE_SIGNUP_APPROVAL = False
 ''' 
     sign up approval not required by default, should turn on in prod. 
     if time permits store this in database and allow change from admin dashboard.
@@ -405,7 +405,7 @@ def author(request, author_id):
         if res_code == 200 and res_body:
             for post in res_body["items"]:
                 if post:
-                    makePost(post)
+                    makeInboxPost(post)
 
         posts = InboxPost.objects.filter(
             author=author.get_url_id(),
@@ -470,11 +470,9 @@ def posts(request, author_id):
                     visibility=form.cleaned_data.get('visibility'),
                     unlisted=form.cleaned_data.get('unlisted'),
                 )
-                new_post.save()
                 
                 # set post origin and source to itself for a new post
-                new_post.origin = new_post.get_id()
-                new_post.source = new_post.get_id()
+                new_post.origin = new_post.source = new_post.get_id()
                 new_post.save()
 
                 categories = form.cleaned_data.get('categories')

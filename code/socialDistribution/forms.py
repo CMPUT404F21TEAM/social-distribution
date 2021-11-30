@@ -65,32 +65,36 @@ class PostForm(forms.Form):
         )
 
     def __init__(self, *args, **kwargs):
+        # get params
         user_id = kwargs.pop('user_id')
-        post_id = 0
+        post_id = None
         if 'post_id' in kwargs:
             post_id = kwargs.pop('post_id')
-        post = None
-        if post_id > 0:
-            post = LocalPost.objects.get(id=post_id)
+
+        # get existing post if edit form
+        existing_post = None
+        if post_id is not None and LocalPost.objects.filter(id=post_id).exists():
+            existing_post = LocalPost.objects.get(id=post_id)
+
         super(PostForm, self).__init__(*args, **kwargs)
         self.fields['post_recipients'].queryset = LocalAuthor.objects.all().exclude(id=user_id)
-        if post:
-            self.fields['title'].initial = post.title
-            self.fields['description'].initial = post.description
+        if existing_post:
+            self.fields['title'].initial = existing_post.title
+            self.fields['description'].initial = existing_post.description
             
-            previousCategories = post.categories.all()
+            previousCategories = existing_post.categories.all()
             previousCategoriesNames = " ".join([cat.category for cat in previousCategories])
             self.fields['categories'].initial = previousCategoriesNames
             
-            if post.is_image_post():
+            if existing_post.is_image_post():
                 self.fields['post_type'].initial = self.IMAGE
 
             else:
                 self.fields['post_type'].initial = self.TEXT
-                self.fields['content_text'].initial = post.decoded_content
+                self.fields['content_text'].initial = existing_post.decoded_content
             
-            self.fields['unlisted'].initial = post.unlisted
-            self.fields['visibility'].initial = post.visibility
+            self.fields['unlisted'].initial = existing_post.unlisted
+            self.fields['visibility'].initial = existing_post.visibility
         
     # "Django - Get uploaded file type / mimetype", Last accessed on November 19, 2021
     # Authors: Hanpan, moskrc, Nathan Osman

@@ -20,7 +20,7 @@ import socialDistribution.requests as api_requests
 from socialDistribution.models import *
 from .decorators import authenticate_request, validate_node
 from .parsers import url_parser
-from .utility import getPaginated, makePost
+from .utility import getPaginated, makeInboxPost, makeLocalPost
 
 # References for entire file:
 # Django Software Foundation, "Introduction to class-based views", 2021-10-13
@@ -57,7 +57,7 @@ class AuthorsView(View):
         """
         logger.info(f"GET /authors API endpoint invoked")
 
-        authors = LocalAuthor.objects.order_by('pk')
+        authors = LocalAuthor.objects.order_by('created_date')
         page = request.GET.get("page")
         size = request.GET.get("size")
 
@@ -282,7 +282,26 @@ class PostsView(View):
         return JsonResponse(response)
 
     def post(self, request, author_id):
-        return NotImplementedError()
+        '''
+            POST - creates a LocalPost for the given {author_id} with the given data
+        '''
+
+        try:
+            data = json.loads(request.body)
+            post = makeLocalPost(data, author_id)
+            
+        except json.decoder.JSONDecodeError as e:
+            return JsonResponse({
+                "error": "Invalid JSON: " + e.msg
+            }, status=400)
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return JsonResponse({
+                "error": "An unknown error occurred"
+            }, status=500)
+            
+        return JsonResponse(status=201, data=post.as_json())
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -371,7 +390,25 @@ class PostView(View):
             messages.info(request, 'Unable to edit post.')
             
     def put(self, request, author_id, post_id):
-        return NotImplementedError
+        '''
+            PUT - creates a LocalPost for the given {author_id} with the given data with the given {post_id}
+        '''
+        try:
+            data = json.loads(request.body)
+            post = makeLocalPost(data, author_id, post_id)
+            
+        except json.decoder.JSONDecodeError:
+            return JsonResponse({
+                "error": "Invalid JSON"
+            }, status=400)
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return JsonResponse({
+                "error": "An unknown error occurred"
+            }, status=500)
+            
+        return JsonResponse(status=201, data=post.as_json())
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -597,7 +634,7 @@ class InboxView(View):
             if str(data["type"]).lower() == "post":
                 logger.info("Inbox object identified as post")
 
-                received_post = makePost(data)
+                received_post = makeInboxPost(data)
                 
                 # get owner of inbox
                 receiving_author = get_object_or_404(LocalAuthor, id=author_id)
