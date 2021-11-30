@@ -88,6 +88,14 @@ def add_prod_auth_credentials(apps, schema_editor):
             password="secret16",
             remote_credentials=False
         )
+        # Team 20
+        Node.objects.get_or_create(
+            host="cmput404-vgt-socialdist.herokuapp.com",
+            api_prefix="/service",
+            username="team20",
+            password="secret20",
+            remote_credentials=False
+        )
 
         # Add outbound credentials
         # Clone Team 04
@@ -120,6 +128,14 @@ def add_prod_auth_credentials(apps, schema_editor):
             api_prefix="/service",
             username="admin",
             password="admin",
+            remote_credentials=True
+        )
+        # Team 20
+        Node.objects.get_or_create(
+            host="cmput404-vgt-socialdist.herokuapp.com",
+            api_prefix="/service",
+            username="VeryGoodAuth",
+            password="CoolPassword",
             remote_credentials=True
         )
 
