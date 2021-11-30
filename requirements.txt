@@ -13,6 +13,7 @@ mixer==7.0.6
 Pillow==8.3.2
 psycopg2-binary==2.9.1
 pycodestyle==2.8.0
+pyperclip==1.8.2
 python-dateutil==2.8.2
 python-decouple==3.5
 pytz==2021.3

@@ -3,9 +3,10 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 import datetime
+import uuid
 
 import socialDistribution.requests as api_requests
-from cmput404.constants import API_BASE
+from cmput404.constants import API_BASE, STRING_MAXLEN, URL_MAXLEN
 from .follow import Follow
 
 
@@ -20,11 +21,14 @@ class Author(models.Model):
 
         When a local author is created, it must be re-fetched from the database in order to access the auto-generated author.url attribute.
     """
-
-    url = models.URLField()
-    displayName = models.CharField(max_length=50, default="Anonymous User")
-    githubUrl = models.CharField(max_length=50, null=True)
-    profileImageUrl = models.CharField(max_length=50, null=True)
+    
+    # Django Software Foundation, https://docs.djangoproject.com/en/dev/ref/models/fields/#uuidfield
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    url = models.URLField(max_length=URL_MAXLEN)
+    displayName = models.CharField(max_length=STRING_MAXLEN, default="Anonymous User")
+    githubUrl = models.CharField(max_length=URL_MAXLEN, null=True)
+    profileImageUrl = models.CharField(max_length=URL_MAXLEN, null=True)
+    created_date = models.DateTimeField(auto_now_add=True)
 
     # timestamp of when the object was last updated
     # will need later for caching
@@ -61,25 +65,53 @@ class Author(models.Model):
         return self.url.strip("/") + "/inbox/"
 
     def as_json(self):
+        """ GET JSON representation of author. If local or a remote that was saved recently, return that JSON.
+            Otherwise, make an API call to update JSON.
+        """
+
         was_recent_update = self._last_updated < timezone.now()-datetime.timedelta(seconds=10)
+        json_data = {
+            "type": "author",
+            "id": f"{API_BASE}/author/{self.id}",
+            "host": f'{API_BASE}/',
+            "displayName": self.displayName,
+            "url": f"{API_BASE}/author/{self.id}",
+            "github": self.githubUrl,
+            "profileImage": self.profileImageUrl
+        }
+
         if self._always_up_to_date:
             # read author data from fields
             # will do this in case of LocalAuthor
-            json_data = {
-                "type": "author",
-                "id": f"{API_BASE}/author/{self.id}",
-                "host": f'{API_BASE}/',
-                "displayName": self.displayName,
-                "url": f"{API_BASE}/author/{self.id}",
-                "github": self.githubUrl,
-                "profileImage": self.profileImageUrl
-            }
+            return json_data
+
         else:
             # make API call to get author data
-            status_code, json_data = api_requests.get(self.url.strip("/"))
-            # todo handle errors is api_request fails
+            status_code, response_body = api_requests.get(self.url.strip("/"))
+            if status_code == 200 and response_body is not None:
+                self.update_with_json(data=response_body)
+                return response_body
+            else:
+                # delete the record if there was a problem
+                self.delete()
+                # don't return None
+                return json_data
 
-        return json_data
+    def update_with_json(self, data):
+        '''
+            Add or update Author model data
+            Had to move here from utility.py due to import errors
+        '''
+        try:
+            self.displayName = data['displayName']
+            self.githubUrl = data['github']
+            self.profileImageUrl = data['profileImage']
+            self.save()
+        except:
+            return
+
+    def __str__(self) -> str:
+        return f"Author: {self.url}"
 
 
 class LocalAuthor(Author):
@@ -103,7 +135,7 @@ class LocalAuthor(Author):
     '''
 
     user = models.OneToOneField(User, null=True, on_delete=models.CASCADE)
-    username = models.CharField(max_length=50, unique=True, blank=False)
+    username = models.CharField(max_length=STRING_MAXLEN, unique=True, blank=False)
 
     follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')

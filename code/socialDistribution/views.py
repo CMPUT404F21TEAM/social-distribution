@@ -9,16 +9,16 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
-import requests
 
 from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
 from .forms import CreateUserForm, PostForm
 
 import base64
+import pyperclip
 
-from .utility import add_or_update_author
 import socialDistribution.requests as api_requests
 from api.models import Node
+from api.utility import makeInboxPost
 from .models import *
 from .forms import CreateUserForm, PostForm
 from .decorators import unauthenticated_user
@@ -34,7 +34,7 @@ from .github_activity.github_activity import pull_github_events
 
 logger = logging.getLogger(__name__)
 
-REQUIRE_SIGNUP_APPROVAL = True
+REQUIRE_SIGNUP_APPROVAL = False
 ''' 
     sign up approval not required by default, should turn on in prod. 
     if time permits store this in database and allow change from admin dashboard.
@@ -362,7 +362,7 @@ def authors(request):
                 )
 
                 # add or update remaining fields
-                add_or_update_author(author=author, data=remote_author)
+                author.update_with_json(data=remote_author)
 
                 remote_authors.append({
                     "data": author,
@@ -393,10 +393,20 @@ def author(request, author_id):
         author_type = REMOTE
 
     if author_type == LOCAL:
-            posts = author.posts.listed().get_public()  # get public posts only
+        posts = author.posts.listed().get_public()  # get public posts only
 
     else:
         # show public posts only
+
+        request_url = author.get_url_id().strip('/') + "/posts"
+
+        res_code, res_body = api_requests.get(request_url, send_basic_auth_header=True)
+        
+        if res_code == 200 and res_body:
+            for post in res_body["items"]:
+                if post:
+                    makeInboxPost(post)
+
         posts = InboxPost.objects.filter(
             author=author.get_url_id(),
             visibility=InboxPost.Visibility.PUBLIC
@@ -411,6 +421,25 @@ def author(request, author_id):
 
     return render(request, 'author/detail.html', context)
 
+def unlisted_posts(request):
+    """ Display an author's unlisted posts 
+    """
+
+    curr_user = LocalAuthor.objects.get(user=request.user)
+
+    # TODO: Should become an API request (same as /author/<author-id>) since won't know if author is local/remote
+
+    posts = curr_user.posts.unlisted()
+
+    context = {
+        'author': curr_user,
+        'modal_type':'copy',
+        'author_type': 'Local',
+        'curr_user': curr_user,
+        'author_posts': posts.chronological()
+    }
+
+    return render(request, 'author/detail.html', context)
 
 def create(request):
     return render(request, 'create/index.html')
@@ -441,11 +470,9 @@ def posts(request, author_id):
                     visibility=form.cleaned_data.get('visibility'),
                     unlisted=form.cleaned_data.get('unlisted'),
                 )
-                new_post.save()
                 
                 # set post origin and source to itself for a new post
-                new_post.origin = new_post.get_id()
-                new_post.source = new_post.get_id()
+                new_post.origin = new_post.source = new_post.get_id()
                 new_post.save()
 
                 categories = form.cleaned_data.get('categories')
@@ -511,6 +538,25 @@ def share_post(request, id):
 
     return redirect('socialDistribution:home')
 
+def copy_link(request, id):
+    """
+        Allows user to copy a post's link
+    """
+
+    # TODO:
+    #     * add copy link for remote posts 
+    
+    post = LocalPost.objects.get(id=id)
+    link = post.get_local_shareable_link()
+    try:
+        pyperclip.copy(link)
+    except: # pyperclip.PyperclipException
+        pass # nothing gets copied, but the link is still displayed
+
+    if post.unlisted is True:
+        return redirect('socialDistribution:unlisted-posts')
+    
+    return redirect('socialDistribution:home')
 
 def edit_post(request, id):
     """
@@ -611,13 +657,13 @@ def like_post(request, post_type, id):
         like = {
             "@context": "https://www.w3.org/ns/activitystreams",
             "summary": f"{author.username} Likes your post",
-            "type": "like",
+            "type": "Like",
             "author": author.as_json(),
             "object": obj
         }
 
         # redirect request to remote/local api
-        status_code, response_data = api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
+        status_code, response_data = api_requests.post(url=request_url, data=like)
 
         if status_code >= 400:
             messages.error(request, 'An error occurred while liking post')
@@ -664,14 +710,16 @@ def single_post(request, post_type, id):
                 url=comment["author"]["id"]
             )
             # add or update remaining fields
-            add_or_update_author(author=comment_author, data=comment["author"])
+            comment_author.update_with_json(data=comment["author"])
             try:
                 author = LocalAuthor.objects.get(url=comment_author.url)
                 author_type = LOCAL
 
             except LocalAuthor.DoesNotExist:
+                author = get_object_or_404(Author, url=comment_author.url)
                 author_type = REMOTE
 
+            comment["comment_author_local_server_id"] = author.id
             comment["comment_author_object"] = comment_author
             comment["author_type"] = author_type
 
@@ -717,14 +765,14 @@ def like_comment(request):
         like = {
             "@context": "https://www.w3.org/ns/activitystreams",
             "summary": f"{author.username} Likes your comment",
-            "type": "like",
+            "type": "Like",
             "author": author.as_json(),
             "object": comment_id
         }
 
         # redirect request to remote/local api
         request_url = post_author.get_inbox()
-        api_requests.post(url=request_url, data=like, send_basic_auth_header=True)
+        api_requests.post(url=request_url, data=like)
 
 
     if prev_page is None:
@@ -779,7 +827,7 @@ def post_comment(request, author_id, post_id):
                 request_url = f'{post.author.strip("/")}/inbox/'
 
                 # send comment to remote inbox
-                api_requests.post(url=request_url, data=data, send_basic_auth_header=True)
+                api_requests.post(url=request_url, data=data)
 
             else:
                 HttpResponseNotFound()
@@ -808,6 +856,11 @@ def delete_post(request, id):
     
     if (author.id != post.author.id):
         return HttpResponseForbidden()
+    
+    # remain on unlisted page if the deleted post is unlisted 
+    if post.unlisted is True:
+        post.delete()
+        return redirect('socialDistribution:unlisted-posts')
     
     post.delete()
     return redirect('socialDistribution:home')

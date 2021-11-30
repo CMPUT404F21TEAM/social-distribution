@@ -2,9 +2,6 @@ from django.db import models
 from datetime import datetime, timezone
 import timeago
 
-from cmput404.constants import HOST, API_PREFIX
-
-
 class Like(models.Model):
     '''
     Like model:
@@ -30,7 +27,7 @@ class Like(models.Model):
 
     def as_json(self):
         return {
-            "type": "like",
+            "type": "Like",
         }
 
 

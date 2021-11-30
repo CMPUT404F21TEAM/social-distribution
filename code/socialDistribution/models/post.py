@@ -1,16 +1,14 @@
-from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q, manager
-from django.contrib.auth.models import User
+from django.db.models import Q
 from django.utils import timezone
 
 from jsonfield import JSONField
 import datetime as dt
 import timeago
+import uuid
 
 import socialDistribution.requests as api_requests
-from cmput404.constants import API_BASE
-from .comment import Comment
+from cmput404.constants import STRING_MAXLEN, URL_MAXLEN, API_BASE, CLIENT_BASE
 from .category import Category
 
 
@@ -20,6 +18,11 @@ class PostQuerySet(models.QuerySet):
         """ Get all listed posts.
         """
         return self.filter(unlisted=False)
+    
+    def unlisted(self):
+        """ Get all unlisted posts.
+        """
+        return self.filter(unlisted=True)
 
     def get_public(self):
         """ Get all public posts.
@@ -73,23 +76,23 @@ class Post(models.Model):
 
             else:
                 return visibility.upper()   # else return visibility
-            
 
     TITLE_MAXLEN = 100
     DESCRIPTION_MAXLEN = 100
     CONTENT_MAXLEN = 4096
-    STRING_MAXLEN = 50
-    URL_MAXLEN = 2048
+
+    # Django Software Foundation, https://docs.djangoproject.com/en/dev/ref/models/fields/#uuidfield
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     objects = PostQuerySet.as_manager()
 
     title = models.CharField(max_length=TITLE_MAXLEN)
-    
+
     source = models.URLField(max_length=URL_MAXLEN, default='')
 
     origin = models.URLField(max_length=URL_MAXLEN, default='')
 
-    public_id = models.URLField()
+    public_id = models.URLField(max_length=URL_MAXLEN, default='')
 
     description = models.CharField(max_length=DESCRIPTION_MAXLEN)
 
@@ -161,7 +164,7 @@ class Post(models.Model):
         """ Check if post is public. """
 
         return self.visibility == self.Visibility.PUBLIC
-    
+
     def is_friends(self):
         """ Check if post is friends. """
 
@@ -241,7 +244,7 @@ class LocalPost(Post):
         comments_set = self.comments()
         comment_list = [comment.as_json() for comment in comments_set]
         return comment_list
-    
+
     def comments(self):
         """ Gets the comments of the post """
         return self.comment_set.order_by('-pub_date')
@@ -253,6 +256,9 @@ class LocalPost(Post):
 
     def get_id(self):
         return f"{API_BASE}/author/{self.author.id}/posts/{self.id}"
+    
+    def get_local_shareable_link(self):
+        return f"{CLIENT_BASE}/posts/local/{self.id}"
 
     def as_json(self):
         previousCategories = self.categories.all()
@@ -331,7 +337,7 @@ class InboxPost(Post):
 
     '''
 
-    author = models.URLField(max_length=Post.URL_MAXLEN)
+    author = models.URLField(max_length=URL_MAXLEN)
 
     _author_json = JSONField()
 
@@ -339,12 +345,12 @@ class InboxPost(Post):
     def author_as_json(self):
         """ Gets the author of the post in JSON format. """
         return self._author_json
-    
+
     def fetch_update(self):
         """ Fetches update about the post for an edit or delete if it is public """
         if self.visibility != Post.Visibility.PUBLIC:
             return
-        
+
         # make api request
         try:
             actor_url = self.author.strip('/')
@@ -361,7 +367,7 @@ class InboxPost(Post):
                 self.content = response_body['content'].encode('utf-8')
                 self.visibility = Post.Visibility.get_visibility_choice(response_body['visibility'])
                 self.unlisted = response_body['unlisted']
-                
+
                 if response_body['contentType'] == 'text/plain':
                     self.content_type = self.ContentType.PLAIN
                 elif response_body['contentType'] == 'text/markdown':
@@ -372,11 +378,11 @@ class InboxPost(Post):
                     self.content_type = self.ContentType.JPEG
                 elif response_body['contentType'] == 'image/png;base64':
                     self.content_type = self.ContentType.PNG
-                
+
                 categories = response_body['categories']
-                
+
                 if categories is not None:
-                    categories_to_remove = [ cat.category for cat in self.categories.all()]
+                    categories_to_remove = [cat.category for cat in self.categories.all()]
 
                     """
                     This implementation makes category names case-insensitive.
@@ -389,7 +395,7 @@ class InboxPost(Post):
                             defaults={'category': category}
                         )
                         self.categories.add(category_obj)
-                        
+
                         while category_obj.category in categories_to_remove:
                             categories_to_remove.remove(category_obj.category)     # don't remove this category
 
@@ -407,9 +413,70 @@ class InboxPost(Post):
     @property
     def comments_as_json(self):
         request_url = self.public_id.strip('/') + '/comments'
-        status_code, response_data = api_requests.get(request_url, send_basic_auth_header=True)
+        status_code, response_data = api_requests.get(request_url)
         if status_code == 200 and response_data is not None:
             comments = response_data["comments"]
             return comments
         else:
             return []
+        
+    @property
+    def author_as_json(self):
+        request_url = self.public_id.strip('/')
+        status_code, response_data = api_requests.get(request_url)
+        if status_code == 200 and response_data is not None:
+            author = response_data["author"]
+            return author
+        else:
+            return None
+
+    def as_json(self):
+        previousCategories = self.categories.all()
+        previousCategoriesNames = [cat.category for cat in previousCategories]
+        return {
+            "type": "post",
+            # title of a post
+            "title": self.title,
+            # id of the post
+            "id": self.public_id,
+            # where did you get this post from?
+            "source": self.source,
+            # where is it actually from
+            "origin": self.origin,
+            # a brief description of the post
+            "description": self.description,
+            # The content type of the post
+            # assume either
+            # text/markdown -- common mark
+            # text/plain -- UTF-8
+            # application/base64
+            # image/png;base64 # this is an embedded png -- images are POSTS. So you might have a user make 2 posts if a post includes an image!
+            # image/jpeg;base64 # this is an embedded jpeg
+            # for HTML you will want to strip tags before displaying
+            "contentType": self.get_content_type_display(),
+            "content": self.decoded_content,
+            # the author has an ID where by authors can be disambiguated
+            "author": self.author_as_json,
+            # categories this post fits into (a list of strings
+            "categories": previousCategoriesNames,
+            # comments about the post
+            # return a maximum number of comments
+            # total number of comments for this post
+            "count": 0,
+            # the first page of comments
+            "comments": f"{self.public_id}/comments",
+            # commentsSrc is OPTIONAL and can be missing
+            # You should return ~ 5 comments per post.
+            # should be sorted newest(first) to oldest(last)
+            # this is to reduce API call counts
+            "commentsSrc": self.comments_as_json,
+            # ISO 8601 TIMESTAMP
+            "published": self.published.isoformat(),
+            # visibility ["PUBLIC","FRIENDS"]
+            "visibility": self.get_visibility_display(),
+            # for visibility PUBLIC means it is open to the wild web
+            # FRIENDS means if we're direct friends I can see the post
+            # FRIENDS should've already been sent the post so they don't need this
+            "unlisted": self.unlisted
+            # unlisted means it is public if you know the post name -- use this for images, it's so images don't show up in timelines
+        }

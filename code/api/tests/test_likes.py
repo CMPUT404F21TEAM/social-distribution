@@ -12,7 +12,7 @@ import logging
 from socialDistribution.models import PostLike, CommentLike, Comment, LocalAuthor, LocalPost
 from cmput404.constants import API_BASE
 from .test_post import create_post, get_post_json
-from .test_comments import create_comment
+from .test_inbox import create_author
 from datetime import datetime
 
 def create_postlike(author, object):
@@ -26,7 +26,7 @@ def post_like_as_json(postlike):
         "@context": "https://www.w3.org/ns/activitystreams",
         "summary": f"{postlike.author.displayName} Likes your post",
         "author": postlike.author.as_json(),
-        "type": "like",
+        "type": "Like",
         "object": f"{API_BASE}/author/{postlike.object.author.id}/posts/{postlike.object.id}"
     }
 
@@ -43,7 +43,7 @@ def comment_like_as_json(commentlike):
         "@context": "https://www.w3.org/ns/activitystreams",
         "summary": f"{commentlike.author.displayName} Likes your comment",
         "author": commentlike.author.as_json(),
-        "type": "like",
+        "type": "Like",
         "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}/comments/{commentlike.object.id}"
     }
 
@@ -64,12 +64,26 @@ class LikedViewTest(TestCase):
         logging.disable(logging.NOTSET)
 
     def test_get_liked_postlikes(self):
-        author1 = mixer.blend(LocalAuthor)
-        author2 = mixer.blend(LocalAuthor)
-        post1 = create_post('Test post 1', author1)
-        post2 = create_post('Test post 2', author2)
+        author1 = create_author(
+            "user1",
+            "user 1",
+            ""
+        )
 
-        author3 = mixer.blend(LocalAuthor)
+        author2 = create_author(
+            "user2",
+            "user 2",
+            ""
+        )
+
+        post1 = create_post("Test post 1", author1)
+        post2 = create_post("Test post 2", author2)
+
+        author3 = create_author(
+            "user3",
+            "user 3",
+            ""
+        )
 
         post_like1 = create_postlike(author3, post1)
         post_like2 = create_postlike(author3, post2)
@@ -84,7 +98,13 @@ class LikedViewTest(TestCase):
 
         response = self.client.get(reverse('api:liked', args=(author3.id,)))
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(json.dumps(expected), response.json())
+
+        self.maxDiff = None
+        res_json = response.json()
+        self.assertTrue(res_json["type"] == "liked")
+
+        for post_like in expected["items"]:
+            self.assertIn(post_like, res_json["items"])
 
     def test_get_liked_commentlikes(self):
         author1 = mixer.blend(LocalAuthor)
@@ -113,7 +133,11 @@ class LikedViewTest(TestCase):
 
         response = self.client.get(reverse('api:liked', args=(author3.id,)))
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(json.dumps(expected), response.json())
+        
+        res_json = response.json()
+        self.assertTrue(res_json["type"] == "liked")
+        for comment_like in expected["items"]:
+            self.assertIn(comment_like, res_json["items"])
 
     def test_get_liked(self):
         author1 = mixer.blend(LocalAuthor)
@@ -161,7 +185,12 @@ class LikedViewTest(TestCase):
 
         response = self.client.get(reverse('api:liked', args=(author5.id,)))
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(json.dumps(expected), response.json())        
+
+        res_json = response.json()
+        self.assertTrue(res_json["type"] == "liked")
+
+        for like in expected["items"]:
+            self.assertIn(like, res_json["items"])
 
 
 class TestCommentLikesView(TestCase):
