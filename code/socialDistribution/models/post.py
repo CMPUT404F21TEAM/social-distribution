@@ -1,7 +1,5 @@
-from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q, manager
-from django.contrib.auth.models import User
+from django.db.models import Q
 from django.utils import timezone
 
 from jsonfield import JSONField
@@ -10,8 +8,7 @@ import timeago
 import uuid
 
 import socialDistribution.requests as api_requests
-from cmput404.constants import API_BASE, CLIENT_BASE
-from .comment import Comment
+from cmput404.constants import STRING_MAXLEN, URL_MAXLEN, API_BASE, CLIENT_BASE
 from .category import Category
 
 
@@ -83,8 +80,6 @@ class Post(models.Model):
     TITLE_MAXLEN = 100
     DESCRIPTION_MAXLEN = 100
     CONTENT_MAXLEN = 4096
-    STRING_MAXLEN = 50
-    URL_MAXLEN = 2048
 
     # Django Software Foundation, https://docs.djangoproject.com/en/dev/ref/models/fields/#uuidfield
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -97,7 +92,7 @@ class Post(models.Model):
 
     origin = models.URLField(max_length=URL_MAXLEN, default='')
 
-    public_id = models.URLField()
+    public_id = models.URLField(max_length=URL_MAXLEN, default='')
 
     description = models.CharField(max_length=DESCRIPTION_MAXLEN)
 
@@ -342,7 +337,7 @@ class InboxPost(Post):
 
     '''
 
-    author = models.URLField(max_length=Post.URL_MAXLEN)
+    author = models.URLField(max_length=URL_MAXLEN)
 
     _author_json = JSONField()
 
