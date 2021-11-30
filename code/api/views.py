@@ -290,9 +290,9 @@ class PostsView(View):
             data = json.loads(request.body)
             post = makeLocalPost(data, author_id)
             
-        except json.decoder.JSONDecodeError:
+        except json.decoder.JSONDecodeError as e:
             return JsonResponse({
-                "error": "Invalid JSON"
+                "error": "Invalid JSON: " + e.msg
             }, status=400)
 
         except Exception as e:

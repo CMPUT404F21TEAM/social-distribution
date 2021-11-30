@@ -437,6 +437,7 @@ def posts(request, author_id):
         form = PostForm(request.POST, request.FILES, user_id=user_id)
         if form.is_valid():
             content, content_type = form.get_content_and_type()
+            print(content)
 
             # Will do some more refactoring to remove code duplication soon
 
