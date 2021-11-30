@@ -34,7 +34,7 @@ from .github_activity.github_activity import pull_github_events
 
 logger = logging.getLogger(__name__)
 
-REQUIRE_SIGNUP_APPROVAL = True
+REQUIRE_SIGNUP_APPROVAL = False
 ''' 
     sign up approval not required by default, should turn on in prod. 
     if time permits store this in database and allow change from admin dashboard.
