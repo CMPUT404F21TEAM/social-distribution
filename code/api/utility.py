@@ -6,8 +6,15 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
 
 from dateutil import parser
+import logging
 
 from socialDistribution.models import *
+
+from .parsers import url_parser
+from .adapters import team11adapter_post
+
+logger = logging.getLogger("api")
+
 
 # https://docs.djangoproject.com/en/3.2/topics/pagination/ - Pagination
 def getPaginated(data, page, size):
@@ -16,20 +23,21 @@ def getPaginated(data, page, size):
         return p.page(page)
     except:
         return []
-    
+
+
 def makeLocalPost(data, author_id, post_id=None):
     """ 
     Creates a LocalPost given json data
     """
-    
+
     # get content type of post
     contentType = data['contentType']
     content = data["content"]
-    
+
     mime_type, subtype = contentType.split('/')
     if mime_type not in ['image', 'application', 'text']:
         raise json.decoder.JSONDecodeError(f'File type {mime_type} is not supported', '', 0)
-    
+
     subtype = subtype.replace(';base64', '').upper()
     PNG = LocalPost.ContentType.PNG
     JPEG = LocalPost.ContentType.JPEG
@@ -40,17 +48,16 @@ def makeLocalPost(data, author_id, post_id=None):
 
     contentType = subtype
     content = content.encode('utf-8')
-    
 
     # save the received post as a LocalPost
     received_post = LocalPost(
-            author_id=author_id,
-            title=data["title"],
-            description=data["description"],
-            content_type=contentType,
-            content=content,
-            visibility=LocalPost.Visibility.get_visibility_choice(data["visibility"]),
-            unlisted=data["unlisted"],
+        author_id=author_id,
+        title=data["title"],
+        description=data["description"],
+        content_type=contentType,
+        content=content,
+        visibility=LocalPost.Visibility.get_visibility_choice(data["visibility"]),
+        unlisted=data["unlisted"],
     )
 
     # set post origin and source to itself for a new post
@@ -80,21 +87,29 @@ def makeLocalPost(data, author_id, post_id=None):
         received_post.categories.remove(category_obj)
 
     return received_post
-    
-def makeInboxPost(data, id=None):
+
+
+def makeInboxPost(data):
     """ 
-    Creates an InboxPost given json data
+    Creates an InboxPost given json data. Returns None if invalid JSON or unable to create InboxPost.
     """
+
+    # verify they sent valid json
+    validated_data = validate_post_json(data)
+    if validated_data is None:
+        logging.warning(f"Unable to parse post json:\n{data}")
+        return None
+
     # save the received post as an InboxPost
-    
+
     # get content type of post
-    contentType = data['contentType']
-    content = data["content"]
-    
+    contentType = validated_data.get('contentType')
+    content = validated_data.get("content")
+
     mime_type, subtype = contentType.split('/')
     if mime_type not in ['image', 'application', 'text']:
         raise json.decoder.JSONDecodeError(f'File type {mime_type} is not supported', '', 0)
-    
+
     subtype = subtype.replace(';base64', '').upper()
     PNG = LocalPost.ContentType.PNG
     JPEG = LocalPost.ContentType.JPEG
@@ -110,33 +125,33 @@ def makeInboxPost(data, id=None):
     # Nicolas Gervais, https://stackoverflow.com/users/10908375/nicolas-gervais,
     # How do I translate an ISO 8601 datetime string into a Python datetime object? [duplicate]
     # https://stackoverflow.com/a/3908349, CC BY-SA 4.0
-    date_string = data.get("published")
+    date_string = validated_data.get("published")
     published = parser.parse(date_string) if date_string is not None else None
-    
+
     received_post, post_created = InboxPost.objects.get_or_create(
-        public_id=data["id"],
+        public_id=validated_data["id"],
         defaults={
-            "title": data["title"],
-            "source": data["source"],
-            "origin": data["origin"],
-            "description": data["description"],
+            "title": validated_data["title"],
+            "source": validated_data["source"],
+            "origin": validated_data["origin"],
+            "description": validated_data["description"],
             "content_type": contentType,
             "content": content,
-            "author": data["author"]["id"],
-            "_author_json": data["author"],
+            "author": validated_data["author"]["id"],
+            "_author_json": validated_data["author"],
             "published": published,
-            "visibility": InboxPost.Visibility.get_visibility_choice(data["visibility"]),
-            "unlisted": data["unlisted"],
+            "visibility": InboxPost.Visibility.get_visibility_choice(validated_data["visibility"]),
+            "unlisted": validated_data["unlisted"],
         }
     )
 
     if not post_created:
-        categories_to_remove = [category_obj.category 
-            for category_obj in received_post.categories.all()]
+        categories_to_remove = [category_obj.category
+                                for category_obj in received_post.categories.all()]
     else:
         categories_to_remove = []
 
-    for category in data["categories"]:
+    for category in validated_data["categories"]:
         if category != "":
             category_obj, cat_created = Category.objects.get_or_create(
                 category__iexact=category,
@@ -155,3 +170,25 @@ def makeInboxPost(data, id=None):
         received_post.categories.remove(category_obj)
 
     return received_post
+
+
+def validate_post_json(data):
+    """ Validates post JSON sent by a remote server. If JSON is valid, or we are able to adapt to it, 
+        returns that JSON object. Otherwise, return None
+    """
+
+    if not url_parser.is_valid_url(data.get("id")):
+
+        # try team 11 adapter
+        adapted_data = team11adapter_post(data)
+        if adapted_data is not None:
+            logger.info("Used T11 adapter for posts")
+            data = adapted_data
+        else:
+            # Can't parse this post
+            return None
+
+    if data.get("title") is None:
+        data["title"] = "No title"
+
+    return data

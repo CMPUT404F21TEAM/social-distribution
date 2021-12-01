@@ -65,6 +65,7 @@ class Post(models.Model):
         @classmethod
         def get_visibility_choice(cls, visibility):
             """ Returns the visibility choice matching the visibility parameter string """
+            visibility = str(visibility)
             if visibility.upper() == "PUBLIC" or visibility.upper() == "PB":
                 return cls.PUBLIC
 
@@ -75,7 +76,8 @@ class Post(models.Model):
                 return cls.PRIVATE
 
             else:
-                return visibility.upper()   # else return visibility
+                # If they screwed up their post we default to PUBLIC
+                return "PUBLIC"   # else return visibility
 
     TITLE_MAXLEN = 100
     DESCRIPTION_MAXLEN = 100
