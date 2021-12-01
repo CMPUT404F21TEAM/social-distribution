@@ -50,7 +50,9 @@ def validate_node(view_func):
             return HttpResponseServerError()
 
         if not credentials or token_type != 'Basic' or receivedCredentials != expectedCredentials:
-            return HttpResponse(status=401)
+            response = HttpResponse(status=401)
+            response.headers['WWW-Authenticate'] = "Basic realm='myRealm', charset='UTF-8'"
+            return response
 
         return view_func(request, *args, **kwargs)
 
