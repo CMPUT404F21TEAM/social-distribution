@@ -1,17 +1,13 @@
 import base64
-from datetime import datetime
 import json
-from django.http.response import HttpResponseBadRequest
 from django.core.paginator import Paginator
-from django.shortcuts import get_object_or_404
 
 from dateutil import parser
 import logging
 
 from socialDistribution.models import *
+from .json_validators import validate_post_json
 
-from .parsers import url_parser
-from .adapters import team11adapter_post
 
 logger = logging.getLogger("api")
 
@@ -170,25 +166,3 @@ def makeInboxPost(data):
         received_post.categories.remove(category_obj)
 
     return received_post
-
-
-def validate_post_json(data):
-    """ Validates post JSON sent by a remote server. If JSON is valid, or we are able to adapt to it, 
-        returns that JSON object. Otherwise, return None
-    """
-
-    if not url_parser.is_valid_url(data.get("id")):
-
-        # try team 11 adapter
-        adapted_data = team11adapter_post(data)
-        if adapted_data is not None:
-            logger.info("Used T11 adapter for posts")
-            data = adapted_data
-        else:
-            # Can't parse this post
-            return None
-
-    if data.get("title") is None:
-        data["title"] = "No title"
-
-    return data
