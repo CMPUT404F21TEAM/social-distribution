@@ -4,6 +4,7 @@ from django.utils import timezone
 
 import datetime
 import uuid
+from urllib.parse import urlparse
 
 import socialDistribution.requests as api_requests
 from cmput404.constants import API_BASE, STRING_MAXLEN, URL_MAXLEN
@@ -68,12 +69,15 @@ class Author(models.Model):
         """ GET JSON representation of author
         """
 
+        parsed_uri = urlparse(self.url)
+        host = f'{parsed_uri.scheme}://{parsed_uri.netloc}/'
+
         json_data = {
             "type": "author",
-            "id": f"{API_BASE}/author/{self.id}",
-            "host": f'{API_BASE}/',
+            "id": self.url,
+            "host": host,
             "displayName": self.displayName,
-            "url": f"{API_BASE}/author/{self.id}",
+            "url": self.url,
             "github": self.githubUrl,
             "profileImage": self.profileImageUrl
         }
@@ -100,7 +104,7 @@ class Author(models.Model):
             data is always maintained up-to-date or if the data was recently refreshed
         """
 
-        limit = timezone.now()-datetime.timedelta(seconds=10)  # 10 seconds ago
+        limit = timezone.now()-datetime.timedelta(seconds=3)  # 3 seconds ago
         was_recent_update = self._last_updated > limit
 
         # return true if always up-to-date or if just updated
