@@ -26,13 +26,19 @@ def get_post_like_info(post, author):
             status_code, response_body = api_requests.get(request_url)
 
             if status_code == 200 and response_body is not None:
-                likes_list = response_body["items"]
+                try:
+                    likes_list = response_body["items"]
+                # if we get a KeyError, try treating the body itself as the list of like objects
+                # workaround for T16
+                except KeyError:
+                    likes_list = response_body
 
                 is_liked = False
                 for like in likes_list:
                     if like['id'] == author.get_url_id():
                         is_liked = True
                         break
+                    
 
                 return is_liked, len(likes_list)
 
