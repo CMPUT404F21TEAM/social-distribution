@@ -11,6 +11,7 @@ from django.shortcuts import redirect
 from django.db.models import Count, Q
 
 from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
+from socialDistribution.fetchers import fetch_author_update
 from .forms import CreateUserForm, PostForm
 
 import base64

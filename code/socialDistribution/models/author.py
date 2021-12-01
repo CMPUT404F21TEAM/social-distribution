@@ -21,7 +21,7 @@ class Author(models.Model):
 
         When a local author is created, it must be re-fetched from the database in order to access the auto-generated author.url attribute.
     """
-    
+
     # Django Software Foundation, https://docs.djangoproject.com/en/dev/ref/models/fields/#uuidfield
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     url = models.URLField(max_length=URL_MAXLEN)
@@ -109,6 +109,17 @@ class Author(models.Model):
             self.save()
         except:
             return
+
+    def up_to_date(self):
+        """ Checks if the author data is currently up do date. Returns true if either the 
+            data is always maintained up-to-date or if the data was recently refreshed
+        """
+
+        limit = timezone.now()-datetime.timedelta(seconds=10)  # 10 seconds ago
+        was_recent_update = self._last_updated > limit
+
+        # return true if always up-to-date or if just updated
+        return self._always_up_to_date or was_recent_update
 
     def __str__(self) -> str:
         return f"Author: {self.url}"
