@@ -9,7 +9,7 @@ import logging
 from api.utility import makeInboxPost
 
 
-class UtilityYests(TestCase):
+class UtilityTests(TestCase):
 
     # the pillow, https://stackoverflow.com/users/2812257/the-pillow, "How can I disable logging while running unit tests in Python Django?"
     # https://stackoverflow.com/a/54519433, 2019-02-04, CC BY-SA 4.0
