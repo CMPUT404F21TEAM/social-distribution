@@ -22,13 +22,10 @@ def post_card(post, author):
         post_type = 'inbox'
     else:
         post_type = 'local'
-    try:
-        is_liked, likes = get_post_like_info(post, author)
-        like_text = get_like_text(is_liked, likes)
-    except:
-        is_liked = False
-        likes = 0
-        like_text = ''
+
+    is_liked, likes = get_post_like_info(post, author)
+    like_text = get_like_text(is_liked, likes)
+
     
     return {
         'post': post,
