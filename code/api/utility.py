@@ -127,6 +127,7 @@ def makeInboxPost(data):
     received_post, post_created = InboxPost.objects.get_or_create(
         public_id=validated_data["id"],
         defaults={
+            "public_id": validated_data["id"],
             "title": validated_data["title"],
             "source": validated_data["source"],
             "origin": validated_data["origin"],

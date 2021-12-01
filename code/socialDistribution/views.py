@@ -10,8 +10,9 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 
-from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
+from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE, REMOTE_NODES
 from .forms import CreateUserForm, PostForm
+from api.parsers import url_parser
 
 import base64
 import pyperclip
@@ -834,7 +835,11 @@ def post_comment(request, author_id, post_id):
                     "object": post.public_id
                 }
 
-                request_url = f'{post.author.strip("/")}/inbox/'
+                if url_parser.get_host(post.author) == REMOTE_NODES["t16"]:
+                    request_url = post.public_id.strip("/") + '/comments/'
+                
+                else:
+                    request_url = f'{post.author.strip("/")}/inbox/'
 
                 # send comment to remote inbox
                 api_requests.post(url=request_url, data=data)

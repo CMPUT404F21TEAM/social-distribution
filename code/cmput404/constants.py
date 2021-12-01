@@ -21,3 +21,9 @@ LOCAL = "Local"
 REMOTE = "Remote"
 STRING_MAXLEN = 255
 URL_MAXLEN = 2048
+
+REMOTE_NODES = {
+    "t08": "cmput404-bettersocial.herokuapp.com",
+    "t11": "cmput404fall21g11.herokuapp.com",
+    "t16": "i-connect.herokuapp.com",
+}
