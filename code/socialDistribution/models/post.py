@@ -9,6 +9,7 @@ import uuid
 
 import socialDistribution.requests as api_requests
 from cmput404.constants import STRING_MAXLEN, URL_MAXLEN, API_BASE, CLIENT_BASE
+from api.json_validators import validate_post_json
 from .category import Category
 
 
@@ -360,6 +361,7 @@ class InboxPost(Post):
             endpoint = actor_url + '/posts/' + object_url
 
             status_code, response_body = api_requests.get(endpoint)
+            response_body = validate_post_json(response_body) if response_body is not None else None
 
             # check if GET request came back with post object
             if status_code == 200 and response_body is not None:
