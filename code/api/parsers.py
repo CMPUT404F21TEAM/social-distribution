@@ -1,5 +1,10 @@
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
+
 from urllib.parse import urlsplit
 from cmput404.constants import HOST, API_PREFIX
+
+validate = URLValidator()
 
 
 class UrlParser():
@@ -16,6 +21,16 @@ class UrlParser():
         """
         host = self.get_host(url)
         return host == HOST
+
+    def is_valid_url(self, url):
+        """ Returns true if valid URL, false otherwise
+        """
+
+        try:
+            validate(url)
+            return True
+        except ValidationError:
+            return False
 
     def get_object_type(self, url):
         """ Gets the object type of the url.
