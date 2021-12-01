@@ -65,11 +65,9 @@ class Author(models.Model):
         return self.url.strip("/") + "/inbox/"
 
     def as_json(self):
-        """ GET JSON representation of author. If local or a remote that was saved recently, return that JSON.
-            Otherwise, make an API call to update JSON.
+        """ GET JSON representation of author
         """
 
-        was_recent_update = self._last_updated < timezone.now()-datetime.timedelta(seconds=10)
         json_data = {
             "type": "author",
             "id": f"{API_BASE}/author/{self.id}",
@@ -79,23 +77,7 @@ class Author(models.Model):
             "github": self.githubUrl,
             "profileImage": self.profileImageUrl
         }
-
-        if self._always_up_to_date:
-            # read author data from fields
-            # will do this in case of LocalAuthor
-            return json_data
-
-        else:
-            # make API call to get author data
-            status_code, response_body = api_requests.get(self.url.strip("/"))
-            if status_code == 200 and response_body is not None:
-                self.update_with_json(data=response_body)
-                return response_body
-            else:
-                # delete the record if there was a problem
-                self.delete()
-                # don't return None
-                return json_data
+        return json_data
 
     def update_with_json(self, data):
         '''
@@ -103,12 +85,15 @@ class Author(models.Model):
             Had to move here from utility.py due to import errors
         '''
         try:
-            self.displayName = data['displayName']
-            self.githubUrl = data['github']
-            self.profileImageUrl = data['profileImage']
+            if data.get("displayName"):
+                self.displayName = data['displayName']
+            if data.get("github"):
+                self.githubUrl = data['github']
+            if data.get("profileImage"):
+                self.profileImageUrl = data['profileImage']
             self.save()
         except:
-            return
+            pass
 
     def up_to_date(self):
         """ Checks if the author data is currently up do date. Returns true if either the 

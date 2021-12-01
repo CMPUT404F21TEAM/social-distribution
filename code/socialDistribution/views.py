@@ -11,7 +11,7 @@ from django.shortcuts import redirect
 from django.db.models import Count, Q
 
 from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
-from socialDistribution.fetchers import fetch_author_update
+from socialDistribution.fetchers import fetch_remote_authors, fetch_author_update
 from .forms import CreateUserForm, PostForm
 
 import base64
@@ -333,49 +333,28 @@ def authors(request):
     """
     args = {}
 
-    # Django Software Foundation, "Generating aggregates for each item in a QuerySet", 2021-10-13
-    # https://docs.djangoproject.com/en/3.2/topics/db/aggregation/#generating-aggregates-for-each-item-in-a-queryset
-    authors = LocalAuthor.objects.annotate(posts__count=Count(
-        "posts", filter=Q(posts__visibility=LocalPost.Visibility.PUBLIC)))
-    local_authors = [{
-        "data": author,
-        "type": LOCAL
-    } for author in authors]
+    # fetch all remote authors from connected nodes
+    fetch_remote_authors()
 
-    remote_authors = []
+    author_objects = Author.objects.all()
 
-    # get remote authors
-    for node in Node.objects.filter(remote_credentials=True):
-        # ignore current host
-        if node.host == HOST:
-            continue
+    authors = []
+    for author in author_objects:
+        if LocalAuthor.objects.filter(id=author.id).exists():
+            authors.append({
+                "data": author,
+                "type": LOCAL
+            })
+        else:
+            authors.append({
+                "data": author,
+                'type': REMOTE
+            })
 
-        # get request for authors
-        try:
-            res_code, res_body = api_requests.get(f'{SCHEME}://{node.host}{node.api_prefix}/authors/', send_basic_auth_header=True)
+        # send update signal
+        fetch_author_update(author)
 
-            # skip node if unresponsive
-            if res_body == None:
-                continue
-
-            # prepare remote data
-            for remote_author in res_body['items']:
-                author, created = Author.objects.get_or_create(
-                    url=remote_author['id'],
-                )
-
-                # add or update remaining fields
-                author.update_with_json(data=remote_author)
-
-                remote_authors.append({
-                    "data": author,
-                    'type': REMOTE
-                })
-
-        except Exception as error:
-            logger.error(str(error))
-
-    args["authors"] = local_authors + remote_authors
+    args["authors"] = authors
     args["curr_user"] = LocalAuthor.objects.get(user=request.user)
     return render(request, 'author/index.html', args)
 
@@ -394,6 +373,9 @@ def author(request, author_id):
     except LocalAuthor.DoesNotExist:
         author = get_object_or_404(Author, id=author_id)
         author_type = REMOTE
+
+    # send update signal
+    fetch_author_update(author)
 
     if author_type == LOCAL:
         posts = author.posts.listed().get_public()  # get public posts only
