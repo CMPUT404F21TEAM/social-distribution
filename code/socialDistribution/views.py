@@ -15,6 +15,7 @@ from .forms import CreateUserForm, PostForm
 
 import base64
 import pyperclip
+from dateutil import parser
 
 import socialDistribution.requests as api_requests
 from api.models import Node
@@ -39,6 +40,7 @@ REQUIRE_SIGNUP_APPROVAL = False
     sign up approval not required by default, should turn on in prod. 
     if time permits store this in database and allow change from admin dashboard.
 '''
+
 
 def index(request):
     """
@@ -401,7 +403,7 @@ def author(request, author_id):
         request_url = author.get_url_id().strip('/') + "/posts"
 
         res_code, res_body = api_requests.get(request_url, send_basic_auth_header=True)
-        
+
         if res_code == 200 and res_body:
             for post in res_body["items"]:
                 if post:
@@ -421,6 +423,7 @@ def author(request, author_id):
 
     return render(request, 'author/detail.html', context)
 
+
 def unlisted_posts(request):
     """ Display an author's unlisted posts 
     """
@@ -433,13 +436,14 @@ def unlisted_posts(request):
 
     context = {
         'author': curr_user,
-        'modal_type':'copy',
+        'modal_type': 'copy',
         'author_type': 'Local',
         'curr_user': curr_user,
         'author_posts': posts.chronological()
     }
 
     return render(request, 'author/detail.html', context)
+
 
 def create(request):
     return render(request, 'create/index.html')
@@ -470,7 +474,7 @@ def posts(request, author_id):
                     visibility=form.cleaned_data.get('visibility'),
                     unlisted=form.cleaned_data.get('unlisted'),
                 )
-                
+
                 # set post origin and source to itself for a new post
                 new_post.origin = new_post.source = new_post.get_id()
                 new_post.save()
@@ -538,25 +542,27 @@ def share_post(request, id):
 
     return redirect('socialDistribution:home')
 
+
 def copy_link(request, id):
     """
         Allows user to copy a post's link
     """
 
     # TODO:
-    #     * add copy link for remote posts 
-    
+    #     * add copy link for remote posts
+
     post = LocalPost.objects.get(id=id)
     link = post.get_local_shareable_link()
     try:
         pyperclip.copy(link)
-    except: # pyperclip.PyperclipException
-        pass # nothing gets copied, but the link is still displayed
+    except:  # pyperclip.PyperclipException
+        pass  # nothing gets copied, but the link is still displayed
 
     if post.unlisted is True:
         return redirect('socialDistribution:unlisted-posts')
-    
+
     return redirect('socialDistribution:home')
+
 
 def edit_post(request, id):
     """
@@ -566,14 +572,14 @@ def edit_post(request, id):
     author = get_object_or_404(LocalAuthor, user=request.user)
     if (author.id != post.author.id):
         return HttpResponseForbidden()
-        
+
     if not post.is_public():
         return HttpResponseBadRequest("Only public posts are editable")
-    
+
     if request.method == 'POST':
         # get post data
         edited_post = post.as_json()
-        
+
         form = PostForm(request.POST, request.FILES, user_id=post.author.id)
         if form.is_valid():
             content, content_type = form.get_content_and_type()
@@ -611,7 +617,7 @@ def edit_post(request, id):
                     for category in categories_to_remove:
                         category_obj = Category.objects.get(category=category)
                         post.categories.remove(category_obj)
-                        
+
                 post.save()
 
                 # get recipients for a private post
@@ -619,10 +625,10 @@ def edit_post(request, id):
                     recipients = form.cleaned_data.get('post_recipients')
                 else:
                     recipients = None
-                
+
             except ValidationError:
                 messages.info(request, 'Unable to edit post.')
-                
+
     prev_page = request.META['HTTP_REFERER']
 
     if prev_page is None:
@@ -677,6 +683,7 @@ def like_post(request, post_type, id):
         # will have to edit this if other endpoints require args
         return redirect(prev_page)
 
+
 def single_post(request, post_type, id):
     """ Displays a post to the user.
 
@@ -703,7 +710,7 @@ def single_post(request, post_type, id):
         comments_to_hide = []
 
         for comment in comments_json:
-            # hack 
+            # hack
             # inject more data into json comment
             # retrieve it in comment.py
 
@@ -744,8 +751,11 @@ def single_post(request, post_type, id):
             comment["author_type"] = author_type
 
             # add comment time
-            now = datetime.now(timezone.utc)
-            comment["when"] = timeago.format(datetime.fromisoformat(comment['published']), now)
+            comment["when"] = ""
+            if comment.get("published") is not None:
+                now = datetime.now(timezone.utc)
+                published = parser.parse(comment["published"])
+                comment["when"] = timeago.format(published, now)
 
         # hide comments
         for comment in comments_to_hide:
@@ -799,11 +809,11 @@ def like_comment(request):
         request_url = post_author.get_inbox()
         api_requests.post(url=request_url, data=like)
 
-
     if prev_page is None:
         return redirect('socialDistribution:home')
     else:
         return redirect(prev_page)
+
 
 def post_comment(request, author_id, post_id):
 
@@ -841,7 +851,7 @@ def post_comment(request, author_id, post_id):
                 # create post reqeust data
                 data = {
                     "@context": "https://www.w3.org/ns/activitystreams",
-                    "summary":f"{author.username} Commented on your post",
+                    "summary": f"{author.username} Commented on your post",
                     "type": "comment",
                     "author": author.as_json(),
                     "comment": comment,
@@ -862,7 +872,7 @@ def post_comment(request, author_id, post_id):
             return HttpResponse('Internal Server Error')
 
         return redirect('socialDistribution:single-post', post_type=post_type, id=post_id)
-    
+
     else:
         # redirect back, method not allowed
         prev_page = request.META['HTTP_REFERER']
@@ -872,21 +882,22 @@ def post_comment(request, author_id, post_id):
         else:
             return redirect(prev_page)
 
+
 def delete_post(request, id):
     """
         Deletes a post
     """
     author = get_object_or_404(LocalAuthor, user=request.user)
     post = get_object_or_404(LocalPost, id=id)
-    
+
     if (author.id != post.author.id):
         return HttpResponseForbidden()
-    
-    # remain on unlisted page if the deleted post is unlisted 
+
+    # remain on unlisted page if the deleted post is unlisted
     if post.unlisted is True:
         post.delete()
         return redirect('socialDistribution:unlisted-posts')
-    
+
     post.delete()
     return redirect('socialDistribution:home')
 
@@ -914,12 +925,11 @@ def inbox(request):
     """
     author = LocalAuthor.objects.get(user=request.user)
     follow_requests = author.follow_requests.all()
-    
+
     for post in author.inbox_posts.all():
         post.fetch_update()
     posts = author.inbox_posts.all().order_by('-published')
-        
-    
+
     context = {
         'author': author,
         'follow_requests': follow_requests,
