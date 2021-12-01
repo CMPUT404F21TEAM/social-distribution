@@ -9,6 +9,7 @@ import uuid
 
 import socialDistribution.requests as api_requests
 from cmput404.constants import STRING_MAXLEN, URL_MAXLEN, API_BASE, CLIENT_BASE
+from api.json_validators import validate_post_json
 from .category import Category
 
 
@@ -65,6 +66,7 @@ class Post(models.Model):
         @classmethod
         def get_visibility_choice(cls, visibility):
             """ Returns the visibility choice matching the visibility parameter string """
+            visibility = str(visibility)
             if visibility.upper() == "PUBLIC" or visibility.upper() == "PB":
                 return cls.PUBLIC
 
@@ -75,7 +77,8 @@ class Post(models.Model):
                 return cls.PRIVATE
 
             else:
-                return visibility.upper()   # else return visibility
+                # If they screwed up their post we default to PUBLIC
+                return "PUBLIC"   # else return visibility
 
     TITLE_MAXLEN = 100
     DESCRIPTION_MAXLEN = 100
@@ -358,6 +361,7 @@ class InboxPost(Post):
             endpoint = actor_url + '/posts/' + object_url
 
             status_code, response_body = api_requests.get(endpoint)
+            response_body = validate_post_json(response_body) if response_body is not None else None
 
             # check if GET request came back with post object
             if status_code == 200 and response_body is not None:
