@@ -11,7 +11,8 @@ from api.models import *
 
 logger = logging.getLogger(__name__)
 
-# nbwoodward, https://stackoverflow.com/users/8894424/nbwoodward, "Can you perform multi-threaded tasks within Django?", 
+# nbwoodward, https://stackoverflow.com/users/8894424/nbwoodward,
+# "Can you perform multi-threaded tasks within Django?",
 # https://stackoverflow.com/a/53327191, CC BY-SA 4.0
 
 
@@ -61,9 +62,53 @@ def fetch_author_update(author: Author):
 
 
 def update_author(id):
-    author = Author.objects.get(id=id)
-    status_code, response_body = api_requests.get(author.url.strip("/"))
-    if status_code == 200 and response_body is not None:
-        author.update_with_json(data=response_body)
-    else:
-        author.delete()
+    try:
+        author = Author.objects.get(id=id)
+
+        # update author object
+        status_code, response_body = api_requests.get(author.url.strip("/"))
+        if status_code == 200 and response_body is not None:
+            author.update_with_json(data=response_body)
+        else:
+            author.delete()
+
+        # update only if local
+        if LocalAuthor.objects.filter(id=id).exists():
+            for follow in author.follows.all():
+                fetch_follow_update(follow)
+
+    except Exception as e:
+        logger.error(e, exc_info=True)
+
+
+def fetch_follow_update(follow: Follow):
+    # don't update if follow already up to date
+    if follow.up_to_date():
+        return None
+
+    logger.info(f"Starting update for {follow}")
+    t = threading.Thread(target=update_follow, args=[follow.id], daemon=True)
+    t.start()
+    return follow.id
+
+
+def update_follow(id):
+    try:
+        follow = Follow.objects.get(id=id)
+
+        # make api request
+        actor_url = follow.actor.url.strip('/')
+        object_url = follow.object.url.strip('/')
+        endpoint = actor_url + '/followers/' + object_url
+        status_code, response_body = api_requests.get(endpoint)
+
+        # check if GET request came back with author object
+        if status_code == 200 and response_body is not None and response_body.get("id") == object_url:
+            follow._is_friend = True
+        else:
+            follow._is_friend = False
+        
+        follow.save()
+
+    except Exception as e:
+        logger.error(e, exc_info=True)
