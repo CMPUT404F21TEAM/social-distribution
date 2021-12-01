@@ -67,6 +67,8 @@ def fetch_author_update(author: Author):
     if author.up_to_date():
         return None
 
+    # TODO: check status of pending follow requests
+
     logger.info(f"Starting update for {author}")
 
     # Start a thread that will update data for author
