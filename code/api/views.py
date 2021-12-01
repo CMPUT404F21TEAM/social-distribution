@@ -425,13 +425,33 @@ class PostLikesView(View):
 
 
         try:
-            post = LocalPost.objects.get(id=post_id)
-            authors = [like.author.as_json() for like in post.likes.all()]
+            author = get_object_or_404(Author, id=author_id)
+            post = get_object_or_404(LocalPost, id=post_id, author=author)
+
+            post_likes = post.likes.all()
+
+            items = []
+            for like in post_likes:
+                like_author_json = like.author.as_json()
+
+                like = {
+                    "@context": "https://www.w3.org/ns/activitystreams",
+                    "summary": f"{like_author_json['displayName']} Likes your post",
+                    "type": "Like",
+                    "author": like_author_json,
+                    "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}"
+                }    
+
+                items.append(like)
 
             response = {
-                "type:": "likes",
-                "items": authors
+                "type": "likes",
+                "items": items
             }
+
+        except Http404 as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseNotFound()
 
         except Exception as e:
             logger.error(e, exc_info=True)
@@ -566,6 +586,10 @@ class CommentLikesView(View):
                 "type": "likes",
                 "items": comment_likes_list
             }
+
+        except Http404 as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseNotFound()
 
         except Exception as e:
             logger.error(e, exc_info=True)

@@ -5,6 +5,8 @@ from django.http.response import HttpResponseBadRequest
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
 
+from dateutil import parser
+
 from socialDistribution.models import *
 
 # https://docs.djangoproject.com/en/3.2/topics/pagination/ - Pagination
@@ -103,6 +105,13 @@ def makeInboxPost(data, id=None):
 
     contentType = subtype
     content = content.encode('utf-8')
+
+    # Handle different data formats (some groups not following correct ISO)
+    # Nicolas Gervais, https://stackoverflow.com/users/10908375/nicolas-gervais,
+    # How do I translate an ISO 8601 datetime string into a Python datetime object? [duplicate]
+    # https://stackoverflow.com/a/3908349, CC BY-SA 4.0
+    date_string = data.get("published")
+    published = parser.parse(date_string) if date_string is not None else None
     
     received_post, post_created = InboxPost.objects.get_or_create(
         public_id=data["id"],
@@ -115,7 +124,7 @@ def makeInboxPost(data, id=None):
             "content": content,
             "author": data["author"]["id"],
             "_author_json": data["author"],
-            "published": datetime.fromisoformat(data['published']),
+            "published": published,
             "visibility": InboxPost.Visibility.get_visibility_choice(data["visibility"]),
             "unlisted": data["unlisted"],
         }
