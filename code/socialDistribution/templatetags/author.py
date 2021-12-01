@@ -1,5 +1,8 @@
 from django import template
 
+from socialDistribution.fetchers import fetch_follow_update
+from socialDistribution.models import Follow
+
 register = template.Library()
 
 # Django Software Foundation, "Custom Template tags and Filters", 2021-10-10
@@ -18,6 +21,13 @@ def card_author(*args, **kwargs):
     is_friend = curr_user.has_friend(author)
 
     author_is_user = author.get_url_id() == curr_user.get_url_id()
+
+    # update the follow of author on the current user if exists
+    try:
+        follow = curr_user.follows.get(actor=author)
+        fetch_follow_update(follow)
+    except Follow.DoesNotExist:
+        pass
 
     return {
         'author': author,
