@@ -167,6 +167,26 @@ class FollowersSingleView(View):
             # return 404 if author not found
             return HttpResponseNotFound()
 
+    @method_decorator(validate_node)
+    def put(self, request, author_id, foreign_author_id):
+        """ PUT - Add {foreign_author_id} as a follower of {author_id} """
+
+        author = get_object_or_404(LocalAuthor, pk=author_id)
+        logger.info(f"PUT /author/{author_id}/followers/{foreign_author_id} API endpoint invoked")
+
+        follower, created = Author.objects.get_or_create(url=foreign_author_id)
+
+        follow_obj = Follow.objects.create(
+            object=author,
+            actor=follower
+        )
+
+        author.follows.add(follow_obj)  # django doesn't duplicate relations
+
+        response = follower.as_json()
+
+        return JsonResponse(response)
+
     def delete(self, request, author_id, foreign_author_id):
         """ DELETE - Remove {foreign_author_id} as a follower of {author_id} """
         logger.info(f"DELETE /author/{author_id}/followers/{foreign_author_id} API endpoint invoked")
@@ -425,13 +445,33 @@ class PostLikesView(View):
 
 
         try:
-            post = LocalPost.objects.get(id=post_id)
-            authors = [like.author.as_json() for like in post.likes.all()]
+            author = get_object_or_404(Author, id=author_id)
+            post = get_object_or_404(LocalPost, id=post_id, author=author)
+
+            post_likes = post.likes.all()
+
+            items = []
+            for like in post_likes:
+                like_author_json = like.author.as_json()
+
+                like = {
+                    "@context": "https://www.w3.org/ns/activitystreams",
+                    "summary": f"{like_author_json['displayName']} Likes your post",
+                    "type": "Like",
+                    "author": like_author_json,
+                    "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}"
+                }    
+
+                items.append(like)
 
             response = {
-                "type:": "likes",
-                "items": authors
+                "type": "likes",
+                "items": items
             }
+
+        except Http404 as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseNotFound()
 
         except Exception as e:
             logger.error(e, exc_info=True)
@@ -566,6 +606,10 @@ class CommentLikesView(View):
                 "type": "likes",
                 "items": comment_likes_list
             }
+
+        except Http404 as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseNotFound()
 
         except Exception as e:
             logger.error(e, exc_info=True)

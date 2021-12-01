@@ -4,7 +4,7 @@
             {{ post.author_as_json.displayName }}
         </div>
         <small class="text-muted">
-            {{ post.when }}
+            {{ post.when }}&nbsp;&#8226;&nbsp;{{ post.get_visibility_display|lower }}
         </small>
     </div>
     <div class="card-body d-flex flex-column overflow-auto object-fit">
