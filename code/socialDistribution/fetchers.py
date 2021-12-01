@@ -11,6 +11,9 @@ from api.models import *
 
 logger = logging.getLogger(__name__)
 
+# nbwoodward, https://stackoverflow.com/users/8894424/nbwoodward, "Can you perform multi-threaded tasks within Django?", 
+# https://stackoverflow.com/a/53327191, CC BY-SA 4.0
+
 
 def fetch_remote_authors():
     """ Asynchronously fetch all authors from the API endpoints of all connected remote nodes.
