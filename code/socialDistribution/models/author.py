@@ -42,16 +42,16 @@ class Author(models.Model):
         """ Returns the id of the author in url form """
         return self.url
 
-    def has_follower(self, author):
-        """ Over-ridden in LocalAuthor. Returns True if author is a follower of self, False otherwise """
-        res_code, res_body = api_requests.get(self.url.strip("/") + "/followers")
+    # def has_follower(self, author):
+    #     """ Over-ridden in LocalAuthor. Returns True if author is a follower of self, False otherwise """
+    #     res_code, res_body = api_requests.get(self.url.strip("/") + "/followers")
 
-        if res_code == 200 and res_body:
-            for follower in res_body["items"]:
-                if follower["id"] == author.get_url_id():
-                    return True
-        else:
-            return False
+    #     if res_code == 200 and res_body:
+    #         for follower in res_body["items"]:
+    #             if follower["id"] == author.get_url_id():
+    #                 return True
+    #     else:
+    #         return False
 
     def has_follow_request(self, author):
         """ Over-ridden in LocalAuthor. Always returns False """
@@ -139,6 +139,15 @@ class LocalAuthor(Author):
 
     follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')
+
+    def is_following(self, author: Author):
+        """ Returns true if author is a follower of self, false otherwise. """
+
+        try:
+            self.following.get(object=author)
+            return True
+        except Follow.DoesNotExist:
+            return False
 
     def has_follower(self, author: Author):
         """ Returns true if author is a follower of self, false otherwise. """

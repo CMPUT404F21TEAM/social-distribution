@@ -122,10 +122,10 @@ def update_follow(id):
 
     try:
         follow = Follow.objects.get(id=id)
-
-        # make api request to see if object is a friend of actor (i.e. they are friends)
         actor_url = follow.actor.url.strip('/')
         object_url = follow.object.url.strip('/')
+
+        # make api request to see if object is a follower of actor (i.e. they are friends)
         endpoint = actor_url + '/followers/' + object_url
         status_code, response_body = api_requests.get(endpoint)
 
@@ -136,6 +136,15 @@ def update_follow(id):
             follow._is_friend = False
 
         follow.save()
+
+        # make api request to see if actor is a follower of object still
+        endpoint = object_url + '/followers/' + actor_url
+        status_code, response_body = api_requests.get(endpoint)
+
+        if status_code == 200 and response_body is not None:
+            pass  # still following
+        else:
+            follow.delete()
 
     except Exception as e:
         logger.error(e, exc_info=True)

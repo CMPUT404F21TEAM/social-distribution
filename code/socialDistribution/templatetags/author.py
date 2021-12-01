@@ -7,6 +7,8 @@ register = template.Library()
 
 # Django Software Foundation, "Custom Template tags and Filters", 2021-10-10
 # https://docs.djangoproject.com/en/3.2/howto/custom-template-tags/#inclusion-tags
+
+
 @register.inclusion_tag('tagtemplates/author.html')
 def card_author(*args, **kwargs):
     """
@@ -16,7 +18,7 @@ def card_author(*args, **kwargs):
     author_type = kwargs['author_type']
     curr_user = kwargs['curr_user']
 
-    is_following = author.has_follower(curr_user)
+    is_following = curr_user.is_following(author)
     request_sent = author.has_follow_request(curr_user)
     is_friend = curr_user.has_friend(author)
 
@@ -25,6 +27,12 @@ def card_author(*args, **kwargs):
     # update the follow of author on the current user if exists
     try:
         follow = curr_user.follows.get(actor=author)
+        fetch_follow_update(follow)
+    except Follow.DoesNotExist:
+        pass
+
+    try:
+        follow = curr_user.following.get(object=author)
         fetch_follow_update(follow)
     except Follow.DoesNotExist:
         pass
