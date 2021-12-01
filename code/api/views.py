@@ -167,6 +167,26 @@ class FollowersSingleView(View):
             # return 404 if author not found
             return HttpResponseNotFound()
 
+    @method_decorator(validate_node)
+    def put(self, request, author_id, foreign_author_id):
+        """ PUT - Add {foreign_author_id} as a follower of {author_id} """
+
+        author = get_object_or_404(LocalAuthor, pk=author_id)
+        logger.info(f"PUT /author/{author_id}/followers/{foreign_author_id} API endpoint invoked")
+
+        follower, created = Author.objects.get_or_create(url=foreign_author_id)
+
+        follow_obj = Follow.objects.create(
+            object=author,
+            actor=follower
+        )
+
+        author.follows.add(follow_obj)  # django doesn't duplicate relations
+
+        response = follower.as_json()
+
+        return JsonResponse(response)
+
     def delete(self, request, author_id, foreign_author_id):
         """ DELETE - Remove {foreign_author_id} as a follower of {author_id} """
         logger.info(f"DELETE /author/{author_id}/followers/{foreign_author_id} API endpoint invoked")
