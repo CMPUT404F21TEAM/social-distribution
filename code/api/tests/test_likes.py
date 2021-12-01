@@ -7,10 +7,12 @@ from django.utils import timezone
 from mixer.backend.django import mixer
 
 import json
+import base64
 import logging
 
 from socialDistribution.models import PostLike, CommentLike, Comment, LocalAuthor, LocalPost
-from cmput404.constants import API_BASE
+from cmput404.constants import API_BASE, HOST
+from  api.models import Node
 from .test_post import create_post, get_post_json
 from .test_inbox import create_author
 from datetime import datetime
@@ -256,6 +258,10 @@ class TestCommentLikesView(TestCase):
     @classmethod
     def setUpClass(cls):
         logging.disable(logging.CRITICAL)
+        Node.objects.create(host=HOST, username='testclient', password='testpassword!', remote_credentials=False)
+        cls.basicAuthHeaders = {
+            'HTTP_AUTHORIZATION': 'Basic %s' % base64.b64encode(b'testclient:testpassword!').decode("ascii"),
+        }
 
     # enable logging after tests
     @classmethod
@@ -285,7 +291,10 @@ class TestCommentLikesView(TestCase):
             ]
         }
 
-        response = self.client.get(reverse('api:comment_likes', args=(author1.id, post.id, comment.id,)))
+        response = self.client.get(
+            reverse('api:comment_likes', args=(author1.id, post.id, comment.id,)),
+            **self.basicAuthHeaders
+        )
         self.maxDiff = None
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(json.dumps(expected), response.json())
