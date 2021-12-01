@@ -564,6 +564,7 @@ class PostCommentsSingleView(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class CommentLikesView(View):
 
+    @method_decorator(validate_node)
     def get(self, request, author_id, post_id, comment_id):
         """ GET - Get a list of likes on comment_id which 
             was made on post_id which was created by author_id
@@ -575,8 +576,7 @@ class CommentLikesView(View):
             post = get_object_or_404(
                 LocalPost, 
                 id=post_id, 
-                author=author,
-                visibility=LocalPost.Visibility.PUBLIC
+                author=author
             )
             comment = get_object_or_404(Comment, id=comment_id, post=post)
 
