@@ -202,11 +202,6 @@ class FollowersSingleView(View):
         except (Author.DoesNotExist, Follow.DoesNotExist):
             # return 404 if author not found
             return HttpResponseNotFound()
-        
-    def put(self, request, author_id, foreign_author_id):
-        """ PUT - Add a follower (must be authenticated)"""
-        return NotImplementedError
-
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LikedView(View):
