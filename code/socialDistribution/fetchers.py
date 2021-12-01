@@ -11,6 +11,7 @@ from api.models import *
 
 logger = logging.getLogger(__name__)
 
+# All functions are in this file are inspiried by the following example
 # nbwoodward, https://stackoverflow.com/users/8894424/nbwoodward,
 # "Can you perform multi-threaded tasks within Django?",
 # https://stackoverflow.com/a/53327191, CC BY-SA 4.0
@@ -23,11 +24,19 @@ def fetch_remote_authors():
     for node in Node.objects.filter(remote_credentials=True).exclude(host=HOST):
         server_url = f'{SCHEME}://{node.host}{node.api_prefix}'
         logger.info(f"Starting update for all authors on {server_url}")
+
+        # Start a thread that will get all authors for the given remote server
         t = threading.Thread(target=update_authors_for_server, args=[server_url], daemon=True)
         t.start()
 
 
 def update_authors_for_server(server_url):
+    """ Makes API call to get all authors on a remote server
+
+        Parameters:
+         - server_url (string): the base API endpoint for a remote server
+    """
+
     try:
         authors_endpoint = server_url.strip('/') + '/authors/'
         res_code, res_body = api_requests.get(authors_endpoint)
@@ -49,6 +58,9 @@ def update_authors_for_server(server_url):
 
 def fetch_author_update(author: Author):
     """ Asynchronously fetch author data for given author from the API endpoint of their home node.
+
+        Paramters:
+         - author (models.Author): The author to be updated
     """
 
     # don't update if author already up to date
@@ -56,12 +68,20 @@ def fetch_author_update(author: Author):
         return None
 
     logger.info(f"Starting update for {author}")
+
+    # Start a thread that will update data for author
     t = threading.Thread(target=update_author, args=[author.id], daemon=True)
     t.start()
     return author.id
 
 
 def update_author(id):
+    """ Makes API call to update author data for a given author
+
+        Parameters:
+         - id (UUID): the ID of the author to update 
+    """
+
     try:
         author = Author.objects.get(id=id)
 
@@ -72,16 +92,17 @@ def update_author(id):
         else:
             author.delete()
 
-        # update only if local
-        if LocalAuthor.objects.filter(id=id).exists():
-            for follow in author.follows.all():
-                fetch_follow_update(follow)
-
     except Exception as e:
         logger.error(e, exc_info=True)
 
 
 def fetch_follow_update(follow: Follow):
+    """ Asynchronously update follow data for a given follow.
+
+        Paramters:
+         - follow (models.Follow): The follow to be updated
+    """
+
     # don't update if follow already up to date
     if follow.up_to_date():
         return None
@@ -93,10 +114,16 @@ def fetch_follow_update(follow: Follow):
 
 
 def update_follow(id):
+    """ Makes API call to update follow data for a given follow
+
+        Parameters:
+         - id: the ID of the follow object to update 
+    """
+
     try:
         follow = Follow.objects.get(id=id)
 
-        # make api request
+        # make api request to see if object is a friend of actor (i.e. they are friends)
         actor_url = follow.actor.url.strip('/')
         object_url = follow.object.url.strip('/')
         endpoint = actor_url + '/followers/' + object_url
@@ -107,7 +134,7 @@ def update_follow(id):
             follow._is_friend = True
         else:
             follow._is_friend = False
-        
+
         follow.save()
 
     except Exception as e:
