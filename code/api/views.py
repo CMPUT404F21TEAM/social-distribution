@@ -432,18 +432,17 @@ class PostLikesView(View):
 
             items = []
             for like in post_likes:
-                if Author.objects.filter(url=like.author.get_url_id()):
-                    like_author_json = like.author.as_json()
+                like_author_json = like.author.as_json()
 
-                    like = {
-                        "@context": "https://www.w3.org/ns/activitystreams",
-                        "summary": f"{like_author_json['displayName']} Likes your post",
-                        "type": "Like",
-                        "author": like_author_json,
-                        "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}"
-                    }    
+                like = {
+                    "@context": "https://www.w3.org/ns/activitystreams",
+                    "summary": f"{like_author_json['displayName']} Likes your post",
+                    "type": "Like",
+                    "author": like_author_json,
+                    "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}"
+                }    
 
-                    items.append(like)
+                items.append(like)
 
             response = {
                 "type": "likes",
