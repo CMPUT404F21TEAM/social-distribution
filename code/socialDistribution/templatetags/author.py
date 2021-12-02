@@ -24,10 +24,6 @@ def card_author(*args, **kwargs):
 
     author_is_user = author.get_url_id() == curr_user.get_url_id()
 
-    # requests for some updates for next time
-    fetch_follow_update(curr_user, author)
-    fetch_follow_update(author, curr_user)
-
     return {
         'author': author,
         'author_type': author_type,
