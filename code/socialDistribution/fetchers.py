@@ -89,7 +89,8 @@ def update_author(id):
         status_code, response_body = api_requests.get(author.url.strip("/"))
         if status_code == 200 and response_body is not None:
             author.update_with_json(data=response_body)
-        else:
+
+        elif status_code == 404 or status_code == 410:
             author.delete()
 
     except Exception as e:
@@ -124,11 +125,11 @@ def fetch_follow_update(actor: Author, object: Author):
 
 def update_follow(actor_id, object_id):
     """ Makes API call to check if actor author is following object author. 
-    
+
         Parameters:
          - actor_id: The id of the author that might be a follower of object
          - object_id: The id of the author that might have actor as a follower
-    
+
     """
 
     try:
@@ -142,10 +143,11 @@ def update_follow(actor_id, object_id):
         status_code, response_body = api_requests.get(endpoint)
 
         # check if GET request came back with author object
-        if status_code == 200 and response_body is not None:
+        if status_code >= 200 and status_code <= 299 and response_body is not None:
             # record that follow if not already in the system
             if not Follow.objects.filter(object=object, actor=actor).exists():
                 Follow.objects.create(object=object, actor=actor)
+
         elif status_code == 404 or status_code == 410:
             # remove that follow if in the system
             if Follow.objects.filter(object=object, actor=actor).exists():
@@ -153,40 +155,3 @@ def update_follow(actor_id, object_id):
 
     except Exception as e:
         logger.error(e, exc_info=True)
-
-
-# def temp(id):
-#     """ Makes API call to update follow data for a given follow
-
-#         Parameters:
-#          - id: the ID of the follow object to update
-#     """
-
-#     try:
-#         follow = Follow.objects.get(id=id)
-#         actor_url = follow.actor.url.strip('/')
-#         object_url = follow.object.url.strip('/')
-
-#         # make api request to see if object is a follower of actor (i.e. they are friends)
-#         endpoint = actor_url + '/followers/' + object_url
-#         status_code, response_body = api_requests.get(endpoint)
-
-#         # check if GET request came back with author object
-#         if status_code == 200 and response_body is not None and response_body.get("id") == object_url:
-#             follow._is_friend = True
-#         else:
-#             follow._is_friend = False
-
-#         follow.save()
-
-#         # make api request to see if actor is a follower of object still
-#         endpoint = object_url + '/followers/' + actor_url
-#         status_code, response_body = api_requests.get(endpoint)
-
-#         if status_code == 200 and response_body is not None:
-#             pass  # still following
-#         else:
-#             follow.delete()
-
-#     except Exception as e:
-#         logger.error(e, exc_info=True)

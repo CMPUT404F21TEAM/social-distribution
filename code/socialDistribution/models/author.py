@@ -4,9 +4,7 @@ from django.utils import timezone
 
 import datetime
 import uuid
-from urllib.parse import urlparse
 
-import socialDistribution.requests as api_requests
 from cmput404.constants import API_BASE, STRING_MAXLEN, URL_MAXLEN
 from .follow import Follow
 
