@@ -1,5 +1,6 @@
 """ This file contains methods that asyncrohonously fetch update data for different data models """
 
+from django.db import connection
 import threading
 import logging
 
@@ -54,6 +55,10 @@ def update_authors_for_server(server_url):
 
     except Exception as e:
         logger.error(e, exc_info=True)
+    
+    finally:
+        logger.info("Closing connection")
+        connection.close()
 
 
 def fetch_author_update(author: Author):
@@ -95,6 +100,10 @@ def update_author(id):
 
     except Exception as e:
         logger.error(e, exc_info=True)
+
+    finally:
+        logger.info("Closing connection")
+        connection.close()
 
 
 def fetch_follow_update(actor: Author, object: Author):
@@ -155,3 +164,7 @@ def update_follow(actor_id, object_id):
 
     except Exception as e:
         logger.error(e, exc_info=True)
+
+    finally:
+        logger.info("Closing connection")
+        connection.close()
