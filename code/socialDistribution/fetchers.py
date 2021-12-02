@@ -22,36 +22,34 @@ def fetch_remote_authors():
     """ Asynchronously fetch all authors from the API endpoints of all connected remote nodes.
     """
 
-    for node in Node.objects.filter(remote_credentials=True).exclude(host=HOST):
-        server_url = f'{SCHEME}://{node.host}{node.api_prefix}'
-
-        # Start a thread that will get all authors for the given remote server
-        t = threading.Thread(target=update_authors_for_server, args=[server_url], daemon=True)
-        t.start()
+    # Start a thread that will get all remote authors
+    t = threading.Thread(target=update_remote_authors, args=[], daemon=True)
+    t.start()
 
 
-def update_authors_for_server(server_url):
-    """ Makes API call to get all authors on a remote server
+def update_remote_authors():
+    """ Makes series of API calls to get all authors on remote servers.
 
-        Parameters:
-         - server_url (string): the base API endpoint for a remote server
     """
 
     try:
-        logger.info(f"Starting update for all authors on {server_url}")
-        authors_endpoint = server_url.strip('/') + '/authors/'
-        res_code, res_body = api_requests.get(authors_endpoint)
+        logger.info(f"Starting fetch for all remote authors")
 
-        # skip node if unresponsive
-        if res_body == None:
-            return None
+        # check remote nodes
+        for node in Node.objects.filter(remote_credentials=True).exclude(host=HOST):
+            server_url = f'{SCHEME}://{node.host}{node.api_prefix}'
+            authors_endpoint = server_url.strip('/') + '/authors/'
+            res_code, res_body = api_requests.get(authors_endpoint)
 
-        # add remote authors to local cache
-        for remote_author in res_body['items']:
-            author, created = Author.objects.get_or_create(
-                url=remote_author['id'],
-            )
-            author.update_with_json(data=remote_author)
+            # skip node if unresponsive
+            if res_body is not None and res_body.get("items") is not None:
+
+                # add remote authors to local cache
+                for remote_author in res_body['items']:
+                    author, created = Author.objects.get_or_create(
+                        url=remote_author['id'],
+                    )
+                    author.update_with_json(data=remote_author)
 
         # check for deleted authors 
         for author in Author.objects.all():
@@ -65,7 +63,7 @@ def update_authors_for_server(server_url):
         logger.error(e, exc_info=True)
     
     finally:
-        logger.info(f"Finished remote authors update for {server_url}")
+        logger.info(f"Finished remote authors fetch for all servers")
         connection.close()
 
 

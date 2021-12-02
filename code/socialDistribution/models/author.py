@@ -91,7 +91,7 @@ class Author(models.Model):
             data is always maintained up-to-date or if the data was recently refreshed
         """
 
-        limit = timezone.now()-datetime.timedelta(seconds=3)  # 3 seconds ago
+        limit = timezone.now()-datetime.timedelta(seconds=6)  # 6 seconds ago
         was_recent_update = self._last_updated > limit
 
         # return true if always up-to-date or if just updated
