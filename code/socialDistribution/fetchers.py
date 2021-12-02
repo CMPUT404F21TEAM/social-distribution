@@ -24,7 +24,6 @@ def fetch_remote_authors():
 
     for node in Node.objects.filter(remote_credentials=True).exclude(host=HOST):
         server_url = f'{SCHEME}://{node.host}{node.api_prefix}'
-        logger.info(f"Starting update for all authors on {server_url}")
 
         # Start a thread that will get all authors for the given remote server
         t = threading.Thread(target=update_authors_for_server, args=[server_url], daemon=True)
@@ -39,6 +38,7 @@ def update_authors_for_server(server_url):
     """
 
     try:
+        logger.info(f"Starting update for all authors on {server_url}")
         authors_endpoint = server_url.strip('/') + '/authors/'
         res_code, res_body = api_requests.get(authors_endpoint)
 
@@ -64,7 +64,7 @@ def update_authors_for_server(server_url):
         logger.error(e, exc_info=True)
     
     finally:
-        logger.info("Closing connection")
+        logger.info(f"Finished remote authors update for {server_url}")
         connection.close()
 
 
@@ -78,8 +78,6 @@ def fetch_author_update(author: Author):
     # don't update if author already up to date
     if author.up_to_date():
         return None
-
-    logger.info(f"Starting update for {author}")
 
     # Start a thread that will update data for author
     t = threading.Thread(target=update_author, args=[author.id], daemon=True)
@@ -96,6 +94,7 @@ def update_author(id):
 
     try:
         author = Author.objects.get(id=id)
+        logger.info(f"Starting update for {author}")
 
         # update author object
         status_code, response_body = api_requests.get(author.url.strip("/"))
@@ -109,7 +108,7 @@ def update_author(id):
         logger.error(e, exc_info=True)
 
     finally:
-        logger.info("Closing connection")
+        logger.info(f"Finished author update for {author}")
         connection.close()
 
 
@@ -131,7 +130,6 @@ def fetch_follow_update(actor: Author, object: Author):
     except Follow.DoesNotExist:
         pass
 
-    logger.info(f"Starting follow update for {actor} --> {object}")
 
     # Start a thread that will update follow
     t = threading.Thread(target=update_follow, args=[actor.id, object.id], daemon=True)
@@ -151,6 +149,7 @@ def update_follow(actor_id, object_id):
     try:
         actor = Author.objects.get(id=actor_id)
         object = Author.objects.get(id=object_id)
+        logger.info(f"Starting follow update for {actor} --> {object}")
         actor_url = actor.url.strip('/')
         object_url = object.url.strip('/')
 
@@ -173,5 +172,5 @@ def update_follow(actor_id, object_id):
         logger.error(e, exc_info=True)
 
     finally:
-        logger.info("Closing connection")
+        logger.info(f"Finished follow update for {actor} --> {object}")
         connection.close()
