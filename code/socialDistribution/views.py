@@ -11,7 +11,7 @@ from django.shortcuts import redirect
 from django.db.models import Count, Q
 
 from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
-from socialDistribution.fetchers import fetch_remote_authors, fetch_author_update
+from socialDistribution.fetchers import fetch_remote_authors, fetch_author_update, fetch_follow_update
 from .forms import CreateUserForm, PostForm
 
 import base64
@@ -351,9 +351,6 @@ def authors(request):
                 'type': REMOTE
             })
 
-        # send update signal
-        fetch_author_update(author)
-
     args["authors"] = authors
     args["curr_user"] = LocalAuthor.objects.get(user=request.user)
     return render(request, 'author/index.html', args)
@@ -376,6 +373,8 @@ def author(request, author_id):
 
     # send update signal
     fetch_author_update(author)
+    fetch_follow_update(curr_user, author)
+    fetch_follow_update(author, curr_user)
 
     if author_type == LOCAL:
         posts = author.posts.listed().get_public()  # get public posts only
