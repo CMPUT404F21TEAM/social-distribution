@@ -348,7 +348,10 @@ class TestCommentLikesView(TestCase):
         post.delete()
         self.assertFalse(LocalPost.objects.filter(id=post_id).exists())
 
-        response = self.client.get(reverse('api:comment_likes', args=(author1.id, post_id, comment.id)))
+        response = self.client.get(
+            reverse('api:comment_likes', args=(author1.id, post_id, comment.id)),
+            **self.basicAuthHeaders,
+        )
         self.assertEqual(response.status_code, 404)
 
     def test_get_comment_likes_missing_comment(self):
@@ -368,5 +371,8 @@ class TestCommentLikesView(TestCase):
         comment.delete()
         self.assertFalse(LocalPost.objects.filter(id=comment.id).exists())
 
-        response = self.client.get(reverse('api:comment_likes', args=(author1.id, post.id, comment_id)))
+        response = self.client.get(
+            reverse('api:comment_likes', args=(author1.id, post.id, comment_id)),
+            **self.basicAuthHeaders,
+        )
         self.assertEqual(response.status_code, 404)
