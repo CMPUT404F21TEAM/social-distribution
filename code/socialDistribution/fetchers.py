@@ -53,6 +53,13 @@ def update_authors_for_server(server_url):
             )
             author.update_with_json(data=remote_author)
 
+        # check for deleted authors 
+        for author in Author.objects.all():
+            author_url = author.url.strip("/")
+            res_code, res_data = api_requests.get(author_url)
+            if res_code == 404 or res_code == 410:
+                author.delete()
+
     except Exception as e:
         logger.error(e, exc_info=True)
     

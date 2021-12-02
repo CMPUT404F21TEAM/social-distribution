@@ -351,9 +351,6 @@ def authors(request):
                 'type': REMOTE
             })
 
-        # send update signal
-        fetch_author_update(author)
-
     args["authors"] = authors
     args["curr_user"] = LocalAuthor.objects.get(user=request.user)
     return render(request, 'author/index.html', args)
