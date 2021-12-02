@@ -223,9 +223,6 @@ class InboxViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(comment.total_likes(), 1)
         liker = comment.likes.all()[0]
-        temp = list(Author.objects.all())
-        a = liker.author
-        b = author1
         self.assertEqual(liker.author.id, author1.id)
 
     def test_post_like(self):
