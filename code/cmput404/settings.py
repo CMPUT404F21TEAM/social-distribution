@@ -67,7 +67,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8011",
     "https://cmput404fall21g11.herokuapp.com",
     "https://cmput404-bettersocial.herokuapp.com",
-    "https://i-connect.herokuapp.com"
+    "https://i-connect.herokuapp.com",
+    "https://cmput404-vgt-socialdist.herokuapp.com"
 ]
 
 TEMPLATES = [
