@@ -13,7 +13,6 @@ class Follow(models.Model):
     actor = models.ForeignKey('Author', on_delete=models.CASCADE, related_name="following")
 
     _last_updated = models.DateTimeField(auto_now=True)
-    _is_friend = models.BooleanField(default=False)
 
     class Meta:
         # Django Software Foundation, "UniqueConstraint", 2021-11-06,
@@ -23,12 +22,15 @@ class Follow(models.Model):
             models.UniqueConstraint(fields=['actor', 'object'], name='unique_follow'),
         ]
 
-    def is_friend(self):
-        """ Checks if follow is bidirectional. That is, checks if object also follows actor. This method makes an
-            HTTP request. 
+    @classmethod
+    def are_friends(cls, author1, author2):
+        """ Checks if bidirectional follows exist between author1 and author2. That is, checks if author1
+            and author2 are friends.
         """
 
-        return self._is_friend
+        first = cls.objects.filter(actor_id=author1.id, object_id=author2.id).exists()
+        second = cls.objects.filter(actor_id=author2.id, object_id=author1.id).exists()
+        return first and second
 
     def up_to_date(self):
         """ Checks if the follow data is currently up do date. Returns true if either the 

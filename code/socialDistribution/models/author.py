@@ -26,6 +26,7 @@ class Author(models.Model):
     # Django Software Foundation, https://docs.djangoproject.com/en/dev/ref/models/fields/#uuidfield
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     url = models.URLField(max_length=URL_MAXLEN)
+    host = models.URLField(max_length=STRING_MAXLEN, blank=True)
     displayName = models.CharField(max_length=STRING_MAXLEN, default="Anonymous User")
     githubUrl = models.CharField(max_length=URL_MAXLEN, null=True)
     profileImageUrl = models.CharField(max_length=URL_MAXLEN, null=True)
@@ -41,17 +42,6 @@ class Author(models.Model):
     def get_url_id(self):
         """ Returns the id of the author in url form """
         return self.url
-
-    # def has_follower(self, author):
-    #     """ Over-ridden in LocalAuthor. Returns True if author is a follower of self, False otherwise """
-    #     res_code, res_body = api_requests.get(self.url.strip("/") + "/followers")
-
-    #     if res_code == 200 and res_body:
-    #         for follower in res_body["items"]:
-    #             if follower["id"] == author.get_url_id():
-    #                 return True
-    #     else:
-    #         return False
 
     def has_follow_request(self, author):
         """ Over-ridden in LocalAuthor. Always returns False """
@@ -69,13 +59,10 @@ class Author(models.Model):
         """ GET JSON representation of author
         """
 
-        parsed_uri = urlparse(self.url)
-        host = f'{parsed_uri.scheme}://{parsed_uri.netloc}/'
-
         json_data = {
             "type": "author",
             "id": self.url,
-            "host": host,
+            "host": self.host,
             "displayName": self.displayName,
             "url": self.url,
             "github": self.githubUrl,
@@ -91,6 +78,8 @@ class Author(models.Model):
         try:
             if data.get("displayName"):
                 self.displayName = data['displayName']
+            if data.get('host'):
+                self.host = data['host']
             if data.get("github"):
                 self.githubUrl = data['github']
             if data.get("profileImage"):
@@ -141,7 +130,7 @@ class LocalAuthor(Author):
     inbox_posts = models.ManyToManyField('InboxPost')
 
     def is_following(self, author: Author):
-        """ Returns true if author is a follower of self, false otherwise. """
+        """ Returns true if self is following author, false otherwise. """
 
         try:
             self.following.get(object=author)
@@ -161,11 +150,7 @@ class LocalAuthor(Author):
     def has_friend(self, author: Author):
         """ Returns true if author is a friend of self, false otherwise. """
 
-        try:
-            follow = self.follows.get(actor=author)
-            return follow.is_friend()
-        except Follow.DoesNotExist:
-            return False
+        return Follow.are_friends(self, author)
 
     def has_follow_request(self, author: Author):
         """ Returns true if self has a follow request from author, false otherwise. """
@@ -213,5 +198,6 @@ class LocalAuthor(Author):
         # Clark, https://stackoverflow.com/users/10424244/clark, "Django - How to get self.id when saving a new object?",
         # 2021-02-19, https://stackoverflow.com/a/66271445, CC BY-SA 4.0
         url = f"{API_BASE}/author/{self.id}"
-        if self.url != url:
-            Author.objects.filter(id=self.id).update(url=url)
+        host = f"{API_BASE}/"
+        if self.url != url or self.host != host:
+            Author.objects.filter(id=self.id).update(url=url, host=host)

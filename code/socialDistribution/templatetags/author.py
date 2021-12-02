@@ -24,18 +24,9 @@ def card_author(*args, **kwargs):
 
     author_is_user = author.get_url_id() == curr_user.get_url_id()
 
-    # update the follow of author on the current user if exists
-    try:
-        follow = curr_user.follows.get(actor=author)
-        fetch_follow_update(follow)
-    except Follow.DoesNotExist:
-        pass
-
-    try:
-        follow = curr_user.following.get(object=author)
-        fetch_follow_update(follow)
-    except Follow.DoesNotExist:
-        pass
+    # requests for some updates for next time
+    fetch_follow_update(curr_user, author)
+    fetch_follow_update(author, curr_user)
 
     return {
         'author': author,

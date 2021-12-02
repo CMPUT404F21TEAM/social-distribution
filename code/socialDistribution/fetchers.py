@@ -67,8 +67,6 @@ def fetch_author_update(author: Author):
     if author.up_to_date():
         return None
 
-    # TODO: check status of pending follow requests
-
     logger.info(f"Starting update for {author}")
 
     # Start a thread that will update data for author
@@ -98,55 +96,97 @@ def update_author(id):
         logger.error(e, exc_info=True)
 
 
-def fetch_follow_update(follow: Follow):
-    """ Asynchronously update follow data for a given follow.
-
-        Paramters:
-         - follow (models.Follow): The follow to be updated
-    """
-
-    # don't update if follow already up to date
-    if follow.up_to_date():
-        return None
-
-    logger.info(f"Starting update for {follow}")
-    t = threading.Thread(target=update_follow, args=[follow.id], daemon=True)
-    t.start()
-    return follow.id
-
-
-def update_follow(id):
-    """ Makes API call to update follow data for a given follow
+def fetch_follow_update(actor: Author, object: Author):
+    """ Asynchronously checks if actor is following object. If actor is following object, a Follow
+        object is created (if does not already exist). If actor is not following object, the corresponding
+        Follow object is deleted (if it exists).
 
         Parameters:
-         - id: the ID of the follow object to update 
+         - actor (Author): The author that might be a follower of object
+         - object (Author): The author that might have actor as a follower
+    """
+
+    # check if follow exists and whether it is up to date
+    try:
+        follow = Follow.objects.get(actor_id=actor.id, object_id=object.id)
+        if follow.up_to_date():
+            return None  # no update needed for now
+    except Follow.DoesNotExist:
+        pass
+
+    logger.info(f"Starting follow update for {actor} --> {object}")
+
+    # Start a thread that will update follow
+    t = threading.Thread(target=update_follow, args=[actor.id, object.id], daemon=True)
+    t.start()
+    return actor.id, object.id
+
+
+def update_follow(actor_id, object_id):
+    """ Makes API call to check if actor author is following object author. 
+    
+        Parameters:
+         - actor_id: The id of the author that might be a follower of object
+         - object_id: The id of the author that might have actor as a follower
+    
     """
 
     try:
-        follow = Follow.objects.get(id=id)
-        actor_url = follow.actor.url.strip('/')
-        object_url = follow.object.url.strip('/')
+        actor = Author.objects.get(id=actor_id)
+        object = Author.objects.get(id=object_id)
+        actor_url = actor.url.strip('/')
+        object_url = object.url.strip('/')
 
-        # make api request to see if object is a follower of actor (i.e. they are friends)
-        endpoint = actor_url + '/followers/' + object_url
-        status_code, response_body = api_requests.get(endpoint)
-
-        # check if GET request came back with author object
-        if status_code == 200 and response_body is not None and response_body.get("id") == object_url:
-            follow._is_friend = True
-        else:
-            follow._is_friend = False
-
-        follow.save()
-
-        # make api request to see if actor is a follower of object still
+        # make api request to see if actor is a follower of object
         endpoint = object_url + '/followers/' + actor_url
         status_code, response_body = api_requests.get(endpoint)
 
+        # check if GET request came back with author object
         if status_code == 200 and response_body is not None:
-            pass  # still following
-        else:
-            follow.delete()
+            # record that follow if not already in the system
+            if not Follow.objects.filter(object=object, actor=actor).exists():
+                Follow.objects.create(object=object, actor=actor)
+        elif status_code == 404 or status_code == 410:
+            # remove that follow if in the system
+            if Follow.objects.filter(object=object, actor=actor).exists():
+                Follow.objects.filter(object=object, actor=actor).delete()
 
     except Exception as e:
         logger.error(e, exc_info=True)
+
+
+# def temp(id):
+#     """ Makes API call to update follow data for a given follow
+
+#         Parameters:
+#          - id: the ID of the follow object to update
+#     """
+
+#     try:
+#         follow = Follow.objects.get(id=id)
+#         actor_url = follow.actor.url.strip('/')
+#         object_url = follow.object.url.strip('/')
+
+#         # make api request to see if object is a follower of actor (i.e. they are friends)
+#         endpoint = actor_url + '/followers/' + object_url
+#         status_code, response_body = api_requests.get(endpoint)
+
+#         # check if GET request came back with author object
+#         if status_code == 200 and response_body is not None and response_body.get("id") == object_url:
+#             follow._is_friend = True
+#         else:
+#             follow._is_friend = False
+
+#         follow.save()
+
+#         # make api request to see if actor is a follower of object still
+#         endpoint = object_url + '/followers/' + actor_url
+#         status_code, response_body = api_requests.get(endpoint)
+
+#         if status_code == 200 and response_body is not None:
+#             pass  # still following
+#         else:
+#             follow.delete()
+
+#     except Exception as e:
+#         logger.error(e, exc_info=True)
