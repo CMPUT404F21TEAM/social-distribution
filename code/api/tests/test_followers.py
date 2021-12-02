@@ -191,6 +191,10 @@ class FollowersViewTests(TestCase):
         author2 = mixer.blend(LocalAuthor)
         author3 = mixer.blend(LocalAuthor)
 
+        author1 = LocalAuthor.objects.get(id=author1.id)
+        author2 = LocalAuthor.objects.get(id=author2.id)
+        author3 = LocalAuthor.objects.get(id=author3.id)
+
         author1.follows.create(actor=author2)
         author1.follows.create(actor=author3)
 
