@@ -843,9 +843,15 @@ def post_comment(request, author_id, post_id):
                     "object": post.public_id
                 }
 
-                if url_parser.get_host(post.public_id) == REMOTE_NODES["t16"]:
+                post_host = url_parser.get_host(post.public_id)
+                if post_host != HOST:
                     request_url = post.public_id.strip("/") + '/comments/'
-                    data["id"] = post.public_id
+                    
+                    if post_host == REMOTE_NODES["t16"]:
+                        data["id"] = post.public_id
+
+                    elif post_host == REMOTE_NODES["t11"]:
+                        data["api_url"] = post.public_id
                 
                 else:
                     request_url = f'{post.author.strip("/")}/inbox/'
