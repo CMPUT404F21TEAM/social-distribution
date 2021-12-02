@@ -679,13 +679,19 @@ def single_post(request, post_type, id):
 
     if post_type == "local":
         post = get_object_or_404(LocalPost, id=id)
+        author_is_user = post.author.get_url_id() == current_user.get_url_id()
+        post_author = post.author
     elif post_type == "inbox":
         post = get_object_or_404(InboxPost, id=id)
+        author_is_user = post.author == current_user.get_url_id()
+        post_author = get_object_or_404(Author, url= post.author)
     else:
         raise Http404()
 
     try:
         comments_json = post.comments_as_json
+        comments_to_hide = []
+
         for comment in comments_json:
             # hack
             # inject more data into json comment
@@ -701,6 +707,8 @@ def single_post(request, post_type, id):
             )
             # add or update remaining fields
             comment_author.update_with_json(data=comment["author"])
+            
+            # get database record of comment_author
             try:
                 author = LocalAuthor.objects.get(url=comment_author.url)
                 author_type = LOCAL
@@ -708,7 +716,19 @@ def single_post(request, post_type, id):
             except LocalAuthor.DoesNotExist:
                 author = get_object_or_404(Author, url=comment_author.url)
                 author_type = REMOTE
+            
+            # Hide comments from other friends of post_author
+            if post.visibility == LocalPost.Visibility.FRIENDS and not author_is_user:
 
+                # if not a friend return
+                if not current_user.has_friend(post_author):
+                    return HttpResponseForbidden("You don't permsission to see this friends only post.")
+                
+                # check if comment from post_author or current user
+                if author.id != post_author.id  and author.id != current_user.id:
+                    comments_to_hide.append(comment)
+                    continue
+                
             comment["comment_author_local_server_id"] = author.id
             comment["comment_author_object"] = comment_author
             comment["author_type"] = author_type
@@ -719,6 +739,11 @@ def single_post(request, post_type, id):
                 now = datetime.now(timezone.utc)
                 published = parser.parse(comment["published"])
                 comment["when"] = timeago.format(published, now)
+
+        # hide comments
+        for comment in comments_to_hide:
+            # del comments_json[index]
+            comments_json.remove(comment)
 
     except Exception as e:
         logger.error(e, exc_info=True)
