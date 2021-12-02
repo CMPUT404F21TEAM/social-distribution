@@ -17,11 +17,13 @@ from .test_post import create_post, get_post_json
 from .test_inbox import create_author
 from datetime import datetime
 
+
 def create_postlike(author, object):
     return PostLike.objects.create(
         author=author,
         object=object
     )
+
 
 def post_like_as_json(postlike):
     return {
@@ -38,6 +40,7 @@ def create_commentlike(author, object):
         author=author,
         object=object
     )
+
 
 def comment_like_as_json(commentlike):
     post = commentlike.object.post
@@ -109,13 +112,21 @@ class LikedViewTest(TestCase):
             self.assertIn(post_like, res_json["items"])
 
     def test_get_liked_commentlikes(self):
+        self.maxDiff = None
+
         author1 = mixer.blend(LocalAuthor)
         author2 = mixer.blend(LocalAuthor)
+
+        # refetch to get proper urls
+        author1 = LocalAuthor.objects.get(id=author1.id)
+        author2 = LocalAuthor.objects.get(id=author2.id)
+
         post1 = create_post('Test post 1', author1)
         post2 = create_post('Test post 2', author2)
 
         author3 = mixer.blend(LocalAuthor)
-        
+        author3 = LocalAuthor.objects.get(id=author3.id)
+
         comment1 = mixer.blend(Comment, author=author1, post=post2)
         comment2 = mixer.blend(Comment, author=author2, post=post1)
         comment3 = mixer.blend(Comment, author=author3, post=post1)
@@ -135,7 +146,7 @@ class LikedViewTest(TestCase):
 
         response = self.client.get(reverse('api:liked', args=(author3.id,)))
         self.assertEqual(response.status_code, 200)
-        
+
         res_json = response.json()
         self.assertTrue(res_json["type"] == "liked")
         for comment_like in expected["items"]:
@@ -148,11 +159,18 @@ class LikedViewTest(TestCase):
         author4 = mixer.blend(LocalAuthor)
         author5 = mixer.blend(LocalAuthor)
 
+        # refetch to get proper urls
+        author1 = LocalAuthor.objects.get(id=author1.id)
+        author2 = LocalAuthor.objects.get(id=author2.id)
+        author3 = LocalAuthor.objects.get(id=author3.id)
+        author4 = LocalAuthor.objects.get(id=author4.id)
+        author5 = LocalAuthor.objects.get(id=author5.id)
+
         post1 = create_post('Test post 1', author1)
         post2 = create_post('Test post 2', author2)
         post3 = create_post('Test post 3', author3)
         post4 = create_post('Test post 4', author4)
-        
+
         comment1 = mixer.blend(Comment, author=author1, post=post1)
         comment2 = mixer.blend(Comment, author=author2, post=post2)
         comment3 = mixer.blend(Comment, author=author2, post=post3)
@@ -195,7 +213,6 @@ class LikedViewTest(TestCase):
             self.assertIn(like, res_json["items"])
 
 
-
 class TestPostLikesView(TestCase):
 
     @classmethod
@@ -213,6 +230,12 @@ class TestPostLikesView(TestCase):
         author2 = mixer.blend(LocalAuthor)
         author3 = mixer.blend(LocalAuthor)
         author4 = mixer.blend(LocalAuthor)
+
+        # refetch to get proper urls
+        author1 = LocalAuthor.objects.get(id=author1.id)
+        author2 = LocalAuthor.objects.get(id=author2.id)
+        author3 = LocalAuthor.objects.get(id=author3.id)
+        author4 = LocalAuthor.objects.get(id=author4.id)
 
         post_like1 = create_postlike(author2, post)
         post_like2 = create_postlike(author3, post)
@@ -234,11 +257,13 @@ class TestPostLikesView(TestCase):
 
     def test_get_post_likes_404(self):
         author1 = mixer.blend(LocalAuthor)
+        author1 = LocalAuthor.objects.get(id=author1.id)  # refetch to get proper urls
         post = create_post("Test post", author1)
 
         self.assertTrue(LocalPost.objects.filter(id=post.id).exists())
 
         author2 = mixer.blend(LocalAuthor)
+        author2 = LocalAuthor.objects.get(id=author2.id)  # refetch to get proper urls
         create_postlike(author2, post)
 
         post_id = post.id
@@ -274,6 +299,12 @@ class TestCommentLikesView(TestCase):
         author3 = mixer.blend(LocalAuthor)
         author4 = mixer.blend(LocalAuthor)
 
+        # refetch to get proper urls
+        author1 = LocalAuthor.objects.get(id=author1.id)
+        author2 = LocalAuthor.objects.get(id=author2.id)
+        author3 = LocalAuthor.objects.get(id=author3.id)
+        author4 = LocalAuthor.objects.get(id=author4.id)
+
         post = create_post("Test post", author1)
 
         comment = mixer.blend(Comment, author=author1, post=post)
@@ -301,34 +332,47 @@ class TestCommentLikesView(TestCase):
 
     def test_get_comment_likes_missing_post(self):
         author1 = mixer.blend(LocalAuthor)
+        author1 = LocalAuthor.objects.get(id=author1.id)  # refetch to get proper urls
+
         post = create_post("Test post", author1)
         comment = mixer.blend(Comment, author=author1, post=post)
 
         self.assertTrue(LocalPost.objects.filter(id=post.id).exists())
 
         author2 = mixer.blend(LocalAuthor)
+        author2 = LocalAuthor.objects.get(id=author2.id)  # refetch to get proper urls
+
         create_commentlike(author2, comment)
 
         post_id = post.id
         post.delete()
         self.assertFalse(LocalPost.objects.filter(id=post_id).exists())
 
-        response = self.client.get(reverse('api:comment_likes', args=(author1.id, post_id, comment.id)))
+        response = self.client.get(
+            reverse('api:comment_likes', args=(author1.id, post_id, comment.id)),
+            **self.basicAuthHeaders,
+        )
         self.assertEqual(response.status_code, 404)
 
     def test_get_comment_likes_missing_comment(self):
         author1 = mixer.blend(LocalAuthor)
+        author1 = LocalAuthor.objects.get(id=author1.id)  # refetch to get proper urls
         post = create_post("Test post", author1)
         comment = mixer.blend(Comment, author=author1, post=post)
 
         self.assertTrue(LocalPost.objects.filter(id=post.id).exists())
 
         author2 = mixer.blend(LocalAuthor)
+        author2 = LocalAuthor.objects.get(id=author2.id)  # refetch to get proper urls
+
         create_commentlike(author2, comment)
 
         comment_id = comment.id
         comment.delete()
         self.assertFalse(LocalPost.objects.filter(id=comment.id).exists())
 
-        response = self.client.get(reverse('api:comment_likes', args=(author1.id, post.id, comment_id)))
+        response = self.client.get(
+            reverse('api:comment_likes', args=(author1.id, post.id, comment_id)),
+            **self.basicAuthHeaders,
+        )
         self.assertEqual(response.status_code, 404)
