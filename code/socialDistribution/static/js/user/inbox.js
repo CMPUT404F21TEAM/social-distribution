@@ -4,7 +4,7 @@
  * 
  */
 
-let intervalInMs = 3000;
+let intervalInMs = 30000;
 let interval = setInterval(update, intervalInMs);     // update every 30 seconds
 
 function update() {

@@ -9,7 +9,7 @@
 * 
 */
 
-const intervalInMs = 3000;
+const intervalInMs = 30000;
 let interval = setInterval(update, intervalInMs);     // update every 30 seconds
 
 function showPostsOnly () {

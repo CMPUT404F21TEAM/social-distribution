@@ -32,7 +32,7 @@ $('input').on('input', () => {
 })
 
 
-const intervalInMs = 3000;
+const intervalInMs = 30000;
 let interval = setInterval(update, intervalInMs)    // fetch every 30 seconds
 
 function update() {
