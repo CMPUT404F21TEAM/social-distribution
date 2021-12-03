@@ -699,7 +699,7 @@ class InboxView(View):
                 object_id = url_parser.parse_author(obj["id"])
 
                 # check if this is the correct endpoint
-                if object_id != author_id:
+                if object_id != str(author_id):
                     raise ValueError("Object ID does not match inbox ID")
 
                 # try to get object author, otherwise raise 400 error
