@@ -1,5 +1,11 @@
-// Makes GET request to location.href and applies
-// updates to the inbox without refreshing the page
+/*
+ * Makes GET request to location.href and applies
+ * updates to the inbox without refreshing the page
+ * 
+ */
+
+let intervalInMs = 3000;
+let interval = setInterval(update, intervalInMs);     // update every 30 seconds
 
 function update() {
     console.log("Update");
@@ -17,6 +23,8 @@ function update() {
 
             // Update posts
             $('.inbox-posts').html(new_posts);
+
+            configEditPostModal()
         },
         error: function (data) {
             console.log("Error");
@@ -24,4 +32,4 @@ function update() {
     })
 }
 
-setInterval(update, 30000);     // update every 30 seconds
+configEditPostModal();
