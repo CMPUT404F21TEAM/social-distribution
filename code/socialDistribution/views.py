@@ -844,8 +844,8 @@ def post_comment(request, author_id, post_id):
 
                 post_host = url_parser.get_host(post.public_id)
 
-                # Send to comments endpoint for remote nodes
-                if post_host != HOST:
+                # Send to comments endpoint for remote nodes (except t20)
+                if post_host != HOST or post_host != REMOTE_NODES["t20"]:
                     request_url = post.public_id.strip("/") + '/comments/'
                     
                     # For team 11, id is held in api_url field
