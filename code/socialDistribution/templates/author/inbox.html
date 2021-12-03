@@ -17,14 +17,16 @@
             </p>
         </div>
     {% endif %}
-    <div class="list-group mx-auto w-50">
+    <div class="follow-requests list-group mx-auto w-50">
         {% for sender in follow_requests %}
             {% friend_card sender=sender %}
         {% endfor %}
     </div>
-    <div class="container align-self-center" id="post_container">
+    <div class="inbox-posts container align-self-center" id="post_container">
         {% for post in posts %}
             {% post_card post author %}
         {% endfor %}
     </div>
+
+    <script src="{% static 'js/ajax/inbox.js' %}"></script>
 {% endblock %}

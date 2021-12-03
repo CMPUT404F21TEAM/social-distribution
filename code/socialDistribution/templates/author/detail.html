@@ -25,9 +25,11 @@
     <div class="author-prof">
         {% card_author author=author author_type=author_type curr_user=curr_user %}
     </div>
-    <div class="container align-self-center" id="post_container">
+    <div class="author-prof-posts container align-self-center" id="post_container">
         {% for post in author_posts %}
             {% post_card post curr_user %}
         {% endfor %}
     </div>
+
+    <script src="{% static 'js/ajax/profile.js' %}"></script>
 {% endblock %}
