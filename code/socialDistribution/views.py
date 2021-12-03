@@ -843,14 +843,18 @@ def post_comment(request, author_id, post_id):
                 }
 
                 post_host = url_parser.get_host(post.public_id)
+
+                # Send to comments endpoint for remote nodes
                 if post_host != HOST:
                     request_url = post.public_id.strip("/") + '/comments/'
                     
-                    if post_host == REMOTE_NODES["t16"]:
-                        data["id"] = post.public_id
-
-                    elif post_host == REMOTE_NODES["t11"]:
+                    # For team 11, id is held in api_url field
+                    # For other teams, id is head in the id field
+                    if post_host == REMOTE_NODES["t11"]:
                         data["api_url"] = post.public_id
+                    
+                    else:
+                        data["id"] = post.public_id
                 
                 else:
                     request_url = f'{post.author.strip("/")}/inbox/'
