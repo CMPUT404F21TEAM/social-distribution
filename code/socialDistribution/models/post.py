@@ -172,6 +172,11 @@ class Post(models.Model):
         """ Check if post is friends. """
 
         return self.visibility == self.Visibility.FRIENDS
+    
+    def is_unlisted(self):
+        """ Check if post is unlisted. """
+
+        return self.unlisted
 
     def when(self):
         """ Returns string describing when post the was created.
@@ -261,7 +266,10 @@ class LocalPost(Post):
         return f"{API_BASE}/author/{self.author.id}/posts/{self.id}"
     
     def get_local_shareable_link(self):
-        return f"{CLIENT_BASE}/posts/local/{self.id}"
+        try:
+            return f"{CLIENT_BASE}/public-share/{self.id}" # publicly accessible (doesn't have to login)
+        except:
+            return f"{CLIENT_BASE}/posts/local/{self.id}" # only accessible to logged in users
 
     def as_json(self):
         previousCategories = self.categories.all()

@@ -25,11 +25,7 @@
     <div class="card-footer bg-white">
         <div class="d-flex flex-column">
             <p class="px-2">
-                {% if is_liked is None %}
-                    An error occurred while fetching likes
-                {% else %}
-                    {{ like_text }}
-                {% endif %}
+                {{ like_text }}
             </p>
             <div class="d-flex justify-content-between">
                 <div class="d-flex flex-row">
