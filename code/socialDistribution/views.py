@@ -863,7 +863,6 @@ def post_comment(request, author_id, post_id):
 
                     # t11 expects 'api_url' field
                     elif post_host == REMOTE_NODES["t11"]:
-                        data.pop("id")
                         data["api_url"] = post.public_id
 
                 # send comment to remote inbox
