@@ -70,7 +70,7 @@ class Post(models.Model):
             if visibility.upper() == "PUBLIC" or visibility.upper() == "PB":
                 return cls.PUBLIC
 
-            elif visibility.upper() == "FRIEND" or visibility.upper() == "FR":
+            elif visibility.upper() == "FRIEND" or visibility.upper() == "FR" or visibility.upper() == "FRIENDS":
                 return cls.FRIENDS
 
             elif visibility.upper() == "PRIVATE" or visibility.upper() == "PR":
