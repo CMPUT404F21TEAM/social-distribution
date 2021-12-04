@@ -1,12 +1,16 @@
 /*
- * Clears post form on closing modal
- * Handles showing posts and github activity
- * If posts are shown, github activity is hidden and vice versa
- */
+* Clears post form on closing modal
+* Handles showing posts and github activity
+* If posts are shown, github activity is hidden and vice versa
+* 
+* Makes GET request to location.href and displays any
+* changes to home posts and github activity without
+* refreshing the page
+* 
+*/
 
-$('#add_post_modal').on('hidden.bs.modal', function () {
-    $('#create_post_form').trigger('reset');
-})
+const intervalInMs = 5000;
+let interval = setInterval(update, intervalInMs);     // update every 5 seconds
 
 function showPostsOnly () {
     $('label#posts-radio').addClass('active')
@@ -22,8 +26,44 @@ function showGithubOnly () {
     $('#github-activity').css('display', 'inline');
 }
 
+// Make a GET request to updte posts and github acitivity
+function update() {
+    console.log("Update");
+    
+    $.ajax({
+        url: location.href,
+        type: "GET",
+        success: function (data) {
+            console.log('Success');
+            let new_github = $(data).find('#github-activity').html();
+            let new_posts = $(data).find('#regular-posts').html();
+
+            // Update github activity
+            $('#github-activity').html(new_github);
+
+            // Update posts
+            $('#regular-posts').html(new_posts);
+
+            configEditPostModal();
+        },
+        error: function (data) {
+            console.log("Error");
+        }
+    })
+}
+
 $('#posts-radio').on('change', showPostsOnly)
 $('#github-radio').on('change', showGithubOnly)
+
+$('#add_post_modal').on('show.bs.modal', function () {
+    clearInterval(interval);
+    toggle('#add_post_modal');
+});
+
+$('#add_post_modal').on('hidden.bs.modal', function () {
+    $('#create_post_form').trigger('reset');
+    interval = setInterval(update, intervalInMs);     // update every 30 seconds
+})
 
 if ($('input[name="feed-type"]:checked').val() == "1") {
     showPostsOnly();
@@ -31,3 +71,5 @@ if ($('input[name="feed-type"]:checked').val() == "1") {
 else {
     showGithubOnly();
 }
+
+configEditPostModal();
