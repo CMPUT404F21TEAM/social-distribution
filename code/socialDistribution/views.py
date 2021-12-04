@@ -529,6 +529,7 @@ def copy_link(request, id):
 
     post = LocalPost.objects.get(id=id)
     link = post.get_local_shareable_link()
+    
     try:
         pyperclip.copy(link)
     except:  # pyperclip.PyperclipException
@@ -920,9 +921,13 @@ def public_share(request, id):
     """
     post = get_object_or_404(LocalPost, pk=id) 
     author = post.author
+    curr_user = LocalAuthor.objects.get(user=request.user)
+
+    if post.is_public() or author.has_follower(curr_user):
+        viewable = True 
    
-    if not post.is_public:
-        return HttpResponseForbidden()
+    if not viewable:
+        return redirect('socialDistribution:home')
 
     context = {
         'author': author,

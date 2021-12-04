@@ -266,10 +266,7 @@ class LocalPost(Post):
         return f"{API_BASE}/author/{self.author.id}/posts/{self.id}"
     
     def get_local_shareable_link(self):
-        try:
-            return f"{CLIENT_BASE}/public-share/{self.id}" # publicly accessible (doesn't have to login)
-        except:
-            return f"{CLIENT_BASE}/posts/local/{self.id}" # only accessible to logged in users
+        return f"{CLIENT_BASE}/public-share/{self.id}"
 
     def as_json(self):
         previousCategories = self.categories.all()
