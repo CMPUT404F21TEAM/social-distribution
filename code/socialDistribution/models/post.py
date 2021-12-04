@@ -60,7 +60,7 @@ class Post(models.Model):
 
     class Visibility(models.TextChoices):
         PUBLIC = "PB", "PUBLIC"
-        FRIENDS = "FR", "FRIEND"
+        FRIENDS = "FR", "FRIENDS"
         PRIVATE = "PR", "PRIVATE"
 
         @classmethod
@@ -70,7 +70,7 @@ class Post(models.Model):
             if visibility.upper() == "PUBLIC" or visibility.upper() == "PB":
                 return cls.PUBLIC
 
-            elif visibility.upper() == "FRIEND" or visibility.upper() == "FR":
+            elif visibility.upper() == "FRIEND" or visibility.upper() == "FR" or visibility.upper() == "FRIENDS":
                 return cls.FRIENDS
 
             elif visibility.upper() == "PRIVATE" or visibility.upper() == "PR":
@@ -424,8 +424,19 @@ class InboxPost(Post):
         request_url = self.public_id.strip('/') + '/comments'
         status_code, response_data = api_requests.get(request_url)
         if status_code == 200 and response_data is not None:
-            comments = response_data["comments"]
-            return comments
+            if "comments" in response_data:
+                comments = response_data["comments"]
+            elif "items" in response_data:
+                # group 11 sends "items" instead 
+                comments = response_data["items"]
+            else:
+                comments = []
+
+            # check if a list 
+            if not type(comments) == list:
+                return []
+            else:
+                return comments
         else:
             return []
         

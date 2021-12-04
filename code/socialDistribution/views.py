@@ -10,9 +10,10 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 
-from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
+from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE, REMOTE_NODES
 from socialDistribution.fetchers import fetch_remote_authors, fetch_author_update, fetch_follow_update
 from .forms import CreateUserForm, PostForm
+from api.parsers import url_parser
 
 import base64
 import pyperclip
@@ -836,7 +837,22 @@ def post_comment(request, author_id, post_id):
                     "object": post.public_id
                 }
 
-                request_url = f'{post.author.strip("/")}/inbox/'
+                post_host = url_parser.get_host(post.public_id)
+
+                # Send to comments endpoint for remote nodes (except t20)
+                if post_host != HOST or post_host != REMOTE_NODES["t20"]:
+                    request_url = post.public_id.strip("/") + '/comments/'
+                    
+                    # For team 11, id is held in api_url field
+                    # For other teams, id is head in the id field
+                    if post_host == REMOTE_NODES["t11"]:
+                        data["api_url"] = post.public_id
+                    
+                    else:
+                        data["id"] = post.public_id
+                
+                else:
+                    request_url = f'{post.author.strip("/")}/inbox/'
 
                 # send comment to remote inbox
                 api_requests.post(url=request_url, data=data)
@@ -921,10 +937,16 @@ def public_share(request, id):
     """
     post = get_object_or_404(LocalPost, pk=id) 
     author = post.author
-    curr_user = LocalAuthor.objects.get(user=request.user)
-
-    if post.is_public() or author.has_follower(curr_user):
-        viewable = True 
+    viewable = True 
+    if not post.is_public():
+        viewable = False 
+        try:
+            curr_user = LocalAuthor.objects.get(user=request.user)
+            # if curr_user is following author or if author is curr_user
+            if author.has_follower(curr_user) or author.id == curr_user.id:
+                viewable = True 
+        except:
+            return redirect('socialDistribution:home')
    
     if not viewable:
         return redirect('socialDistribution:home')

@@ -153,18 +153,26 @@ def update_follow(actor_id, object_id):
         object_url = object.url.strip('/')
 
         # make api request to see if actor is a follower of object
-        endpoint = object_url + '/followers/' + actor_url
+        endpoint = object_url + '/followers'
         status_code, response_body = api_requests.get(endpoint)
 
         # check if GET request came back with author object
         if status_code >= 200 and status_code <= 299 and response_body is not None:
-            # record that follow if not already in the system
-            if not Follow.objects.filter(object=object, actor=actor).exists():
-                Follow.objects.create(object=object, actor=actor)
 
-        elif status_code == 404 or status_code == 410:
-            # remove that follow if in the system
-            if Follow.objects.filter(object=object, actor=actor).exists():
+            # search list of followers for actor
+            found = False
+            items = response_body.get("items")
+            for author_json in items:
+                id = author_json.get("id", "").strip("/")
+                if id == actor_url:
+                    found = True
+                    break
+
+
+            # record that follow if not already in the system
+            if found and not Follow.objects.filter(object=object, actor=actor).exists():
+                Follow.objects.create(object=object, actor=actor)
+            elif not found and Follow.objects.filter(object=object, actor=actor).exists():
                 Follow.objects.filter(object=object, actor=actor).delete()
 
     except Exception as e:

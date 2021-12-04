@@ -99,7 +99,11 @@
     {% if post_type == 'local' %}
         {% load modal %}
         {% load utility %}
-        <form method="POST" enctype="multipart/form-data" action="{% url 'socialDistribution:edit-post' post.id %}">
+        <form method="POST" 
+            id="edit-post-form"
+            enctype="multipart/form-data" 
+            action="{% url 'socialDistribution:edit-post' post.id %}"
+        >
             {% csrf_token %}
             {% modal id="edit_post_modal"|addstr:post.id type="edit" label="Edit Post" title="Edit Post" btn="Save" postid=post.id %}
         </form>
