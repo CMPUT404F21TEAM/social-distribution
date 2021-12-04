@@ -10,22 +10,24 @@
 {% load notification %}
 {% load post_card %}
 {% block body %}
-    {% if not follow_requests and not posts %}
-        <div class="text-center pt-5">
-            <p class="h2">
-                Your inbox is empty &#128237;
-            </p>
+    <div class="inbox w-100">
+        {% if not follow_requests and not posts %}
+            <div class="empty-inbox text-center pt-5">
+                <p class="h2">
+                    Your inbox is empty &#128237;
+                </p>
+            </div>
+        {% endif %}
+        <div class="follow-requests list-group mx-auto w-50">
+            {% for sender in follow_requests %}
+                {% friend_card sender=sender %}
+            {% endfor %}
         </div>
-    {% endif %}
-    <div class="follow-requests list-group mx-auto w-50">
-        {% for sender in follow_requests %}
-            {% friend_card sender=sender %}
-        {% endfor %}
-    </div>
-    <div class="inbox-posts container align-self-center" id="post_container">
-        {% for post in posts %}
-            {% post_card post author %}
-        {% endfor %}
+        <div class="inbox-posts container align-self-center" id="post_container">
+            {% for post in posts %}
+                {% post_card post author %}
+            {% endfor %}
+        </div>
     </div>
 
     <script src="{% static 'js/toggle.js' %}"></script>
