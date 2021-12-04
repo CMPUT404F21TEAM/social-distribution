@@ -49,6 +49,7 @@ function update() {
             $('.author-prof-posts').html(new_posts);
 
             configEditPostModal();
+            handleMarkDown();
         },
         error: function (data) {
             console.log("Error");

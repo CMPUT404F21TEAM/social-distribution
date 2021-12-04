@@ -15,16 +15,12 @@ function update() {
         type: "GET",
         success: function (data) {
             console.log('Success');
-            let new_requests = $(data).find('.follow-requests').html();
-            let new_posts = $(data).find('.inbox-posts').html();
 
-            // Update follow requests
-            $('.follow-requests').html(new_requests);
-
-            // Update posts
-            $('.inbox-posts').html(new_posts);
+            let inbox = $(data).find('.inbox').html();
+            $('.inbox').html(inbox);
 
             configEditPostModal()
+            handleMarkDown();
         },
         error: function (data) {
             console.log("Error");
