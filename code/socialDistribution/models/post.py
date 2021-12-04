@@ -60,7 +60,7 @@ class Post(models.Model):
 
     class Visibility(models.TextChoices):
         PUBLIC = "PB", "PUBLIC"
-        FRIENDS = "FR", "FRIEND"
+        FRIENDS = "FR", "FRIENDS"
         PRIVATE = "PR", "PRIVATE"
 
         @classmethod
