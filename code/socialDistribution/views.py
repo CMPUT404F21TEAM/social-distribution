@@ -397,6 +397,9 @@ def author(request, author_id):
             visibility=InboxPost.Visibility.PUBLIC
         )
 
+        for p in posts:
+            p.fetch_update()
+
     context = {
         'author': author,
         'author_type': author_type,
