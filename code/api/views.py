@@ -18,7 +18,7 @@ import base64
 from cmput404.constants import API_BASE
 import socialDistribution.requests as api_requests
 from socialDistribution.models import *
-from .decorators import authenticate_request, validate_node
+from .decorators import validate_user, validate_node
 from .parsers import url_parser
 from .utility import getPaginated, makeInboxPost, makeLocalPost
 
@@ -43,7 +43,12 @@ logger = logging.getLogger("api")
 
 
 def index(request):
-    return HttpResponse("Welcome to the Social Distribution API")
+    response = {
+        "message": "Welcome to the Social Distribution API for T04",
+        "documentation": "https://github.com/CMPUT404F21TEAM/social-distribution/wiki/Web-Service-API-Documentation",
+        "authors": f'{API_BASE}/authors/'
+    }
+    return JsonResponse(response)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -93,7 +98,7 @@ class AuthorView(View):
 
         return JsonResponse(response)
 
-    @method_decorator(authenticate_request)
+    # @method_decorator(validate_user)
     def post(self, request, author_id):
         """ POST - Update profile of {author_id} """
         logger.info(f"POST /authors/{author_id} API endpoint invoked")
@@ -167,7 +172,7 @@ class FollowersSingleView(View):
             # return 404 if author not found
             return HttpResponseNotFound()
 
-    @method_decorator(validate_node)
+    @method_decorator(validate_user)
     def put(self, request, author_id, foreign_author_id):
         """ PUT - Add {foreign_author_id} as a follower of {author_id} """
 
@@ -187,6 +192,7 @@ class FollowersSingleView(View):
 
         return JsonResponse(response)
 
+    @method_decorator(validate_node)
     def delete(self, request, author_id, foreign_author_id):
         """ DELETE - Remove {foreign_author_id} as a follower of {author_id} """
         logger.info(f"DELETE /author/{author_id}/followers/{foreign_author_id} API endpoint invoked")
@@ -202,6 +208,7 @@ class FollowersSingleView(View):
         except (Author.DoesNotExist, Follow.DoesNotExist):
             # return 404 if author not found
             return HttpResponseNotFound()
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LikedView(View):
@@ -296,6 +303,7 @@ class PostsView(View):
 
         return JsonResponse(response)
 
+    @method_decorator(validate_user)
     def post(self, request, author_id):
         '''
             POST - creates a LocalPost for the given {author_id} with the given data
@@ -304,7 +312,7 @@ class PostsView(View):
         try:
             data = json.loads(request.body)
             post = makeLocalPost(data, author_id)
-            
+
         except json.decoder.JSONDecodeError as e:
             return JsonResponse({
                 "error": "Invalid JSON: " + e.msg
@@ -315,7 +323,7 @@ class PostsView(View):
             return JsonResponse({
                 "error": "An unknown error occurred"
             }, status=500)
-            
+
         return JsonResponse(status=201, data=post.as_json())
 
 
@@ -324,7 +332,6 @@ class PostView(View):
     def get(self, request, author_id, post_id):
         """ GET - Get json for post {post_id} """
         logger.info(f"GET /author/{author_id}/posts/{post_id} API endpoint invoked")
-
 
         try:
             post = LocalPost.objects.get(id=post_id)
@@ -338,8 +345,8 @@ class PostView(View):
             return HttpResponseServerError()
 
         return JsonResponse(response)
-    
-    # TODO: authenticate
+
+    @method_decorator(validate_user)
     def delete(self, request, author_id, post_id):
         """ DELETE - Delete post {post_id} """
         logger.info(f"DELETE /author/{author_id}/posts/{post_id} API endpoint invoked")
@@ -356,12 +363,11 @@ class PostView(View):
             return HttpResponseServerError()
 
         return HttpResponse(200)
-    
-    # TODO: authenticate
+
+    @method_decorator(validate_user)
     def post(self, request, author_id, post_id):
         """ POST - Update post {post_id} """
         logger.info(f"POST /author/{author_id}/posts/{post_id} API endpoint invoked")
-
 
         data = json.loads(request.body)
         post = LocalPost.objects.get(id=post_id)
@@ -403,7 +409,8 @@ class PostView(View):
 
         except ValidationError:
             messages.info(request, 'Unable to edit post.')
-            
+
+    @method_decorator(validate_user)
     def put(self, request, author_id, post_id):
         '''
             PUT - creates a LocalPost for the given {author_id} with the given data with the given {post_id}
@@ -411,12 +418,12 @@ class PostView(View):
         try:
             data = json.loads(request.body)
             post = makeLocalPost(data, author_id, post_id)
-            
+
         except json.decoder.JSONDecodeError:
             return JsonResponse({
                 "error": "Invalid JSON"
             }, status=400)
-            
+
         except ValidationError:
             return JsonResponse({
                 "error": "Not a valid UUID"
@@ -427,7 +434,7 @@ class PostView(View):
             return JsonResponse({
                 "error": "An unknown error occurred"
             }, status=500)
-            
+
         return JsonResponse(status=201, data=post.as_json())
 
 
@@ -437,7 +444,6 @@ class PostLikesView(View):
     def get(self, request, author_id, post_id):
         """ GET - Get a list of authors who like {post_id} """
         logger.info(f"GET /author/{author_id}/posts/{post_id}/likes API endpoint invoked")
-
 
         try:
             author = get_object_or_404(Author, id=author_id)
@@ -455,7 +461,7 @@ class PostLikesView(View):
                     "type": "Like",
                     "author": like_author_json,
                     "object": f"{API_BASE}/author/{post.author.id}/posts/{post.id}"
-                }    
+                }
 
                 items.append(like)
 
@@ -524,8 +530,6 @@ class PostCommentsView(View):
 
         return JsonResponse(response)
 
-    def post(self, request, author_id, post_id):
-        return NotImplementedError()
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PostCommentsSingleView(View):
@@ -545,13 +549,13 @@ class PostCommentsSingleView(View):
                 return HttpResponseNotFound()
 
             comment = get_object_or_404(Comment, id=comment_id)
-            
+
             # Check if the post id and comment id match
             if post.id != comment.post.id:
                 return HttpResponseNotFound()
-            
+
             response = comment.as_json()
-            
+
         except Http404:
             return HttpResponseNotFound()
 
@@ -560,6 +564,7 @@ class PostCommentsSingleView(View):
             return HttpResponseServerError()
 
         return JsonResponse(response)
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CommentLikesView(View):
@@ -574,8 +579,8 @@ class CommentLikesView(View):
         try:
             author = get_object_or_404(LocalAuthor, pk=author_id)
             post = get_object_or_404(
-                LocalPost, 
-                id=post_id, 
+                LocalPost,
+                id=post_id,
                 author=author
             )
             comment = get_object_or_404(Comment, id=comment_id, post=post)
@@ -617,7 +622,7 @@ class CommentLikesView(View):
 class InboxView(View):
     """ This endpoint currently only works for requests from local server.
     """
-    @method_decorator(authenticate_request)
+    @method_decorator(validate_user)
     def get(self, request, author_id):
         """ GET - If authenticated, get a list of posts sent to {author_id} """
 
@@ -661,7 +666,6 @@ class InboxView(View):
 
         return JsonResponse(response)
 
-    # TODO: authenticate user
     @method_decorator(validate_node)
     def post(self, request, author_id):
         """ POST - Send a post to {author_id}
@@ -679,7 +683,7 @@ class InboxView(View):
                 logger.info("Inbox object identified as post")
 
                 received_post = makeInboxPost(data)
-                
+
                 # get owner of inbox
                 receiving_author = get_object_or_404(LocalAuthor, id=author_id)
 
@@ -710,7 +714,7 @@ class InboxView(View):
 
                 # get or create actor author
                 actor_author, created = Author.objects.get_or_create(
-                    url = actor["id"]
+                    url=actor["id"]
                 )
 
                 # add or update remaining fields
@@ -726,7 +730,7 @@ class InboxView(View):
 
                 # retrieve author
                 liking_author, created = Author.objects.get_or_create(
-                    url= data["author"]["id"]
+                    url=data["author"]["id"]
                 )
 
                 # add or update remaining fields
@@ -737,7 +741,7 @@ class InboxView(View):
                 try:
                     if object_type == "posts":
                         _, id = url_parser.parse_post(data['object'])
-                        context_object = LocalPost.objects.get(id=id)                        
+                        context_object = LocalPost.objects.get(id=id)
                     elif object_type == "comments":
                         _, __, id = url_parser.parse_comment(data['object'])
                         context_object = Comment.objects.get(id=id)
@@ -766,7 +770,7 @@ class InboxView(View):
 
                 # retrieve author
                 commenting_author, created = Author.objects.get_or_create(
-                    url = data["author"]['id']
+                    url=data["author"]['id']
                 )
 
                 # add or update remaining fields
@@ -781,17 +785,17 @@ class InboxView(View):
 
                 # add remote comment
                 Comment.objects.create(
-                    author = commenting_author,
-                    post = post,
-                    comment = data['comment'],
-                    content_type = data['contentType'],
-                    pub_date= datetime.now(timezone.utc),
+                    author=commenting_author,
+                    post=post,
+                    comment=data['comment'],
+                    content_type=data['contentType'],
+                    pub_date=datetime.now(timezone.utc),
                 )
 
                 return HttpResponse(status=200)
             else:
                 raise ValueError("Unknown object sent to inbox")
-        
+
         except json.decoder.JSONDecodeError:
             return JsonResponse({
                 "error": "Invalid JSON"
@@ -819,6 +823,7 @@ class InboxView(View):
                 "error": "An unknown error occurred"
             }, status=500)
 
+    @method_decorator(validate_user)
     def delete(self, request, author_id):
         """ DELETE - Clear the inbox """
 
