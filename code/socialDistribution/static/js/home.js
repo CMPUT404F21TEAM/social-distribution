@@ -9,8 +9,8 @@
 * 
 */
 
-const intervalInMs = 30000;
-let interval = setInterval(update, intervalInMs);     // update every 30 seconds
+const intervalInMs = 5000;
+let interval = setInterval(update, intervalInMs);     // update every 5 seconds
 
 function showPostsOnly () {
     $('label#posts-radio').addClass('active')

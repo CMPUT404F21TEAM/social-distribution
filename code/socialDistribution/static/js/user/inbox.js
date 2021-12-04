@@ -4,8 +4,8 @@
  * 
  */
 
-let intervalInMs = 30000;
-let interval = setInterval(update, intervalInMs);     // update every 30 seconds
+let intervalInMs = 5000;
+let interval = setInterval(update, intervalInMs);     // update every 5 seconds
 
 function update() {
     console.log("Update");

@@ -32,8 +32,8 @@ $('input').on('input', () => {
 })
 
 
-const intervalInMs = 30000;
-let interval = setInterval(update, intervalInMs)    // fetch every 30 seconds
+const intervalInMs = 5000;
+let interval = setInterval(update, intervalInMs)    // fetch every 5 seconds
 
 function update() {
     console.log("Update");
