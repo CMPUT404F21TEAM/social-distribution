@@ -419,8 +419,19 @@ class InboxPost(Post):
         request_url = self.public_id.strip('/') + '/comments'
         status_code, response_data = api_requests.get(request_url)
         if status_code == 200 and response_data is not None:
-            comments = response_data["comments"]
-            return comments
+            if "comments" in response_data:
+                comments = response_data["comments"]
+            elif "items" in response_data:
+                # group 11 sends "items" instead 
+                comments = response_data["items"]
+            else:
+                comments = []
+
+            # check if a list 
+            if not type(comments) == list:
+                return []
+            else:
+                return comments
         else:
             return []
         

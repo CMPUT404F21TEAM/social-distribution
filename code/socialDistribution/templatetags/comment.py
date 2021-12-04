@@ -32,7 +32,7 @@ def comment_card(*args, **kwargs):
     is_friend = author.has_friend(comment_author)
 
     # comment like data
-    is_liked, likes = get_comment_like_info(comment["id"], author)
+    is_liked, likes = get_comment_like_info(comment, author)
     like_text = get_like_text(is_liked, likes)
 
     return {
