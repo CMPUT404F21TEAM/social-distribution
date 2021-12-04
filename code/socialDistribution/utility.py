@@ -35,7 +35,7 @@ def get_post_like_info(post, author):
 
                 is_liked = False
                 for like in likes_list:
-                    if like['id'] == author.get_url_id():
+                    if like['author']['id'] == author.get_url_id():
                         is_liked = True
                         break
                     
@@ -48,7 +48,7 @@ def get_post_like_info(post, author):
         logger.error(e, exc_info=True)
         return None, 0
 
-def get_comment_like_info(comment_id, author):
+def get_comment_like_info(comment, author):
     """
     Returns a boolean indicating whether the author parameter
     liked the comment with id of comment_id, and an integer representing the
@@ -58,6 +58,7 @@ def get_comment_like_info(comment_id, author):
     """
     try:
         print(__name__)
+        comment_id = comment["id"]
         request_url = comment_id.strip('/') + '/likes'
         status_code, response_body = api_requests.get(request_url)
 

@@ -14,6 +14,8 @@ from cmput404.constants import HOST
 from api.node_manager import node_manager
 from api.parsers import url_parser
 
+TIMEOUT = 10
+
 def parse_res_to_dict(response):
     """ 
     Checks if response is a list.
@@ -74,7 +76,7 @@ def get(url, params=None, send_basic_auth_header=True):
         session.mount(url, HTTPAdapter(max_retries=retries))
 
         # timeout here since may need to wake up other groups heroku servers
-        response = session.get(url, headers=headers, params=params, timeout=3)
+        response = session.get(url, headers=headers, params=params, timeout=TIMEOUT)
 
         # parse JSON response if OK
         if response.status_code == 200:

@@ -202,11 +202,6 @@ class FollowersSingleView(View):
         except (Author.DoesNotExist, Follow.DoesNotExist):
             # return 404 if author not found
             return HttpResponseNotFound()
-        
-    def put(self, request, author_id, foreign_author_id):
-        """ PUT - Add a follower (must be authenticated)"""
-        return NotImplementedError
-
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LikedView(View):
@@ -569,6 +564,7 @@ class PostCommentsSingleView(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class CommentLikesView(View):
 
+    @method_decorator(validate_node)
     def get(self, request, author_id, post_id, comment_id):
         """ GET - Get a list of likes on comment_id which 
             was made on post_id which was created by author_id
@@ -580,8 +576,7 @@ class CommentLikesView(View):
             post = get_object_or_404(
                 LocalPost, 
                 id=post_id, 
-                author=author,
-                visibility=LocalPost.Visibility.PUBLIC
+                author=author
             )
             comment = get_object_or_404(Comment, id=comment_id, post=post)
 
@@ -704,7 +699,7 @@ class InboxView(View):
                 object_id = url_parser.parse_author(obj["id"])
 
                 # check if this is the correct endpoint
-                if object_id != author_id:
+                if object_id != str(author_id):
                     raise ValueError("Object ID does not match inbox ID")
 
                 # try to get object author, otherwise raise 400 error

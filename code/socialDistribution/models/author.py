@@ -5,7 +5,6 @@ from django.utils import timezone
 import datetime
 import uuid
 
-import socialDistribution.requests as api_requests
 from cmput404.constants import API_BASE, STRING_MAXLEN, URL_MAXLEN
 from .follow import Follow
 
@@ -21,10 +20,11 @@ class Author(models.Model):
 
         When a local author is created, it must be re-fetched from the database in order to access the auto-generated author.url attribute.
     """
-    
+
     # Django Software Foundation, https://docs.djangoproject.com/en/dev/ref/models/fields/#uuidfield
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     url = models.URLField(max_length=URL_MAXLEN)
+    host = models.URLField(max_length=STRING_MAXLEN, blank=True)
     displayName = models.CharField(max_length=STRING_MAXLEN, default="Anonymous User")
     githubUrl = models.CharField(max_length=URL_MAXLEN, null=True)
     profileImageUrl = models.CharField(max_length=URL_MAXLEN, null=True)
@@ -41,17 +41,6 @@ class Author(models.Model):
         """ Returns the id of the author in url form """
         return self.url
 
-    def has_follower(self, author):
-        """ Over-ridden in LocalAuthor. Returns True if author is a follower of self, False otherwise """
-        res_code, res_body = api_requests.get(self.url.strip("/") + "/followers")
-
-        if res_code == 200 and res_body:
-            for follower in res_body["items"]:
-                if follower["id"] == author.get_url_id():
-                    return True
-        else:
-            return False
-
     def has_follow_request(self, author):
         """ Over-ridden in LocalAuthor. Always returns False """
         # No endpoint give us follow request objects
@@ -65,37 +54,19 @@ class Author(models.Model):
         return self.url.strip("/") + "/inbox/"
 
     def as_json(self):
-        """ GET JSON representation of author. If local or a remote that was saved recently, return that JSON.
-            Otherwise, make an API call to update JSON.
+        """ GET JSON representation of author
         """
 
-        was_recent_update = self._last_updated < timezone.now()-datetime.timedelta(seconds=10)
         json_data = {
             "type": "author",
-            "id": f"{API_BASE}/author/{self.id}",
-            "host": f'{API_BASE}/',
+            "id": self.url,
+            "host": self.host,
             "displayName": self.displayName,
-            "url": f"{API_BASE}/author/{self.id}",
+            "url": self.url,
             "github": self.githubUrl,
             "profileImage": self.profileImageUrl
         }
-
-        if self._always_up_to_date:
-            # read author data from fields
-            # will do this in case of LocalAuthor
-            return json_data
-
-        else:
-            # make API call to get author data
-            status_code, response_body = api_requests.get(self.url.strip("/"))
-            if status_code == 200 and response_body is not None:
-                self.update_with_json(data=response_body)
-                return response_body
-            else:
-                # delete the record if there was a problem
-                self.delete()
-                # don't return None
-                return json_data
+        return json_data
 
     def update_with_json(self, data):
         '''
@@ -103,12 +74,28 @@ class Author(models.Model):
             Had to move here from utility.py due to import errors
         '''
         try:
-            self.displayName = data['displayName']
-            self.githubUrl = data['github']
-            self.profileImageUrl = data['profileImage']
+            if data.get("displayName"):
+                self.displayName = data['displayName']
+            if data.get('host'):
+                self.host = data['host']
+            if data.get("github"):
+                self.githubUrl = data['github']
+            if data.get("profileImage"):
+                self.profileImageUrl = data['profileImage']
             self.save()
         except:
-            return
+            pass
+
+    def up_to_date(self):
+        """ Checks if the author data is currently up do date. Returns true if either the 
+            data is always maintained up-to-date or if the data was recently refreshed
+        """
+
+        limit = timezone.now()-datetime.timedelta(seconds=6)  # 6 seconds ago
+        was_recent_update = self._last_updated > limit
+
+        # return true if always up-to-date or if just updated
+        return self._always_up_to_date or was_recent_update
 
     def __str__(self) -> str:
         return f"Author: {self.url}"
@@ -140,6 +127,15 @@ class LocalAuthor(Author):
     follow_requests = models.ManyToManyField('Author', related_name="sent_follow_requests")
     inbox_posts = models.ManyToManyField('InboxPost')
 
+    def is_following(self, author: Author):
+        """ Returns true if self is following author, false otherwise. """
+
+        try:
+            self.following.get(object=author)
+            return True
+        except Follow.DoesNotExist:
+            return False
+
     def has_follower(self, author: Author):
         """ Returns true if author is a follower of self, false otherwise. """
 
@@ -152,11 +148,7 @@ class LocalAuthor(Author):
     def has_friend(self, author: Author):
         """ Returns true if author is a friend of self, false otherwise. """
 
-        try:
-            follow = self.follows.get(actor=author)
-            return follow.is_friend()
-        except Follow.DoesNotExist:
-            return False
+        return Follow.are_friends(self, author)
 
     def has_follow_request(self, author: Author):
         """ Returns true if self has a follow request from author, false otherwise. """
@@ -204,5 +196,6 @@ class LocalAuthor(Author):
         # Clark, https://stackoverflow.com/users/10424244/clark, "Django - How to get self.id when saving a new object?",
         # 2021-02-19, https://stackoverflow.com/a/66271445, CC BY-SA 4.0
         url = f"{API_BASE}/author/{self.id}"
-        if self.url != url:
-            Author.objects.filter(id=self.id).update(url=url)
+        host = f"{API_BASE}/"
+        if self.url != url or self.host != host:
+            Author.objects.filter(id=self.id).update(url=url, host=host)

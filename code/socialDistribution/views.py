@@ -10,8 +10,10 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.db.models import Count, Q
 
-from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE
+from cmput404.constants import SCHEME, HOST, API_BASE, LOCAL, REMOTE, REMOTE_NODES
+from socialDistribution.fetchers import fetch_remote_authors, fetch_author_update, fetch_follow_update
 from .forms import CreateUserForm, PostForm
+from api.parsers import url_parser
 
 import base64
 import pyperclip
@@ -332,49 +334,25 @@ def authors(request):
     """
     args = {}
 
-    # Django Software Foundation, "Generating aggregates for each item in a QuerySet", 2021-10-13
-    # https://docs.djangoproject.com/en/3.2/topics/db/aggregation/#generating-aggregates-for-each-item-in-a-queryset
-    authors = LocalAuthor.objects.annotate(posts__count=Count(
-        "posts", filter=Q(posts__visibility=LocalPost.Visibility.PUBLIC)))
-    local_authors = [{
-        "data": author,
-        "type": LOCAL
-    } for author in authors]
+    # fetch all remote authors from connected nodes
+    fetch_remote_authors()
 
-    remote_authors = []
+    author_objects = Author.objects.all()
 
-    # get remote authors
-    for node in Node.objects.filter(remote_credentials=True):
-        # ignore current host
-        if node.host == HOST:
-            continue
+    authors = []
+    for author in author_objects:
+        if LocalAuthor.objects.filter(id=author.id).exists():
+            authors.append({
+                "data": author,
+                "type": LOCAL
+            })
+        else:
+            authors.append({
+                "data": author,
+                'type': REMOTE
+            })
 
-        # get request for authors
-        try:
-            res_code, res_body = api_requests.get(f'{SCHEME}://{node.host}{node.api_prefix}/authors/', send_basic_auth_header=True)
-
-            # skip node if unresponsive
-            if res_body == None:
-                continue
-
-            # prepare remote data
-            for remote_author in res_body['items']:
-                author, created = Author.objects.get_or_create(
-                    url=remote_author['id'],
-                )
-
-                # add or update remaining fields
-                author.update_with_json(data=remote_author)
-
-                remote_authors.append({
-                    "data": author,
-                    'type': REMOTE
-                })
-
-        except Exception as error:
-            logger.error(str(error))
-
-    args["authors"] = local_authors + remote_authors
+    args["authors"] = authors
     args["curr_user"] = LocalAuthor.objects.get(user=request.user)
     return render(request, 'author/index.html', args)
 
@@ -393,6 +371,11 @@ def author(request, author_id):
     except LocalAuthor.DoesNotExist:
         author = get_object_or_404(Author, id=author_id)
         author_type = REMOTE
+
+    # send update signal
+    fetch_author_update(author)
+    fetch_follow_update(curr_user, author)
+    fetch_follow_update(author, curr_user)
 
     if author_type == LOCAL:
         posts = author.posts.listed().get_public()  # get public posts only
@@ -696,13 +679,19 @@ def single_post(request, post_type, id):
 
     if post_type == "local":
         post = get_object_or_404(LocalPost, id=id)
+        author_is_user = post.author.get_url_id() == current_user.get_url_id()
+        post_author = post.author
     elif post_type == "inbox":
         post = get_object_or_404(InboxPost, id=id)
+        author_is_user = post.author == current_user.get_url_id()
+        post_author = get_object_or_404(Author, url= post.author)
     else:
         raise Http404()
 
     try:
         comments_json = post.comments_as_json
+        comments_to_hide = []
+
         for comment in comments_json:
             # hack
             # inject more data into json comment
@@ -718,6 +707,8 @@ def single_post(request, post_type, id):
             )
             # add or update remaining fields
             comment_author.update_with_json(data=comment["author"])
+            
+            # get database record of comment_author
             try:
                 author = LocalAuthor.objects.get(url=comment_author.url)
                 author_type = LOCAL
@@ -725,7 +716,19 @@ def single_post(request, post_type, id):
             except LocalAuthor.DoesNotExist:
                 author = get_object_or_404(Author, url=comment_author.url)
                 author_type = REMOTE
+            
+            # Hide comments from other friends of post_author
+            if post.visibility == LocalPost.Visibility.FRIENDS and not author_is_user:
 
+                # if not a friend return
+                if not current_user.has_friend(post_author):
+                    return HttpResponseForbidden("You don't permsission to see this friends only post.")
+                
+                # check if comment from post_author or current user
+                if author.id != post_author.id  and author.id != current_user.id:
+                    comments_to_hide.append(comment)
+                    continue
+                
             comment["comment_author_local_server_id"] = author.id
             comment["comment_author_object"] = comment_author
             comment["author_type"] = author_type
@@ -736,6 +739,11 @@ def single_post(request, post_type, id):
                 now = datetime.now(timezone.utc)
                 published = parser.parse(comment["published"])
                 comment["when"] = timeago.format(published, now)
+
+        # hide comments
+        for comment in comments_to_hide:
+            # del comments_json[index]
+            comments_json.remove(comment)
 
     except Exception as e:
         logger.error(e, exc_info=True)
@@ -834,7 +842,22 @@ def post_comment(request, author_id, post_id):
                     "object": post.public_id
                 }
 
-                request_url = f'{post.author.strip("/")}/inbox/'
+                post_host = url_parser.get_host(post.public_id)
+
+                # Send to comments endpoint for remote nodes (except t20)
+                if post_host != HOST or post_host != REMOTE_NODES["t20"]:
+                    request_url = post.public_id.strip("/") + '/comments/'
+                    
+                    # For team 11, id is held in api_url field
+                    # For other teams, id is head in the id field
+                    if post_host == REMOTE_NODES["t11"]:
+                        data["api_url"] = post.public_id
+                    
+                    else:
+                        data["id"] = post.public_id
+                
+                else:
+                    request_url = f'{post.author.strip("/")}/inbox/'
 
                 # send comment to remote inbox
                 api_requests.post(url=request_url, data=data)

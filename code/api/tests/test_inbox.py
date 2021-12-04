@@ -10,7 +10,7 @@ import base64
 import logging
 import json
 
-from socialDistribution.models import LocalAuthor, LocalPost, Comment
+from socialDistribution.models import LocalAuthor, LocalPost, Comment, Author
 from api.models import Node
 from cmput404.constants import API_BASE, HOST
 import base64
@@ -27,7 +27,7 @@ def create_author(username, displayName, githubUrl):
     user.save()
     author = LocalAuthor.objects.create(
         username=username, displayName=displayName, githubUrl=githubUrl, user=user)
-    return author
+    return LocalAuthor.objects.get(id=author.id)
 
 
 class InboxViewTests(TestCase):
