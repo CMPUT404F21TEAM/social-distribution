@@ -847,20 +847,23 @@ def post_comment(request, author_id, post_id):
 
                 post_host = url_parser.get_host(post.public_id)
 
-                # Send to comments endpoint for remote nodes (except t20)
-                if post_host != HOST or post_host != REMOTE_NODES["t20"]:
-                    request_url = post.public_id.strip("/") + '/comments/'
-                    
-                    # For team 11, id is held in api_url field
-                    # For other teams, id is head in the id field
-                    if post_host == REMOTE_NODES["t11"]:
+                # send to inbox by default
+                request_url = f'{post.author.strip("/")}/inbox/'
+
+                # make adjustments for other groups
+                if post_host != HOST:
+                    # all remote groups expect 'id' field
+                    data["id"] = post.public_id
+
+                    # t08, t11, t16 expect comments to /author/aid/posts/pid/comments/
+                    if post_host == REMOTE_NODES["t08"] \
+                            or post_host == REMOTE_NODES["t11"] \
+                            or post_host == REMOTE_NODES["t16"]:
+                        request_url = post.public_id.strip("/") + '/comments/'
+
+                    # t11 expects 'api_url' field
+                    elif post_host == REMOTE_NODES["t11"]:
                         data["api_url"] = post.public_id
-                    
-                    else:
-                        data["id"] = post.public_id
-                
-                else:
-                    request_url = f'{post.author.strip("/")}/inbox/'
 
                 # send comment to remote inbox
                 api_requests.post(url=request_url, data=data)
