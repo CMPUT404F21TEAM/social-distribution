@@ -1,0 +1,19 @@
+{% extends 'navBase.html' %}
+
+{% block head %}
+    <title>Public Post View</title>
+    {% load static %}
+        <link rel="stylesheet" type="text/css" href="{% static 'css/author/style.css' %}">
+        <link rel="stylesheet" type"text/css" href="{% static 'css/posts/style.css' %}"
+{% endblock %}
+
+{% load author %}
+{% load post_card %}
+{% block body %}
+
+    <!-- Display a single post -->
+    <div class="conatiner">
+        {% post_card post=post author=curr_user %}
+    </div>
+
+{% endblock %}
