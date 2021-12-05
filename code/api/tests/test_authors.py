@@ -8,6 +8,7 @@ import json
 import logging
 
 from socialDistribution.models import LocalAuthor
+from .utilities import create_author as create_author_with_auth, get_basic_auth
 
 # Documentation and code samples taken from the following references:
 # Django Software Foundation, https://docs.djangoproject.com/en/3.2/intro/tutorial05/
@@ -263,3 +264,45 @@ class AuthorsViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertDictEqual(actual, expected)
+
+    def test_post_author(self):
+        author = create_author_with_auth()
+
+        data = {
+            "displayName": "Lara Croft",
+            "github": "https://github.com/croft",
+            "profileImage": "https://lh4.googleusercontent.com/-qu9N5sJB6Uc/TXdJsP9YGOI/AAAAAAAAAZs/AIta6Ea3XVU/s1600/TR3.jpg"
+        }
+
+        # make post to update author object
+        response = self.client.post(
+            reverse("api:author", kwargs={"author_id": author.id}),
+            content_type="application/json",
+            data=json.dumps(data),
+            **get_basic_auth(author)
+        )
+
+        self.assertEqual(200, response.status_code)
+
+        actual = response.json()
+        self.assertEqual(actual["displayName"], data["displayName"])
+        self.assertEqual(actual["github"], data["github"])
+        self.assertEqual(actual["profileImage"], data["profileImage"])
+
+    def test_no_auth(self):
+        author = create_author_with_auth()
+
+        data = {
+            "displayName": "Lara Croft",
+            "github": "https://github.com/croft",
+            "profileImage": "https://lh4.googleusercontent.com/-qu9N5sJB6Uc/TXdJsP9YGOI/AAAAAAAAAZs/AIta6Ea3XVU/s1600/TR3.jpg"
+        }
+
+        # make post to update author object
+        response = self.client.post(
+            reverse("api:author", kwargs={"author_id": author.id}),
+            content_type="application/json",
+            data=json.dumps(data)
+        )
+
+        self.assertEqual(401, response.status_code)
