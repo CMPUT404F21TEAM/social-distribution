@@ -1,0 +1,28 @@
+%!Adobe-FontList 1.20
+%Locale:0x409
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Type1
+FontName:Helvetica
+FamilyName:Helvetica
+StyleName:Regular
+FullName:Helvetica
+MenuName:Helvetica
+StyleBits:0
+WritingScript:Roman
+OutlineFileName:B:\Bravity Stream\Videos\New Age\iPhone Notifications\iPhone Messages Template\Font\Helvetica.otf
+DataFormat:sfntData
+UsesStandardEncoding:yes
+isCFF:yes
+hasSVG:no
+VariableFontType:NonVariableFont
+FileLength:25344
+FileModTime:1582481436
+WeightClass:500
+WidthClass:5
+AngleClass:0
+NameArray:0,Mac,4,Helvetica
+NameArray:0,Win,1,Helvetica
+%EndFont
+
