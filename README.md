@@ -3,7 +3,7 @@
 CMPUT404-project-socialdistribution
 
 # Demo Video
-[![App Demo Video](https://github.com/CMPUT404F21TEAM/social-distribution/blob/videoBranch/video/VideoThumbnail.png)](https://youtu.be/MoULLQmtl0M)
+[![App Demo Video](https://github.com/CMPUT404F21TEAM/social-distribution/blob/master/video/VideoThumbnail.png)](https://youtu.be/MoULLQmtl0M)
 
 # Usage
 
