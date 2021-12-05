@@ -682,7 +682,7 @@ def single_post(request, post_type, id):
     elif post_type == "inbox":
         post = get_object_or_404(InboxPost, id=id)
         author_is_user = post.author == current_user.get_url_id()
-        post_author = get_object_or_404(Author, url= post.author)
+        post_author = get_object_or_404(Author, url=post.author)
     else:
         raise Http404()
 
@@ -705,7 +705,7 @@ def single_post(request, post_type, id):
             )
             # add or update remaining fields
             comment_author.update_with_json(data=comment["author"])
-            
+
             # get database record of comment_author
             try:
                 author = LocalAuthor.objects.get(url=comment_author.url)
@@ -714,19 +714,19 @@ def single_post(request, post_type, id):
             except LocalAuthor.DoesNotExist:
                 author = get_object_or_404(Author, url=comment_author.url)
                 author_type = REMOTE
-            
+
             # Hide comments from other friends of post_author
             if post.visibility == LocalPost.Visibility.FRIENDS and not author_is_user:
 
                 # if not a friend return
                 if not current_user.has_friend(post_author):
                     return HttpResponseForbidden("You don't permsission to see this friends only post.")
-                
+
                 # check if comment from post_author or current user
-                if author.id != post_author.id  and author.id != current_user.id:
+                if author.id != post_author.id and author.id != current_user.id:
                     comments_to_hide.append(comment)
                     continue
-                
+
             comment["comment_author_local_server_id"] = author.id
             comment["comment_author_object"] = comment_author
             comment["author_type"] = author_type
@@ -907,6 +907,30 @@ def profile(request):
     '''
     author = get_object_or_404(LocalAuthor, user=request.user)
     djangoUser = get_object_or_404(get_user_model(), username=request.user)
+
+    if request.method == 'POST':
+        # extract post data
+        display_name = request.POST.get('display_name')
+        github_url = request.POST.get('github_url')
+        email = request.POST.get('email')
+        profile_image_url = request.POST.get('profile_image_url')
+
+        try:
+            # update author
+            author.displayName = display_name
+            author.githubUrl = github_url
+            author.profileImageUrl = profile_image_url
+            author.save()
+
+            # update django user
+            djangoUser.email = email
+            djangoUser.save()
+
+        except Exception:
+            messages.error(request, "Error editing profile")
+
+        finally:
+            return redirect('socialDistribution:profile')
 
     # add missing information to author
     author.email = djangoUser.email
