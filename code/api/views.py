@@ -97,40 +97,43 @@ class AuthorView(View):
 
         return JsonResponse(response)
 
-    # @method_decorator(validate_user)
+    @method_decorator(validate_user)
     def post(self, request, author_id):
         """ POST - Update profile of {author_id} """
         logger.info(f"POST /authors/{author_id} API endpoint invoked")
 
-        # extract post data
-        display_name = request.POST.get('display_name')
-        github_url = request.POST.get('github_url')
-        email = request.POST.get('email')
-        profile_image_url = request.POST.get('profile_image_url')
-
-        # check data for empty string
-        if (not display_name or not email):
-            return HttpResponseBadRequest()
-
-        djangoUser = get_object_or_404(get_user_model(), username=request.user)
-        author = get_object_or_404(LocalAuthor, user=request.user)
+        author = get_object_or_404(LocalAuthor, id=author_id)
+        djangoUser = author.user
 
         try:
+            data = json.loads(request.body)
+
+            # extract post data
+            if data.get('displayName'):
+                author.displayName = data.get('displayName')
+            if data.get('github'):
+                author.githubUrl = data.get('github')
+            if data.get('email'):
+                djangoUser.email = data.get('email')
+            if data.get('profileImage'):
+                author.profileImageUrl = data.get('profileImage')
+
             # update author
-            author.displayName = display_name
-            author.githubUrl = github_url
-            author.profileImageUrl = profile_image_url
             author.save()
 
             # update django user
-            djangoUser.email = email
             djangoUser.save()
+
+        except json.decoder.JSONDecodeError:
+            return JsonResponse({
+                "error": "Invalid JSON"
+            }, status=400)
 
         except Exception as e:
             logger.error(e, exc_info=True)
             return HttpResponseServerError()
 
-        return redirect('socialDistribution:profile')
+        return JsonResponse(author.as_json())
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -538,7 +541,7 @@ class PostCommentsView(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class PostCommentsSingleView(View):
     '''
-        HANDLE Singular Comment GET 
+        HANDLE Singular Comment GET
     '''
 
     def get(self, request, author_id, post_id, comment_id):
@@ -572,7 +575,7 @@ class CommentLikesView(View):
 
     @method_decorator(validate_node)
     def get(self, request, author_id, post_id, comment_id):
-        """ GET - Get a list of likes on comment_id which 
+        """ GET - Get a list of likes on comment_id which
             was made on post_id which was created by author_id
         """
         logger.info(f"GET /author/{author_id}/posts/{post_id}/comments/{comment_id} API endpoint invoked")
@@ -662,7 +665,7 @@ class InboxView(View):
         """ POST - Send a post to {author_id}
             - if the type is “post” then add that post to the author’s inbox
             - if the type is “follow” then add that follow is added to the author’s inbox to approve later
-            - if the type is “like” then add that like to the author’s inbox    
+            - if the type is “like” then add that like to the author’s inbox
         """
         logger.info(f"POST /author/{author_id}/inbox/ API endpoint invoked")
 
