@@ -54,7 +54,6 @@ def index(request):
 @method_decorator(csrf_exempt, name='dispatch')
 class AuthorsView(View):
 
-    @method_decorator(ensure_csrf_cookie)
     def get(self, request):
         """ GET - Retrieve all user profiles
             'page' is indexed from 1, NOT 0.
@@ -158,8 +157,8 @@ class FollowersSingleView(View):
     def get(self, request, author_id, foreign_author_id):
         """ GET - Check if {foreign_author_id} is a follower of {author_id} """
 
-        author = get_object_or_404(LocalAuthor, pk=author_id)
         logger.info(f"GET /author/{author_id}/followers/{foreign_author_id} API endpoint invoked")
+        author = get_object_or_404(LocalAuthor, pk=author_id)
 
         try:
             # try to find and return follower author object
@@ -176,8 +175,8 @@ class FollowersSingleView(View):
     def put(self, request, author_id, foreign_author_id):
         """ PUT - Add {foreign_author_id} as a follower of {author_id} """
 
-        author = get_object_or_404(LocalAuthor, pk=author_id)
         logger.info(f"PUT /author/{author_id}/followers/{foreign_author_id} API endpoint invoked")
+        author = get_object_or_404(LocalAuthor, pk=author_id)
 
         follower, created = Author.objects.get_or_create(url=foreign_author_id)
 
@@ -217,11 +216,10 @@ class LikedView(View):
         """ GET - Get a list of like objects from {author_id} """
         logger.info(f"GET /author/{author_id}/liked API endpoint invoked")
 
-        try:
-            page = request.GET.get("page")
-            size = request.GET.get("size")
+        author = get_object_or_404(LocalAuthor, id=author_id)
 
-            author = LocalAuthor.objects.get(id=author_id)
+        try:
+
             author_liked_posts = LocalPost.objects.filter(
                 likes__author=author,
                 visibility=LocalPost.Visibility.PUBLIC
@@ -270,12 +268,12 @@ class PostsView(View):
     def get(self, request, author_id):
         logger.info(f"GET /author/{author_id}/posts API endpoint invoked")
 
+        author = get_object_or_404(LocalAuthor, id=author_id)
+
         # Send all PUBLIC posts
         try:
-            # TODO handle pagination
             page = request.GET.get("page")
             size = request.GET.get("size")
-            author = get_object_or_404(LocalAuthor, id=author_id)
             posts = LocalPost.objects.listed().get_public().filter(author=author).order_by('pk')
 
             if page and size:
@@ -283,9 +281,11 @@ class PostsView(View):
                 size = int(size)
                 try:
                     if page < 1 or size < 1:
-                        return HttpResponseBadRequest("Malformed query: page and size must be > 0")
+                        return HttpResponseBadRequest({
+                            "error": "Malformed query: page and size must be > 0"
+                        })
                 except Exception as e:
-                    return HttpResponseBadRequest(e)
+                    return HttpResponseBadRequest()
                 posts = getPaginated(posts, page, size)
 
             posts = [post.as_json() for post in posts]
@@ -369,8 +369,8 @@ class PostView(View):
         """ POST - Update post {post_id} """
         logger.info(f"POST /author/{author_id}/posts/{post_id} API endpoint invoked")
 
+        post = get_object_or_404(LocalPost, id=post_id)
         data = json.loads(request.body)
-        post = LocalPost.objects.get(id=post_id)
 
         try:
             post.title = data['title']
@@ -408,13 +408,18 @@ class PostView(View):
             return JsonResponse(status=201, data=post.as_json())
 
         except ValidationError:
-            messages.info(request, 'Unable to edit post.')
+            return HttpResponseBadRequest()
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            return HttpResponseServerError()
 
     @method_decorator(validate_user)
     def put(self, request, author_id, post_id):
         '''
             PUT - creates a LocalPost for the given {author_id} with the given data with the given {post_id}
         '''
+        get_object_or_404(LocalAuthor, id=author_id)
         try:
             data = json.loads(request.body)
             post = makeLocalPost(data, author_id, post_id)
@@ -445,10 +450,10 @@ class PostLikesView(View):
         """ GET - Get a list of authors who like {post_id} """
         logger.info(f"GET /author/{author_id}/posts/{post_id}/likes API endpoint invoked")
 
-        try:
-            author = get_object_or_404(Author, id=author_id)
-            post = get_object_or_404(LocalPost, id=post_id, author=author)
+        author = get_object_or_404(Author, id=author_id)
+        post = get_object_or_404(LocalPost, id=post_id, author=author)
 
+        try:
             post_likes = post.likes.all()
 
             items = []
@@ -470,10 +475,6 @@ class PostLikesView(View):
                 "items": items
             }
 
-        except Http404 as e:
-            logger.error(e, exc_info=True)
-            return HttpResponseNotFound()
-
         except Exception as e:
             logger.error(e, exc_info=True)
             return HttpResponseServerError()
@@ -490,12 +491,13 @@ class PostCommentsView(View):
     def get(self, request, author_id, post_id):
         logger.info(f"GET /author/{author_id}/posts/{post_id}/comments API endpoint invoked")
 
+        post = get_object_or_404(LocalPost, id=post_id)
+        author = get_object_or_404(LocalAuthor, id=author_id)
+
         # Send all comments
         try:
             page = request.GET.get("page")
             size = request.GET.get("size")
-            post = get_object_or_404(LocalPost, id=post_id)
-            author = get_object_or_404(LocalAuthor, id=author_id)
             # Check if the post author match with author in url
             if post.author.id != author.id:
                 return HttpResponseNotFound()
@@ -507,10 +509,12 @@ class PostCommentsView(View):
                 size = int(size)
                 try:
                     if page < 1 or size < 1:
-                        return HttpResponseBadRequest("Malformed query: page and size must be > 0")
+                        return HttpResponseBadRequest({
+                            "error": "Malformed query: page and size must be > 0"
+                        })
                 except Exception as e:
                     logger.error(e, exc_info=True)
-                    return HttpResponseBadRequest(e)
+                    return HttpResponseBadRequest()
 
                 comments = getPaginated(comments, page, size)
 
@@ -540,24 +544,21 @@ class PostCommentsSingleView(View):
     def get(self, request, author_id, post_id, comment_id):
         logger.info(f"GET /author/{author_id}/posts/{post_id}/comments/{comment_id} API endpoint invoked")
 
+        post = get_object_or_404(LocalPost, id=post_id)
+        author = get_object_or_404(LocalAuthor, id=author_id)
+        comment = get_object_or_404(Comment, id=comment_id)
+
         # Send comment
         try:
-            post = get_object_or_404(LocalPost, id=post_id)
-            author = get_object_or_404(LocalAuthor, id=author_id)
             # Check if the post author match with author in url
             if post.author.id != author.id:
                 return HttpResponseNotFound()
-
-            comment = get_object_or_404(Comment, id=comment_id)
 
             # Check if the post id and comment id match
             if post.id != comment.post.id:
                 return HttpResponseNotFound()
 
             response = comment.as_json()
-
-        except Http404:
-            return HttpResponseNotFound()
 
         except Exception as e:
             logger.error(e, exc_info=True)
@@ -575,15 +576,11 @@ class CommentLikesView(View):
             was made on post_id which was created by author_id
         """
         logger.info(f"GET /author/{author_id}/posts/{post_id}/comments/{comment_id} API endpoint invoked")
+        author = get_object_or_404(LocalAuthor, pk=author_id)
+        post = get_object_or_404(LocalPost, id=post_id, author=author)
+        comment = get_object_or_404(Comment, id=comment_id, post=post)
 
         try:
-            author = get_object_or_404(LocalAuthor, pk=author_id)
-            post = get_object_or_404(
-                LocalPost,
-                id=post_id,
-                author=author
-            )
-            comment = get_object_or_404(Comment, id=comment_id, post=post)
 
             comment_likes = comment.likes.all()
             comment_likes_list = []
@@ -607,10 +604,6 @@ class CommentLikesView(View):
                 "items": comment_likes_list
             }
 
-        except Http404 as e:
-            logger.error(e, exc_info=True)
-            return HttpResponseNotFound()
-
         except Exception as e:
             logger.error(e, exc_info=True)
             return HttpResponseServerError()
@@ -628,11 +621,12 @@ class InboxView(View):
 
         logger.info(f"GET /author/{author_id}/inbox/ API endpoint invoked")
 
+        author = get_object_or_404(LocalAuthor, id=author_id)
+
         # Send all posts sent to the author's inbox
         try:
             page = request.GET.get("page")
             size = request.GET.get("size")
-            author = get_object_or_404(LocalAuthor, id=author_id)
             posts = author.inbox_posts.all().order_by('-published')
 
             if page and size:
@@ -654,9 +648,6 @@ class InboxView(View):
                 "size": size,
                 "items": posts
             }
-
-        except Http404:
-            return HttpResponseNotFound()
 
         except Exception as e:
             logger.error(e, exc_info=True)
