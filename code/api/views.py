@@ -819,5 +819,7 @@ class InboxView(View):
         """ DELETE - Clear the inbox """
 
         logger.info(f"POST /author/{author_id}/inbox/ API endpoint invoked")
-
-        return HttpResponse("Hello")
+        author = get_object_or_404(LocalAuthor, id=author_id)
+        author.follow_requests.clear()
+        author.inbox_posts.clear()
+        return HttpResponse(status=204)

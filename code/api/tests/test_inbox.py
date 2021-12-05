@@ -10,7 +10,7 @@ import base64
 import logging
 import json
 
-from socialDistribution.models import LocalAuthor, LocalPost, Comment, Author
+from socialDistribution.models import LocalAuthor, LocalPost, Comment, Author, InboxPost
 from api.models import Node
 from cmput404.constants import API_BASE, HOST
 import base64
@@ -172,7 +172,6 @@ class InboxViewTests(TestCase):
         # Check the inbox of author2
         response = self.client.get(
             reverse("api:inbox", kwargs={"author_id": author2.id}),
-            content_type="application/json",
             **get_basic_auth(author2),
         )
 
@@ -258,3 +257,49 @@ class InboxViewTests(TestCase):
         # Check that the like was from the right author
         like = post.likes.first()
         self.assertEqual("http://remote.com/author/432423432", like.author.url)
+
+    def test_inbox_delete(self):
+        author1 = create_author_simple()
+        author2 = create_author_simple()
+
+        self.assertEqual(author2.inbox_posts.count(), 0)
+        self.assertEqual(author2.follow_requests.count(), 0)
+
+        # Create a post from author1
+        dummy_post = mixer.blend(
+            LocalPost,
+            id=1,
+            author=author1,
+            content="testcontent".encode("utf-8")
+        )
+
+        body = dummy_post.as_json()
+
+        # Send the post to author 2
+        response = self.client.post(
+            reverse("api:inbox", kwargs={"author_id": author2.id}),
+            content_type="application/json",
+            **self.basicAuthHeaders,
+            data=body
+        )
+
+        # Send follow requerst to author 2
+        author2.follow_requests.add(author1)
+
+        self.assertEqual(author2.inbox_posts.count(), 1)
+        self.assertEqual(author2.follow_requests.count(), 1)
+
+        # Send DELETE
+        response = self.client.delete(
+            reverse("api:inbox", kwargs={"author_id": author2.id}),
+            **get_basic_auth(author2),
+        )
+
+        self.assertEqual(response.status_code, 204)
+
+        self.assertEqual(author2.inbox_posts.count(), 0)
+        self.assertEqual(author2.follow_requests.count(), 0)
+
+        # make sure cleared but not deleted
+        self.assertEqual(InboxPost.objects.count(), 1)
+        self.assertEqual(Author.objects.count(), 2)
