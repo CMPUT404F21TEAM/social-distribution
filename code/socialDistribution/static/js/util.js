@@ -1,24 +1,40 @@
 /* 
  * Utility functions
- * Remove duplication
+ * Remove duplication in code
  */
 
-function configEditPostModal() {
+function configPostModals() {
+    // Configures the modals "attached" to a post
+
+    let form_ids = [
+        "edit-post-form",
+        "delete-post-form",
+        "share-post-form",
+        "copy-link-form"
+    ]
 
     // Clear interval when modal shows up and reset interval
     // when modal disappears
+    for (let id of form_ids) {
 
-    $('[id=edit-post-form]').each(function () {
-        let modal = $(this).find('.modal');
-        $(modal).on('show.bs.modal', function () {
-            let modal_id = $(modal).attr('id');
-            clearInterval(interval);
-            toggle("#" + modal_id);
+        $('[id=' + id + ']').each(function () {
+            let modal = $(this).find('.modal');
+
+            // Clear interval when modal is open
+            $(modal).on('show.bs.modal', function () {
+                let modal_id = $(modal).attr('id');
+                clearInterval(interval);
+
+                if (id === "edit-post-form")
+                    toggle("#" + modal_id);
+            });
+    
+            // Reset interval when modal is hidden
+            $(modal).on('hidden.bs.modal', function () {
+                interval = setInterval(update, intervalInMs);
+            });
         });
 
-        $(modal).on('hidden.bs.modal', function () {
-            interval = setInterval(update, intervalInMs);
-        });
-    });
+    }
 
 };

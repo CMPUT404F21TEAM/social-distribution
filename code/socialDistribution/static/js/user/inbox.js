@@ -19,7 +19,7 @@ function update() {
             let inbox = $(data).find('.inbox').html();
             $('.inbox').html(inbox);
 
-            configEditPostModal()
+            configPostModals()
             handleMarkDown();
         },
         error: function (data) {
@@ -28,4 +28,4 @@ function update() {
     })
 }
 
-configEditPostModal();
+configPostModals();
