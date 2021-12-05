@@ -932,9 +932,10 @@ def profile(request):
             djangoUser.save()
 
         except Exception:
-            return messages.error(request, "Error editing profile")
+            messages.error(request, "Error editing profile")
 
-        return redirect('socialDistribution:profile')
+        finally:
+            return redirect('socialDistribution:profile')
 
     # add missing information to author
     author.email = djangoUser.email
