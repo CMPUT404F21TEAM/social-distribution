@@ -59,6 +59,7 @@
                     {% endif %}
                     
                     <!-- Copy Post Link -->
+                    {% if post_type != 'inbox' %}
                     <button 
                     type="button" 
                     class="btn btn-secondary mx-1" 
@@ -66,6 +67,7 @@
                     data-bs-target="#copy_link_modal{{ post.id }}">
                         <i class="far fa-copy"></i>
                     </button>
+                    {% endif %}
 
                     
 
