@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from django.http.response import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseServerError
+from django.http.response import Http404, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotFound, HttpResponseServerError
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
 from .models import Node
@@ -32,11 +32,14 @@ def validate_user(view_func):
                 return response
 
             # check if user matches the requested author
-            author = LocalAuthor.objects.get(user=user)
-            if author.id != author_id:
+            expected = get_object_or_404(LocalAuthor, id=author_id)
+            actual = LocalAuthor.objects.get(user=user)
+            if expected != actual:
                 return HttpResponseForbidden()
 
-
+        except Http404:
+            return HttpResponseNotFound()
+            
         except Exception as e:
             return HttpResponseBadRequest()
 

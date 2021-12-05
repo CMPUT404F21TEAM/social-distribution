@@ -14,6 +14,7 @@ from socialDistribution.models import LocalAuthor, LocalPost, Comment, Author
 from api.models import Node
 from cmput404.constants import API_BASE, HOST
 import base64
+from .utilities import create_author as create_author_simple, get_basic_auth
 
 # Documentation and code samples taken from the following references:
 # Django Software Foundation, https://docs.djangoproject.com/en/3.2/intro/tutorial05/
@@ -118,7 +119,7 @@ class InboxViewTests(TestCase):
 
         # Create a post from author1
         dummy_post = mixer.blend(
-            LocalPost, 
+            LocalPost,
             author=author1,
             content="testcontent".encode("utf-8")
         )
@@ -143,24 +144,17 @@ class InboxViewTests(TestCase):
         self.assertEqual(inbox_post.title, dummy_post.title)
         self.assertEqual(inbox_post.description, dummy_post.description)
         self.assertEqual(inbox_post.decoded_content, dummy_post.decoded_content)
-        
+
     def test_get_inbox(self):
         self.maxDiff = None
-        author1 = create_author(
-            "user1",
-            "Greg Johnson",
-            "http://github.com/gjohnson"
-        )
-        author2 = create_author(
-            "user2",
-            "Lara Croft",
-            "http://github.com/laracroft"
-        )
+        author1 = create_author_simple()
+
+        author2 = create_author_simple()
 
         # Create a post from author1
         dummy_post = mixer.blend(
-            LocalPost, 
-            id=1, 
+            LocalPost,
+            id=1,
             author=author1,
             content="testcontent".encode("utf-8")
         )
@@ -176,21 +170,20 @@ class InboxViewTests(TestCase):
         )
 
         # Check the inbox of author2
-        self.client.login(username='user2', password='password')
         response = self.client.get(
             reverse("api:inbox", kwargs={"author_id": author2.id}),
             content_type="application/json",
-            **self.basicAuthHeaders,
+            **get_basic_auth(author2),
         )
 
-        res_data = json.loads(response.content)
-     
-        resPost = res_data["items"][0]
         self.assertEqual(response.status_code, 200)
+
+        res_data = json.loads(response.content)
+        resPost = res_data["items"][0]
         self.assertEqual(resPost['title'], dummy_post.title)
         self.assertEqual(resPost['description'], dummy_post.description)
         self.assertEqual(resPost['content'], dummy_post.decoded_content)
-    
+
     def test_post_comment_local_like(self):
         '''
             Test liking a comment from a local author
@@ -199,17 +192,17 @@ class InboxViewTests(TestCase):
             "user1",
             "Greg Johnson",
             "http://github.com/gjohnson"
-        ) 
+        )
 
-        post = mixer.blend(LocalPost, author = author1)
-        comment = mixer.blend(Comment, author=author1, post=post, pub_date = datetime.now(timezone.utc) )
+        post = mixer.blend(LocalPost, author=author1)
+        comment = mixer.blend(Comment, author=author1, post=post, pub_date=datetime.now(timezone.utc))
 
         body = {
-                   "@context": "https://www.w3.org/ns/activitystreams",
-                    "summary": f"{author1.username} Likes your post",         
-                    "type": "Like",
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "summary": f"{author1.username} Likes your post",
+            "type": "Like",
                     "author": author1.as_json(),
-                    "object":f"http://{HOST}/author/{post.author.id}/posts/{post.id}/comments/{comment.id}"
+                    "object": f"http://{HOST}/author/{post.author.id}/posts/{post.id}/comments/{comment.id}"
         }
 
         response = self.client.post(
@@ -218,7 +211,6 @@ class InboxViewTests(TestCase):
             **self.basicAuthHeaders,
             data=body
         )
-        
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(comment.total_likes(), 1)
@@ -258,7 +250,7 @@ class InboxViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        
+
         # Check that the post received a like
         post = LocalPost.objects.get(id=post.id)
         self.assertEqual(1, post.likes.count())
