@@ -60,6 +60,7 @@ LOGIN_URL = 'app/login'
 
 LOGIN_EXEMPT_URLS = (
     r'^app/register/$',
+    r'^app/public-share/'
 )
 
 # Add remote groups origin hosts here

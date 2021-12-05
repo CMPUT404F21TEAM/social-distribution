@@ -415,9 +415,6 @@ def unlisted_posts(request):
     """
 
     curr_user = LocalAuthor.objects.get(user=request.user)
-
-    # TODO: Should become an API request (same as /author/<author-id>) since won't know if author is local/remote
-
     posts = curr_user.posts.unlisted()
 
     context = {
@@ -534,11 +531,9 @@ def copy_link(request, id):
         Allows user to copy a post's link
     """
 
-    # TODO:
-    #     * add copy link for remote posts
-
     post = LocalPost.objects.get(id=id)
     link = post.get_local_shareable_link()
+    
     try:
         pyperclip.copy(link)
     except:  # pyperclip.PyperclipException
@@ -941,3 +936,30 @@ def inbox(request):
     }
 
     return render(request, 'author/inbox.html', context)
+
+def public_share(request, id):
+    """
+        Renders a single public post shared via link (including unlisted public posts)
+    """
+    post = get_object_or_404(LocalPost, pk=id) 
+    author = post.author
+    viewable = True 
+    if not post.is_public():
+        viewable = False 
+        try:
+            curr_user = LocalAuthor.objects.get(user=request.user)
+            # if curr_user is following author or if author is curr_user
+            if author.has_follower(curr_user) or author.id == curr_user.id:
+                viewable = True 
+        except:
+            return redirect('socialDistribution:home')
+   
+    if not viewable:
+        return redirect('socialDistribution:home')
+
+    context = {
+        'author': author,
+        'author_type': 'Local',
+        'post':post
+    }
+    return render(request, 'tagtemplates/shared_post.html', context)

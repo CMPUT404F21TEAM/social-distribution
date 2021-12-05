@@ -25,11 +25,7 @@
     <div class="card-footer bg-white">
         <div class="d-flex flex-column">
             <p class="px-2">
-                {% if is_liked is None %}
-                    An error occurred while fetching likes
-                {% else %}
-                    {{ like_text }}
-                {% endif %}
+                {{ like_text }}
             </p>
             <div class="d-flex justify-content-between">
                 <div class="d-flex flex-row">
@@ -63,6 +59,7 @@
                     {% endif %}
                     
                     <!-- Copy Post Link -->
+                    {% if post_type != 'inbox' %}
                     <button 
                     type="button" 
                     class="btn btn-secondary mx-1" 
@@ -70,6 +67,7 @@
                     data-bs-target="#copy_link_modal{{ post.id }}">
                         <i class="far fa-copy"></i>
                     </button>
+                    {% endif %}
 
                     
 
