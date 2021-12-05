@@ -6,8 +6,8 @@
  * 
  */
 
-const intervalInMs = 5000;
-let interval = setInterval(update, intervalInMs)    // fetch every 5 seconds
+const intervalInMs = 20000;
+let interval = setInterval(update, intervalInMs)    // fetch every 20 seconds
 
 function update() {
     console.log("Update");
