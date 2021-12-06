@@ -2,6 +2,9 @@
 
 CMPUT404-project-socialdistribution
 
+# Demo Video
+[![App Demo Video](https://github.com/CMPUT404F21TEAM/social-distribution/blob/master/video/VideoThumbnail.png)](https://youtu.be/MoULLQmtl0M)
+
 # Usage
 
 ### Recommended Python Version

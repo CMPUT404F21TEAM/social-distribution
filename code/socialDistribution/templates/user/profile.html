@@ -24,9 +24,10 @@
    <div class="col col-lg-9">
         <form
             method="post"
-            action="{% url 'api:author' author.id %}" 
+            action="{% url 'socialDistribution:profile' %}" 
         >
-            <div class="mb-3">
+        {% csrf_token %}
+        <div class="mb-3">
                 <label for="username" class="form-label">Username</label>
                 <input disabled type="text" class="form-control" name="username" id="username" value="{{ author.username }}">
             </div>

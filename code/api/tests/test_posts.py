@@ -7,14 +7,11 @@ from django.urls import reverse
 from django.utils import timezone
 from mixer.backend.django import mixer
 
-import base64 as b64
 import logging
-import datetime
 
 from socialDistribution.models import InboxPost, LocalPost, Category, LocalAuthor
-from .test_authors import create_author
 from cmput404.constants import API_BASE
-
+from .utilities import create_author, get_basic_auth
 
 def create_post(title, author):
     post = LocalPost.objects.create(
@@ -91,13 +88,19 @@ class PostsViewTest(TestCase):
         
     def test_post_posts(self):
         self.maxDiff = None
-        author = mixer.blend(LocalAuthor)
+        author = create_author()
+
         post = create_post("first", author)
         newJson = get_post_json(post)
         newJson['title'] = 'newPost'
         newJson['content'] = newJson['content']
 
-        response = self.client.post(reverse('api:posts', args=(post.author.id,)), content_type="application/json", data=json.dumps(newJson))
+        response = self.client.post(
+            reverse('api:posts', args=(post.author.id,)), 
+            content_type="application/json", 
+            data=json.dumps(newJson),
+            **get_basic_auth(author)
+        )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(newJson['title'], LocalPost.objects.latest('published').title)
         
