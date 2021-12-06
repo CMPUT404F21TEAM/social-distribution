@@ -510,21 +510,59 @@ def share_post(request, id):
     """
     if request.method == 'POST':
         author = LocalAuthor.objects.get(user=request.user)
-        post = LocalPost.objects.get(id=id)
+        
+        try:
+            post = LocalPost.objects.get(id=id)
+            if not post.is_public() and not post.is_friends():
+                return redirect('socialDistribution:home')
+            # origin remains unchanged as the original true 'source'
+            oldSource = post.get_id()
 
-        if not post.is_public() and not post.is_friends():
-            return redirect('socialDistribution:home')
+            post.pk = None  # duplicate the post
+            post.author = author
+            post.published = timezone.now()
+            post.source = oldSource
+            post.save()
+            to_dispatch = post
+            
+        except:
+            oldPost = InboxPost.objects.get(id=id)
+            if not oldPost.is_public() and not oldPost.is_friends():
+                return redirect('socialDistribution:home')
+            new_post = LocalPost(
+                    author_id=author.id,
+                    title=oldPost.title,
+                    description=oldPost.description,
+                    content_type=oldPost.content_type,
+                    content=oldPost.content,
+                    visibility=oldPost.visibility,
+                    unlisted=oldPost.unlisted)
 
-        # origin remains unchanged as the original true 'source'
-        oldSource = post.get_id()
+            # set post origin and source to itself for a new post
+            new_post.origin = new_post.source = new_post.get_id()
+            new_post.save()
+            
+            categories = oldPost.categories.all()
+            categories = [cat.category for cat in categories]
+            
 
-        post.pk = None  # duplicate the post
-        post.author = author
-        post.published = timezone.now()
-        post.source = oldSource
-        post.save()
+            if categories is not None:
+                """
+                This implementation makes category names case-insensitive.
+                This makes handling Category objects cleaner, albeit slightly more
+                involved.
+                """
+                for category in categories:
+                    category_obj, created = Category.objects.get_or_create(
+                        category__iexact=category,
+                        defaults={'category': category}
+                    )
+                    new_post.categories.add(category_obj)
+            to_dispatch = new_post
 
-        dispatch_post(post, [])
+
+
+        dispatch_post(to_dispatch, [])
 
     return redirect('socialDistribution:home')
 

@@ -348,6 +348,14 @@ class InboxPost(Post):
     def author_as_json(self):
         """ Gets the author of the post in JSON format. """
         return self._author_json
+    
+    def get_id(self):
+        if type(self.author) is str:
+            authorid = self.author.split('/')[-1]
+        else:
+            authorid = self.author.id
+
+        return f"{API_BASE}/author/{authorid}/posts/{self.id}"
 
     def fetch_update(self):
         """ Fetches update about the post for an edit or delete if it is public """

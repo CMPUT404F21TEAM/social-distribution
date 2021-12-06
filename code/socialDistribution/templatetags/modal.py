@@ -1,5 +1,5 @@
 from django import template
-from ..models import LocalPost
+from ..models import LocalPost, InboxPost
 
 register = template.Library()
 
@@ -11,11 +11,12 @@ def modal(*args, **kwargs):
     post_link = ''
     if 'postid' in kwargs:
         postid = kwargs['postid']
-        post = LocalPost.objects.get(id=postid)
-        if isinstance(post, LocalPost):
+        try:
+            post = LocalPost.objects.get(id=postid)
             post_link = post.get_local_shareable_link()
-        else:
-            post_link = 'Not a local post'
+        except LocalPost.DoesNotExist:
+            post = InboxPost.objects.get(id=postid)
+            post_link = 'Remote post'
     return {
             'user': kwargs.get('user'),
             'modal_id': kwargs['id'],
