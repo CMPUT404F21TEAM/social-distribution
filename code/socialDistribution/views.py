@@ -18,6 +18,7 @@ from api.parsers import url_parser
 import base64
 import pyperclip
 from dateutil import parser
+import uuid
 
 import socialDistribution.requests as api_requests
 from api.models import Node
@@ -896,8 +897,12 @@ def post_comment(request, author_id, post_id):
                         request_url = post.public_id.strip("/") + '/comments/'
 
                     # t11 expects 'api_url' field
-                    elif post_host == REMOTE_NODES["t11"]:
+                    if post_host == REMOTE_NODES["t11"]:
                         data["api_url"] = post.public_id
+
+                    # t16 wants an id for their comment
+                    if post_host == REMOTE_NODES["t16"]:
+                        data["id"] = f"{post.public_id.strip('/')}/comments/{uuid.uuid4()}" 
 
                 # send comment to remote inbox
                 api_requests.post(url=request_url, data=data)
