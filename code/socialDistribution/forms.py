@@ -152,7 +152,7 @@ class PostForm(forms.Form):
             content = base64.b64encode(image_binary)
 
         else:
-            content_type = LocalPost.ContentType.PLAIN
+            content_type = LocalPost.ContentType.MARKDOWN
             content = self.cleaned_data.get('content_text')
 
         return content, content_type
