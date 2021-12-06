@@ -4,13 +4,13 @@ from django.test import TestCase, LiveServerTestCase
 from django.urls import reverse
 from mixer.backend.django import mixer
 
-import json
 import logging
 import base64
 
 from socialDistribution.models import LocalAuthor, Author, Follow
 from api.models import Node
 from cmput404.constants import HOST
+from .utilities import create_author, get_basic_auth
 
 # Documentation and code samples taken from the following references:
 # Django Software Foundation, https://docs.djangoproject.com/en/3.2/intro/tutorial05/
@@ -43,10 +43,8 @@ class FollowersSingleViewTests(TestCase):
         }
 
     def test_get(self):
-        object = mixer.blend(LocalAuthor)
-        object = LocalAuthor.objects.get(id=object.id)  # refetch to get the proper url
-        actor = mixer.blend(LocalAuthor)
-        actor = LocalAuthor.objects.get(id=actor.id)  # refetch to get the proper url
+        object = create_author()
+        actor = create_author()
 
         object.follows.create(actor=actor)
 
@@ -61,10 +59,8 @@ class FollowersSingleViewTests(TestCase):
         self.assertDictEqual(expected, actual)
 
     def test_get_404(self):
-        object = mixer.blend(LocalAuthor)
-        object = LocalAuthor.objects.get(id=object.id)  # refetch to get the proper url
-        actor = mixer.blend(LocalAuthor)
-        actor = LocalAuthor.objects.get(id=actor.id)  # refetch to get the proper url
+        object = create_author()
+        actor = create_author()
 
         kwargs = {"author_id": object.id, "foreign_author_id": actor.url}
         request_url = reverse("api:followers-single", kwargs=kwargs)
@@ -73,10 +69,8 @@ class FollowersSingleViewTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_delete(self):
-        object = mixer.blend(LocalAuthor)
-        object = LocalAuthor.objects.get(id=object.id)  # refetch to get the proper url
-        actor = mixer.blend(LocalAuthor)
-        actor = LocalAuthor.objects.get(id=actor.id)  # refetch to get the proper url
+        object = create_author()
+        actor = create_author()
 
         object.follows.create(actor=actor)
         self.assertEqual(1, object.follows.count())
@@ -85,7 +79,7 @@ class FollowersSingleViewTests(TestCase):
         # create follower and check that it's there when GET
         kwargs = {"author_id": object.id, "foreign_author_id": actor.url}
         request_url = reverse("api:followers-single", kwargs=kwargs)
-        response = self.client.get(request_url)
+        response = self.client.get(request_url, **get_basic_auth(object))
 
         expected = actor.as_json()
         actual = response.json()
@@ -95,17 +89,15 @@ class FollowersSingleViewTests(TestCase):
         # now DELETE and make sure it's gone when GET
         kwargs = {"author_id": object.id, "foreign_author_id": actor.url}
         request_url = reverse("api:followers-single", kwargs=kwargs)
-        response = self.client.delete(request_url)
+        response = self.client.delete(request_url, **self.basicAuthHeaders)
 
         self.assertEqual(204, response.status_code)
         self.assertEqual(b"", response.content)
         self.assertEqual(0, object.follows.count())
 
     def test_put(self):
-        object = mixer.blend(LocalAuthor)
-        object = LocalAuthor.objects.get(id=object.id)
-        actor = mixer.blend(LocalAuthor)
-        actor = LocalAuthor.objects.get(id=actor.id)
+        object = create_author()
+        actor = create_author()
 
         self.assertEqual(0, object.follows.count())
 
@@ -116,7 +108,7 @@ class FollowersSingleViewTests(TestCase):
         response = self.client.put(
             request_url,
             content_type="application/json",
-            **self.basicAuthHeaders,
+            **get_basic_auth(object),
             data=actor.as_json()
         )
 
@@ -134,16 +126,14 @@ class FollowersSingleViewTests(TestCase):
             self.fail(f"Follower not returned by query after PUT")
 
     def test_put_404(self):
-        object = mixer.blend(LocalAuthor)
-        object = LocalAuthor.objects.get(id=object.id)
+        object = create_author()
         deleted_obj_id = object.id
         object.delete()
 
         with self.assertRaises(LocalAuthor.DoesNotExist) as cm:
             LocalAuthor.objects.get(id=deleted_obj_id)
 
-        actor = mixer.blend(LocalAuthor)
-        actor = LocalAuthor.objects.get(id=actor.id)
+        actor = create_author()
 
         kwargs = {"author_id": deleted_obj_id, "foreign_author_id": actor.url}
         
@@ -152,7 +142,7 @@ class FollowersSingleViewTests(TestCase):
         response = self.client.put(
             request_url,
             content_type="application/json",
-            **self.basicAuthHeaders,
+            **get_basic_auth(object),
             data=actor.as_json()
         )
 

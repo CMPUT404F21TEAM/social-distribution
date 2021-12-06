@@ -44,7 +44,7 @@ function update() {
             // Update posts
             $('#regular-posts').html(new_posts);
 
-            configEditPostModal();
+            configPostModals();
             handleMarkDown();
         },
         error: function (data) {
@@ -73,4 +73,4 @@ else {
     showGithubOnly();
 }
 
-configEditPostModal();
+configPostModals();
