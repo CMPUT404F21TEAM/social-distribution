@@ -354,6 +354,7 @@ class InboxPost(Post):
         """ Gets the author of the post in JSON format. """
         return self._author_json
 
+
     def fetch_update(self):
         """ Fetches update about the post for an edit or delete if it is public """
         if self.visibility != Post.Visibility.PUBLIC:

@@ -98,9 +98,15 @@
         </div>
     </div>
 
+    {% load modal %}
+    {% load utility %}
+
+    <form method="POST" action="{% url 'socialDistribution:share-post' post.id %}">
+        {% csrf_token %}
+        {% modal id="share_post_modal"|addstr:post.id type="share" label="Share Post" title="Share Post" btn="Share" postid=post.id%}
+    </form>
+
     {% if post_type == 'local' %}
-        {% load modal %}
-        {% load utility %}
         <form method="POST" 
             id="edit-post-form"
             enctype="multipart/form-data" 

@@ -18,6 +18,7 @@ from api.parsers import url_parser
 import base64
 import pyperclip
 from dateutil import parser
+import uuid
 
 import socialDistribution.requests as api_requests
 from api.models import Node
@@ -507,21 +508,60 @@ def share_post(request, id):
     """
     if request.method == 'POST':
         author = LocalAuthor.objects.get(user=request.user)
-        post = LocalPost.objects.get(id=id)
+        
+        try:
+            post = get_object_or_404(LocalPost, id=id)
+            if not post.is_public() and not post.is_friends():
+                return redirect('socialDistribution:home')
+            # origin remains unchanged as the original true 'source'
+            oldSource = post.get_id()
 
-        if not post.is_public() and not post.is_friends():
-            return redirect('socialDistribution:home')
+            post.pk = None  # duplicate the post
+            post.author = author
+            post.published = timezone.now()
+            post.source = oldSource
+            post.save()
+            to_dispatch = post
+            
+        except:
+            oldPost = get_object_or_404(InboxPost, id=id)
+            
+            if not oldPost.is_public() and not oldPost.is_friends():
+                return redirect('socialDistribution:home')
+            new_post = LocalPost(
+                    author_id=author.id,
+                    title=oldPost.title,
+                    origin=oldPost.origin,
+                    source=oldPost.public_id,
+                    description=oldPost.description,
+                    content_type=oldPost.content_type,
+                    content=oldPost.content,
+                    visibility=oldPost.visibility,
+                    unlisted=oldPost.unlisted)
 
-        # origin remains unchanged as the original true 'source'
-        oldSource = post.get_id()
+            new_post.save()
+            
+            categories = oldPost.categories.all()
+            categories = [cat.category for cat in categories]
+            
 
-        post.pk = None  # duplicate the post
-        post.author = author
-        post.published = timezone.now()
-        post.source = oldSource
-        post.save()
+            if categories is not None:
+                """
+                This implementation makes category names case-insensitive.
+                This makes handling Category objects cleaner, albeit slightly more
+                involved.
+                """
+                for category in categories:
+                    category_obj, created = Category.objects.get_or_create(
+                        category__iexact=category,
+                        defaults={'category': category}
+                    )
+                    new_post.categories.add(category_obj)
+            to_dispatch = new_post
 
-        dispatch_post(post, [])
+
+
+        dispatch_post(to_dispatch, [])
 
     return redirect('socialDistribution:home')
 
@@ -857,8 +897,12 @@ def post_comment(request, author_id, post_id):
                         request_url = post.public_id.strip("/") + '/comments/'
 
                     # t11 expects 'api_url' field
-                    elif post_host == REMOTE_NODES["t11"]:
+                    if post_host == REMOTE_NODES["t11"]:
                         data["api_url"] = post.public_id
+
+                    # t16 wants an id for their comment
+                    if post_host == REMOTE_NODES["t16"]:
+                        data["id"] = f"{post.public_id.strip('/')}/comments/{uuid.uuid4()}" 
 
                 # send comment to remote inbox
                 api_requests.post(url=request_url, data=data)

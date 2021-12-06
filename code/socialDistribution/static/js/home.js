@@ -35,17 +35,20 @@ function update() {
         type: "GET",
         success: function (data) {
             console.log('Success');
-            let new_github = $(data).find('#github-activity').html();
-            let new_posts = $(data).find('#regular-posts').html();
-
-            // Update github activity
-            $('#github-activity').html(new_github);
-
-            // Update posts
-            $('#regular-posts').html(new_posts);
-
-            configPostModals();
-            handleMarkDown();
+            
+            if (!modalShown) {
+                let new_github = $(data).find('#github-activity').html();
+                let new_posts = $(data).find('#regular-posts').html();
+    
+                // Update github activity
+                $('#github-activity').html(new_github);
+    
+                // Update posts
+                $('#regular-posts').html(new_posts);
+    
+                configPostModals();
+                handleMarkDown();
+            }
         },
         error: function (data) {
             console.log("Error");
@@ -57,11 +60,13 @@ $('#posts-radio').on('change', showPostsOnly)
 $('#github-radio').on('change', showGithubOnly)
 
 $('#add_post_modal').on('show.bs.modal', function () {
+    modalShown = true;
     clearInterval(interval);
     toggle('#add_post_modal');
 });
 
 $('#add_post_modal').on('hidden.bs.modal', function () {
+    modalShown = false;
     $('#create_post_form').trigger('reset');
     interval = setInterval(update, intervalInMs);     // update every 30 seconds
 })
