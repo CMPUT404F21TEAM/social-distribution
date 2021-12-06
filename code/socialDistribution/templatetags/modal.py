@@ -1,4 +1,5 @@
 from django import template
+from django.shortcuts import get_object_or_404
 from ..models import LocalPost, InboxPost
 
 register = template.Library()
@@ -15,7 +16,7 @@ def modal(*args, **kwargs):
             post = LocalPost.objects.get(id=postid)
             post_link = post.get_local_shareable_link()
         except LocalPost.DoesNotExist:
-            post = InboxPost.objects.get(id=postid)
+            post = get_object_or_404(InboxPost, id=postid)
             post_link = 'Remote post'
     return {
             'user': kwargs.get('user'),
