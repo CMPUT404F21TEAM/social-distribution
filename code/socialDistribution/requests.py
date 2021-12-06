@@ -7,14 +7,11 @@ import requests
 import json
 import logging
 import base64
-from urllib3.util.retry import Retry
-from requests.adapters import HTTPAdapter
 
-from cmput404.constants import HOST
 from api.node_manager import node_manager
 from api.parsers import url_parser
 
-TIMEOUT = 10
+TIMEOUT = 5
 
 def parse_res_to_dict(response):
     """ 
@@ -69,14 +66,9 @@ def get(url, params=None, send_basic_auth_header=True):
     # 'Can I set max_retries for requests.request?'
     try:
         logger.info(f"Trying to do GET request to {url}")
-        session = requests.Session()
-        retries = Retry(total=2,
-                        backoff_factor=0.1,
-                        status_forcelist=[500, 502, 503, 504])
-        session.mount(url, HTTPAdapter(max_retries=retries))
 
         # timeout here since may need to wake up other groups heroku servers
-        response = session.get(url, headers=headers, params=params, timeout=TIMEOUT)
+        response = requests.get(url, headers=headers, params=params, timeout=TIMEOUT)
 
         # parse JSON response if OK
         if response.status_code == 200:
@@ -124,7 +116,7 @@ def post(url, params=None, data={}, send_basic_auth_header=True):
 
     try:
         logger.info(f"Trying to do POST request to {url}")
-        response = requests.post(url, headers=headers, params=params, json=data)
+        response = requests.post(url, headers=headers, params=params, json=data, timeout=TIMEOUT)
 
         # parse JSON response if OK
         if response.status_code == 200:
@@ -170,13 +162,7 @@ def delete(url, params=None, send_basic_auth_header=True):
     try:
         # ref: https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request - datashaman
         # 'Can I set max_retries for requests.request?'
-        session = requests.Session()
-        retries = Retry(total=2,
-                        backoff_factor=0.1,
-                        status_forcelist=[500, 502, 503, 504])
-
-        session.mount(url, HTTPAdapter(max_retries=retries))
-        response = session.delete(url, headers=headers, params=params)
+        response = requests.delete(url, headers=headers, params=params, timeout=TIMEOUT)
 
         # parse JSON response if OK
         if response.status_code == 200:
