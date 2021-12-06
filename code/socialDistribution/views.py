@@ -512,7 +512,7 @@ def share_post(request, id):
         author = LocalAuthor.objects.get(user=request.user)
         
         try:
-            post = LocalPost.objects.get(id=id)
+            post = get_object_or_404(LocalPost, id=id)
             if not post.is_public() and not post.is_friends():
                 return redirect('socialDistribution:home')
             # origin remains unchanged as the original true 'source'
@@ -526,7 +526,7 @@ def share_post(request, id):
             to_dispatch = post
             
         except:
-            oldPost = InboxPost.objects.get(id=id)
+            oldPost = get_object_or_404(InboxPost, id=id)
             if not oldPost.is_public() and not oldPost.is_friends():
                 return redirect('socialDistribution:home')
             new_post = LocalPost(
