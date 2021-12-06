@@ -527,19 +527,20 @@ def share_post(request, id):
             
         except:
             oldPost = get_object_or_404(InboxPost, id=id)
+            
             if not oldPost.is_public() and not oldPost.is_friends():
                 return redirect('socialDistribution:home')
             new_post = LocalPost(
                     author_id=author.id,
                     title=oldPost.title,
+                    origin=oldPost.origin,
+                    source=oldPost.public_id,
                     description=oldPost.description,
                     content_type=oldPost.content_type,
                     content=oldPost.content,
                     visibility=oldPost.visibility,
                     unlisted=oldPost.unlisted)
 
-            # set post origin and source to itself for a new post
-            new_post.origin = new_post.source = new_post.get_id()
             new_post.save()
             
             categories = oldPost.categories.all()
