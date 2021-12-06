@@ -17,13 +17,16 @@ function update() {
         type: "GET",
         success: function (data) {
             console.log('Success');
-            let new_posts = $(data).find('.author-prof-posts').html();
-
-            // Update posts
-            $('.author-prof-posts').html(new_posts);
-
-            configPostModals();
-            handleMarkDown();
+            
+            if (!modalShown) {
+                let new_posts = $(data).find('.author-prof-posts').html();
+                
+                // Update posts
+                $('.author-prof-posts').html(new_posts);
+    
+                configPostModals();
+                handleMarkDown();
+            }
         },
         error: function (data) {
             console.log("Error");

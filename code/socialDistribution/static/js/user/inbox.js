@@ -16,11 +16,13 @@ function update() {
         success: function (data) {
             console.log('Success');
 
-            let inbox = $(data).find('.inbox').html();
-            $('.inbox').html(inbox);
-
-            configPostModals()
-            handleMarkDown();
+            if (!modalShown) {
+                let inbox = $(data).find('.inbox').html();
+                $('.inbox').html(inbox);
+    
+                configPostModals()
+                handleMarkDown();
+            }
         },
         error: function (data) {
             console.log("Error");
