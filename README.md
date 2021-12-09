@@ -38,7 +38,12 @@ Username/Password for Basic Auth:
   Team 16: username=team16 and password=secret16
 ```
 
-Check out the [wiki page](https://github.com/CMPUT404F21TEAM/social-distribution/wiki) for [Detailed API Documentaion](https://github.com/CMPUT404F21TEAM/social-distribution/wiki/Web-Service-API-Documentation), [UI Design Mockups](https://www.figma.com/file/4V0nM5Zv7Zb3c8Mt4BMW3P/SocialDistributionMockUps?node-id=0%3A1), Completed User Stories,  etc.
+Check out the [wiki page](https://github.com/CMPUT404F21TEAM/social-distribution/wiki) for [Detailed API Documentaion](https://github.com/CMPUT404F21TEAM/social-distribution/wiki/Web-Service-API-Documentation), [UI Design Mockups](https://www.figma.com/file/4V0nM5Zv7Zb3c8Mt4BMW3P/SocialDistributionMockUps?node-id=0%3A1), Completed User Stories, AJAX documentation,  etc.
+
+# AJAX
+
+Check out this [wiki page](https://github.com/CMPUT404F21TEAM/social-distribution/wiki/AJAX) for documentation on how and where we use AJAX in our project.
+
 
 # Team Members 
 The team members and their GitHub usernames
